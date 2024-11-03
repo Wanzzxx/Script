@@ -54,7 +54,12 @@ Time = <number> - The duration of the notfication.
 Tab:AddButton({
 	Name = "Auto Collect Candy (Must Enter Halloween World First)",
 	Callback = function()
-      		while wait(0) do local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+      		while wait(0) do local args = {
+    [1] = "Halloween"
+}
+
+game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Teleport"):InvokeServer(unpack(args))
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
 rootPart.CFrame = workspace.Main.Candy:GetChildren()[5].CandyCorn.CFrame
 end
   	end    
