@@ -52,7 +52,7 @@ Time = <number> - The duration of the notfication.
 ]]
 
 Tab:AddButton({
-	Name = "Auto Collect Candy (Must Enter Halloween World First)",
+	Name = "Auto Collect Candy",
 	Callback = function()
       		while wait(0) do local args = {
     [1] = "Halloween"
