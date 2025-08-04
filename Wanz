@@ -57,29 +57,8 @@ do
         end
     })
 
-local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Players = game:GetService("Players")
-
-local function TeleportToTarget(targetPart)
-    local character = Players.LocalPlayer.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
-    if hrp and targetPart then
-        local dist = (hrp.Position - targetPart.Position).Magnitude
-        local targetCFrame = targetPart.CFrame * CFrame.new(0, 0, 2)
-
-        if dist <= 150 then
-            -- Tween if close enough
-            local tweenInfo = TweenInfo.new(math.clamp(dist / 100, 0.2, 1), Enum.EasingStyle.Linear)
-            local tween = TweenService:Create(hrp, tweenInfo, { CFrame = targetCFrame })
-            tween:Play()
-            tween.Completed:Wait()
-        else
-            -- Instant teleport if too far
-            hrp.CFrame = targetCFrame
-        end
-    end
-end
 
 local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
     Title = "Auto Farm",
@@ -88,17 +67,17 @@ local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
 
 AutoFarmToggle:OnChanged(function(Value)
     if Value then
-        -- Global LMB spam loop
+        -- LMB Spam Thread
         task.spawn(function()
             while Options.AutoFarm.Value do
                 VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
                 task.wait(0.05)
                 VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-                task.wait(0.1)
+                task.wait(0.05)
             end
         end)
 
-        -- Auto farm loop
+        -- Auto Farm Loop
         task.spawn(function()
             while Options.AutoFarm.Value do
                 local EnemyFolder = workspace:FindFirstChild("Enemy")
@@ -110,11 +89,13 @@ AutoFarmToggle:OnChanged(function(Value)
 
                         local mobHRP = mob:FindFirstChild("HumanoidRootPart")
                         local humanoid = mob:FindFirstChildWhichIsA("Humanoid")
+                        local char = Players.LocalPlayer.Character
+                        local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-                        if mob:IsA("Model") and mobHRP and humanoid and humanoid.Health > 0 then
-                            TeleportToTarget(mobHRP)
+                        if mob:IsA("Model") and mobHRP and humanoid and humanoid.Health > 0 and hrp then
+                            hrp.CFrame = mobHRP.CFrame * CFrame.new(0, 0, 2)
 
-                            -- Wait until the mob is dead
+                            -- Wait for mob death
                             while humanoid.Health > 0 and Options.AutoFarm.Value do
                                 task.wait(0.1)
                             end
