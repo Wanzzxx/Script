@@ -133,7 +133,8 @@ Options.AutoStart:OnChanged(function(Value)
                 local startButton = startFrame and startFrame:FindFirstChild("StartButton")
 
                 if startButton and startButton.Visible then
-                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.BackSlash, false, game)
+                    task.wait(5)
+%1VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.BackSlash, false, game)
                     task.wait(0.1)
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.BackSlash, false, game)
                     task.wait(0.2)
