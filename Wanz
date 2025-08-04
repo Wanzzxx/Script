@@ -17,6 +17,12 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
+-- Service
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
 local Options = Fluent.Options
 
 do
@@ -57,9 +63,6 @@ do
         end
     })
 
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local Players = game:GetService("Players")
-
 local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
     Title = "Auto Farm",
     Default = false
@@ -67,17 +70,21 @@ local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
 
 AutoFarmToggle:OnChanged(function(Value)
     if Value then
-        -- LMB Spam Thread
+        _G.Clicking = true
+
+        -- LMB spam
         task.spawn(function()
             while Options.AutoFarm.Value do
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                task.wait(0.05)
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-                task.wait(0.05)
+                if _G.Clicking then
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                    task.wait(0.03)
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+                end
+                task.wait(0.03)
             end
         end)
 
-        -- Auto Farm Loop
+        -- Farm logic
         task.spawn(function()
             while Options.AutoFarm.Value do
                 local EnemyFolder = workspace:FindFirstChild("Enemy")
@@ -93,9 +100,18 @@ AutoFarmToggle:OnChanged(function(Value)
                         local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
                         if mob:IsA("Model") and mobHRP and humanoid and humanoid.Health > 0 and hrp then
-                            hrp.CFrame = mobHRP.CFrame * CFrame.new(0, 0, 2)
+                            _G.Clicking = false
+                            task.wait(0.2) -- let animation reset
 
-                            -- Wait for mob death
+                            -- Tween to enemy
+                            local goalCFrame = mobHRP.CFrame * CFrame.new(0, 0, 2)
+                            local tween = TweenService:Create(hrp, TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = goalCFrame})
+                            tween:Play()
+                            tween.Completed:Wait()
+
+                            task.wait(0.1)
+                            _G.Clicking = true
+
                             while humanoid.Health > 0 and Options.AutoFarm.Value do
                                 task.wait(0.1)
                             end
@@ -103,9 +119,11 @@ AutoFarmToggle:OnChanged(function(Value)
                     end
                 end
 
-                task.wait(0.2)
+                task.wait(0.1)
             end
         end)
+    else
+        _G.Clicking = false
     end
 end)
 
