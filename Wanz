@@ -1,3 +1,4 @@
+-- Wanz Hub (Fixed & Cleaned)
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
@@ -132,8 +133,9 @@ Options.AutoStart:OnChanged(function(Value)
                 local startButton = startFrame and startFrame:FindFirstChild("StartButton")
 
                 if startButton and startButton.Visible then
-                    task.wait(5)
-%1VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.BackSlash, false, game)
+    task.wait(5)
+
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.BackSlash, false, game)
                     task.wait(0.1)
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.BackSlash, false, game)
                     task.wait(0.2)
