@@ -57,7 +57,25 @@ do
         end
     })
 
-    local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
+    local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+
+local function SmoothTeleportTo(targetPos)
+    local character = Players.LocalPlayer.Character
+    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        local distance = (hrp.Position - targetPos.Position).Magnitude
+        local tweenInfo = TweenInfo.new(math.clamp(distance / 100, 0.2, 1), Enum.EasingStyle.Linear)
+        local goal = { CFrame = targetPos.CFrame * CFrame.new(0, 0, 2) }
+
+        local tween = TweenService:Create(hrp, tweenInfo, goal)
+        tween:Play()
+        tween.Completed:Wait()
+    end
+end
+
+local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
     Title = "Auto Farm",
     Default = false
 })
@@ -73,27 +91,24 @@ AutoFarmToggle:OnChanged(function(Value)
                     for _, mob in ipairs(MobFolder:GetChildren()) do
                         if not Options.AutoFarm.Value then break end
 
-                        if mob:IsA("Model") and mob:FindFirstChild("HumanoidRootPart") then
-                            local player = game.Players.LocalPlayer
-                            local char = player.Character
-                            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                        local mobHRP = mob:FindFirstChild("HumanoidRootPart")
+                        local humanoid = mob:FindFirstChildWhichIsA("Humanoid")
+                        
+                        if mob:IsA("Model") and mobHRP and humanoid and humanoid.Health > 0 then
+                            SmoothTeleportTo(mobHRP)
 
-                            if hrp then
-                                hrp.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                            -- Attack until mob is dead or toggle off
+                            while humanoid.Health > 0 and Options.AutoFarm.Value do
+                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                                task.wait(0.05)
+                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+                                task.wait(0.1)
                             end
-
-                            -- Improved left-click spam
-                            local vim = game:GetService("VirtualInputManager")
-                            vim:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                            task.wait(0.05)
-                            vim:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-
-                            task.wait(0.1)
                         end
                     end
                 end
 
-                task.wait(0.15)
+                task.wait(0.2)
             end
         end)
     end
