@@ -132,11 +132,6 @@ Options.AutoSkillBoss:OnChanged(function(Value)
     end
 end)
 
-Tabs.Main:AddParagraph({
-        Title = "Game Menu",
-        Content = "Auto Next/Retry"
-    })
-
 -- AUTO REPLAY TOGGLE
 Options.AutoReplay = Tabs.Main:AddToggle("AutoReplay", {
     Title = "Auto Replay",
