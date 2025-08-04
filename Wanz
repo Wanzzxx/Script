@@ -57,7 +57,7 @@ do
         end
     })
 
-    local TweenService = game:GetService("TweenService")
+local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Players = game:GetService("Players")
 
@@ -65,21 +65,19 @@ local function TeleportToTarget(targetPart)
     local character = Players.LocalPlayer.Character
     local hrp = character and character:FindFirstChild("HumanoidRootPart")
     if hrp and targetPart then
-        local goal = { CFrame = targetPart.CFrame * CFrame.new(0, 0, 2) }
-        local tween = TweenService:Create(hrp, TweenInfo.new(0.5, Enum.EasingStyle.Linear), goal)
-        tween:Play()
-        tween.Completed:Wait()
-    end
-end
+        local dist = (hrp.Position - targetPart.Position).Magnitude
+        local targetCFrame = targetPart.CFrame * CFrame.new(0, 0, 2)
 
-local function RetryTeleportUntilNear(targetPart)
-    local character = Players.LocalPlayer.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    while Options.AutoFarm.Value and (hrp.Position - targetPart.Position).Magnitude > 5 do
-        TeleportToTarget(targetPart)
-        task.wait(0.2)
+        if dist <= 150 then
+            -- Tween if close enough
+            local tweenInfo = TweenInfo.new(math.clamp(dist / 100, 0.2, 1), Enum.EasingStyle.Linear)
+            local tween = TweenService:Create(hrp, tweenInfo, { CFrame = targetCFrame })
+            tween:Play()
+            tween.Completed:Wait()
+        else
+            -- Instant teleport if too far
+            hrp.CFrame = targetCFrame
+        end
     end
 end
 
@@ -114,8 +112,9 @@ AutoFarmToggle:OnChanged(function(Value)
                         local humanoid = mob:FindFirstChildWhichIsA("Humanoid")
 
                         if mob:IsA("Model") and mobHRP and humanoid and humanoid.Health > 0 then
-                            RetryTeleportUntilNear(mobHRP)
+                            TeleportToTarget(mobHRP)
 
+                            -- Wait until the mob is dead
                             while humanoid.Health > 0 and Options.AutoFarm.Value do
                                 task.wait(0.1)
                             end
