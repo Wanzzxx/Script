@@ -31,7 +31,7 @@ local ATTACK_RADIUS = 15
 local TELEPORT_RADIUS = 300
 
 local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
-    Title = "Auto Farm (Radius + Tween)",
+    Title = "Auto Farms Mob",
     Default = false
 })
 
