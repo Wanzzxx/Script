@@ -27,11 +27,6 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local Options = Fluent.Options
 
-Tabs.Main:AddParagraph({
-        Title = "Farm Menu",
-        Content = "You disgusting little lazy fuck"
-    })
-
 -- Toggles
 
 local ATTACK_RADIUS = 15
