@@ -58,52 +58,68 @@ do
         end
     })
 
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+-- Toggle setup
+local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
+    Title = "Auto Farm",
+    Default = false
+})
+
 AutoFarmToggle:OnChanged(function(Value)
     if Value then
         _G.Clicking = true
+
+        -- Left Click Spam
         task.spawn(function()
             while Options.AutoFarm.Value do
-                if _G.Clicking then
+                pcall(function()
                     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                    task.wait(0.05)
+                    task.wait(0.015)
                     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-                end
-                task.wait(0.05)
+                end)
+                task.wait(0.015)
             end
         end)
 
-        -- Farm loop
+        -- Auto Farm Loop
         task.spawn(function()
             while Options.AutoFarm.Value do
-                local EnemyFolder = workspace:FindFirstChild("Enemy")
-                local MobFolder = EnemyFolder and EnemyFolder:FindFirstChild("Mob")
+                local mobFolder = workspace:FindFirstChild("Enemy") and workspace.Enemy:FindFirstChild("Mob")
 
-                if MobFolder then
-                    for _, mob in ipairs(MobFolder:GetChildren()) do
+                if mobFolder then
+                    for _, mob in ipairs(mobFolder:GetChildren()) do
                         if not Options.AutoFarm.Value then break end
 
                         local mobHRP = mob:FindFirstChild("HumanoidRootPart")
-                        local humanoid = mob:FindFirstChildWhichIsA("Humanoid")
+                        local mobHumanoid = mob:FindFirstChildWhichIsA("Humanoid")
                         local char = Players.LocalPlayer.Character
                         local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                        local hum = char and char:FindFirstChildWhichIsA("Humanoid")
 
-                        if mob:IsA("Model") and mobHRP and humanoid and humanoid.Health > 0 and hrp then
-                            _G.Clicking = false
-                            task.wait(0.2) -- wait for attack stun to end
-                            hrp.CFrame = mobHRP.CFrame * CFrame.new(0, 0, 2)
-                            task.wait(0.1)
-                            _G.Clicking = true
+                        if mob:IsA("Model") and mobHRP and mobHumanoid and mobHumanoid.Health > 0 and hrp and hum then
+                            -- Force teleport (prevent attack lock)
+                            hum.PlatformStand = true
+                            local goal = mobHRP.CFrame * CFrame.new(0, 0, 2)
+                            local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Linear), {CFrame = goal})
+                            tween:Play()
+                            tween.Completed:Wait()
+                            hum.PlatformStand = false
 
-                            while humanoid.Health > 0 and Options.AutoFarm.Value do
-                                task.wait(0.1)
+                            -- Wait until enemy is dead
+                            while mobHumanoid.Health > 0 and Options.AutoFarm.Value do
+                                task.wait(0.05)
                             end
                         end
                     end
                 end
 
-                task.wait(0.2)
+                task.wait(0.1)
             end
         end)
+
     else
         _G.Clicking = false
     end
