@@ -96,6 +96,45 @@ AutoFarmToggle:OnChanged(function(Value)
     end
 end)
 
+-- AUTO REPLAY
+Options.AutoReplay = Tabs.Main:AddToggle("AutoReplay", {
+    Title = "Auto Replay",
+    Default = false,
+})
+
+Options.AutoReplay:OnChanged(function(Value)
+    if Value then
+        task.spawn(function()
+            while Options.AutoReplay.Value do
+                local args = { [1] = "RPlay" }
+                local success, err = pcall(function()
+                    game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("WinEvent"):WaitForChild("Buttom"):FireServer(unpack(args))
+                end)
+                task.wait(1)
+            end
+        end)
+    end
+end)
+
+-- AUTO NEXT
+Options.AutoNext = Tabs.Main:AddToggle("AutoNext", {
+    Title = "Auto Next",
+    Default = false,
+})
+
+Options.AutoNext:OnChanged(function(Value)
+    if Value then
+        task.spawn(function()
+            while Options.AutoNext.Value do
+                local args = { [1] = "NextLv" }
+                local success, err = pcall(function()
+                    game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("WinEvent"):WaitForChild("Buttom"):FireServer(unpack(args))
+                end)
+                task.wait(1)
+            end
+        end)
+    end
+end)
 
 
 -- Settings
