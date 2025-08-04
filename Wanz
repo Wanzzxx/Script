@@ -22,14 +22,43 @@ local Options = Fluent.Options
 do
     Fluent:Notify({
         Title = "Notification",
-        Content = "Script Loaded.",
-        SubContent = "DONE",
+        Content = "This is a notification",
+        SubContent = "SubContent",
         Duration = 5
     })
 
--- Select Units
+    Tabs.Main:AddParagraph({
+        Title = "Paragraph",
+        Content = "This is a paragraph.\nSecond line!"
+    })
 
--- 👇 Fetch Unit Names from Slot1, Slot2, Slot3
+    Tabs.Main:AddButton({
+        Title = "Button",
+        Description = "Very important button",
+        Callback = function()
+            Window:Dialog({
+                Title = "Title",
+                Content = "This is a dialog",
+                Buttons = {
+                    {
+                        Title = "Confirm",
+                        Callback = function()
+                            print("Confirmed the dialog.")
+                        end
+                    },
+                    {
+                        Title = "Cancel",
+                        Callback = function()
+                            print("Cancelled the dialog.")
+                        end
+                    }
+                }
+            })
+        end
+    })
+
+    
+    -- 👇 Fetch Unit Names from Slot1, Slot2, Slot3
 local AvailableUnits = {}
 local UnitSlots = {} -- [unitName] = slotIndex
 
@@ -52,8 +81,6 @@ local UnitDropdown = Tabs.Main:AddDropdown("UnitDropdown", {
     Multi = false,
     Default = nil,
 })
-
--- Toggles
 
 -- 👇 Auto Farm toggle
 local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
@@ -103,7 +130,40 @@ AutoFarmToggle:OnChanged(function(Value)
 end)
 
 
--- SETTINGS
+    local Dropdown = Tabs.Main:AddDropdown("Dropdown", {
+        Title = "Dropdown",
+        Values = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen"},
+        Multi = false,
+        Default = 1,
+    })
+
+    Dropdown:SetValue("four")
+
+    Dropdown:OnChanged(function(Value)
+        print("Dropdown changed:", Value)
+    end)
+
+    local MultiDropdown = Tabs.Main:AddDropdown("MultiDropdown", {
+        Title = "Dropdown",
+        Description = "You can select multiple values.",
+        Values = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen"},
+        Multi = true,
+        Default = {"seven", "twelve"},
+    })
+
+    MultiDropdown:SetValue({
+        three = true,
+        five = true,
+        seven = false
+    })
+
+    MultiDropdown:OnChanged(function(Value)
+        local Values = {}
+        for Value, State in next, Value do
+            table.insert(Values, Value)
+        end
+        print("Mutlidropdown changed:", table.concat(Values, ", "))
+    end)
 
     local Colorpicker = Tabs.Main:AddColorpicker("Colorpicker", {
         Title = "Colorpicker",
