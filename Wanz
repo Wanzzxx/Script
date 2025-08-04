@@ -111,6 +111,103 @@ Options.AutoSkillBoss:OnChanged(function(Value)
     end
 end)
 
+-- Auto Replay
+Options.AutoReplay = Tabs.Main:AddToggle("AutoReplay", {
+    Title = "Auto Replay",
+    Default = false
+})
+
+Options.AutoReplay:OnChanged(function(Value)
+    if Value then
+        task.spawn(function()
+            while Options.AutoReplay.Value do
+                local frame = LocalPlayer:FindFirstChild("PlayerGui")
+                    and LocalPlayer.PlayerGui:FindFirstChild("Win")
+                    and LocalPlayer.PlayerGui.Win:FindFirstChild("Frame")
+
+                if frame and frame.Visible then
+                    local args = { [1] = "RPlay" }
+                    pcall(function()
+                        ReplicatedStorage:WaitForChild("Events"):WaitForChild("WinEvent"):WaitForChild("Buttom"):FireServer(unpack(args))
+                    end)
+                    task.wait(1)
+                end
+                task.wait(0.5)
+            end
+        end)
+    end
+end)
+
+-- Auto Next
+Options.AutoNext = Tabs.Main:AddToggle("AutoNext", {
+    Title = "Auto Next",
+    Default = false
+})
+
+Options.AutoNext:OnChanged(function(Value)
+    if Value then
+        task.spawn(function()
+            while Options.AutoNext.Value do
+                local frame = LocalPlayer:FindFirstChild("PlayerGui")
+                    and LocalPlayer.PlayerGui:FindFirstChild("Win")
+                    and LocalPlayer.PlayerGui.Win:FindFirstChild("Frame")
+
+                if frame and frame.Visible then
+                    local args = { [1] = "NextLv" }
+                    pcall(function()
+                        ReplicatedStorage:WaitForChild("Events"):WaitForChild("WinEvent"):WaitForChild("Buttom"):FireServer(unpack(args))
+                    end)
+                    task.wait(1)
+                end
+                task.wait(0.5)
+            end
+        end)
+    end
+end)
+
+-- Auto Start
+Options.AutoStart = Tabs.Main:AddToggle("AutoStart", {
+    Title = "Auto Start",
+    Default = false
+})
+
+Options.AutoStart:OnChanged(function(Value)
+    if Value then
+        task.spawn(function()
+            while Options.AutoStart.Value do
+                local gui = LocalPlayer:FindFirstChild("PlayerGui")
+                local readyUI = gui and gui:FindFirstChild("RoomUi")
+                local readyFrame = readyUI and readyUI:FindFirstChild("Ready")
+                local startFrame = readyFrame and readyFrame:FindFirstChild("Frame")
+                local startButton = startFrame and startFrame:FindFirstChild("StartButton")
+
+                if startButton and startButton.Visible then
+                    task.wait(5)
+
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.BackSlash, false, game)
+                    task.wait(0.05)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.BackSlash, false, game)
+                    task.wait(0.1)
+
+                    for i = 1, 2 do
+                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Down, false, game)
+                        task.wait(0.05)
+                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Down, false, game)
+                        task.wait(0.1)
+                    end
+
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+                    task.wait(0.05)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+                end
+
+                task.wait(1)
+            end
+        end)
+    end
+end)
+
+
 -- Save and Interface Setup
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
