@@ -97,6 +97,7 @@ AutoFarmToggle:OnChanged(function(Value)
 end)
 
 -- Auto Skill
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local EnemyFolder = workspace:WaitForChild("Enemy")
 local MobFolder = EnemyFolder:WaitForChild("Mob")
 
