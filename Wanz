@@ -2,6 +2,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
+-- Window & Tabs
 local Window = Fluent:CreateWindow({
     Title = "Fluent " .. Fluent.Version,
     SubTitle = "WANZ HUB",
@@ -17,31 +18,30 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
--- Service
-
+-- Services
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
 
 local Options = Fluent.Options
 
--- Toggles
-
+-- Config
 local ATTACK_RADIUS = 15
 local TELEPORT_RADIUS = 300
 
-local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
+-- Auto Farm
+Options.AutoFarm = Tabs.Main:AddToggle("AutoFarm", {
     Title = "Auto Farms Mob",
     Default = false
 })
 
-AutoFarmToggle:OnChanged(function(Value)
+Options.AutoFarm:OnChanged(function(Value)
     if Value then
-        _G.Clicking = true
-
         task.spawn(function()
             while Options.AutoFarm.Value do
-                local char = Players.LocalPlayer.Character
+                local char = LocalPlayer.Character
                 local hrp = char and char:FindFirstChild("HumanoidRootPart")
                 local hum = char and char:FindFirstChildWhichIsA("Humanoid")
                 if not hrp or not hum then task.wait(0.1) continue end
@@ -49,11 +49,9 @@ AutoFarmToggle:OnChanged(function(Value)
                 local mobFolder = workspace:FindFirstChild("Enemy") and workspace.Enemy:FindFirstChild("Mob")
                 if mobFolder then
                     local closestMob, closestDist
-
                     for _, mob in ipairs(mobFolder:GetChildren()) do
                         local mobHRP = mob:FindFirstChild("HumanoidRootPart")
                         local mobHumanoid = mob:FindFirstChildWhichIsA("Humanoid")
-
                         if mobHRP and mobHumanoid and mobHumanoid.Health > 0 then
                             local dist = (mobHRP.Position - hrp.Position).Magnitude
                             if not closestDist or dist < closestDist then
@@ -66,19 +64,15 @@ AutoFarmToggle:OnChanged(function(Value)
                     if closestMob and closestDist then
                         local mobHRP = closestMob:FindFirstChild("HumanoidRootPart")
                         local mobHumanoid = closestMob:FindFirstChildWhichIsA("Humanoid")
-
                         if closestDist > ATTACK_RADIUS and closestDist < TELEPORT_RADIUS then
-                            -- Tween to mob if not in attack range
                             hum.PlatformStand = true
-                            local goal = mobHRP.CFrame * CFrame.new(0, 0, 3)
-                            local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Linear), {CFrame = goal})
+                            local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Linear), {CFrame = mobHRP.CFrame * CFrame.new(0, 0, 3)})
                             tween:Play()
                             tween.Completed:Wait()
                             hum.PlatformStand = false
                             task.wait(0.1)
                         end
 
-                        -- If in attack range, spam LMB
                         if closestDist <= ATTACK_RADIUS then
                             VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
                             task.wait(0.015)
@@ -86,32 +80,24 @@ AutoFarmToggle:OnChanged(function(Value)
                         end
                     end
                 end
-
                 task.wait(0.05)
             end
         end)
-
-    else
-        _G.Clicking = false
     end
 end)
 
--- Auto Skill
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local EnemyFolder = workspace:WaitForChild("Enemy")
-local MobFolder = EnemyFolder:WaitForChild("Mob")
-
+-- Auto Skill When Bosses
 Options.AutoSkillBoss = Tabs.Main:AddToggle("AutoSkillBoss", {
     Title = "Auto Skill When Bosses",
-    Default = false,
+    Default = false
 })
 
 Options.AutoSkillBoss:OnChanged(function(Value)
     if Value then
         task.spawn(function()
             while Options.AutoSkillBoss.Value do
-                if #MobFolder:GetChildren() == 1 then
-                    -- Press Z, X, C, V
+                local mobFolder = workspace:FindFirstChild("Enemy") and workspace.Enemy:FindFirstChild("Mob")
+                if mobFolder and #mobFolder:GetChildren() == 1 then
                     for _, key in ipairs({ Enum.KeyCode.Z, Enum.KeyCode.X, Enum.KeyCode.C, Enum.KeyCode.V }) do
                         pcall(function()
                             VirtualInputManager:SendKeyEvent(true, key, false, game)
@@ -127,67 +113,61 @@ Options.AutoSkillBoss:OnChanged(function(Value)
     end
 end)
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
-
--- AUTO REPLAY TOGGLE
+-- Auto Replay
 Options.AutoReplay = Tabs.Main:AddToggle("AutoReplay", {
     Title = "Auto Replay",
-    Default = false,
+    Default = false
 })
 
 Options.AutoReplay:OnChanged(function(Value)
     if Value then
         task.spawn(function()
             while Options.AutoReplay.Value do
-                local winUI = LocalPlayer:FindFirstChild("PlayerGui")
+                local frame = LocalPlayer:FindFirstChild("PlayerGui")
                     and LocalPlayer.PlayerGui:FindFirstChild("Win")
                     and LocalPlayer.PlayerGui.Win:FindFirstChild("Frame")
 
-                if winUI and winUI.Visible then
+                if frame and frame.Visible then
                     local args = { [1] = "RPlay" }
                     pcall(function()
                         ReplicatedStorage:WaitForChild("Events"):WaitForChild("WinEvent"):WaitForChild("Buttom"):FireServer(unpack(args))
                     end)
-                    task.wait(1) -- Optional delay after sending
+                    task.wait(1)
                 end
-
                 task.wait(0.5)
             end
         end)
     end
 end)
 
--- AUTO NEXT TOGGLE
+-- Auto Next
 Options.AutoNext = Tabs.Main:AddToggle("AutoNext", {
     Title = "Auto Next",
-    Default = false,
+    Default = false
 })
 
 Options.AutoNext:OnChanged(function(Value)
     if Value then
         task.spawn(function()
             while Options.AutoNext.Value do
-                local winUI = LocalPlayer:FindFirstChild("PlayerGui")
+                local frame = LocalPlayer:FindFirstChild("PlayerGui")
                     and LocalPlayer.PlayerGui:FindFirstChild("Win")
                     and LocalPlayer.PlayerGui.Win:FindFirstChild("Frame")
 
-                if winUI and winUI.Visible then
+                if frame and frame.Visible then
                     local args = { [1] = "NextLv" }
                     pcall(function()
                         ReplicatedStorage:WaitForChild("Events"):WaitForChild("WinEvent"):WaitForChild("Buttom"):FireServer(unpack(args))
                     end)
                     task.wait(1)
                 end
-
                 task.wait(0.5)
             end
         end)
     end
 end)
 
--- Settings
+-- Settings Save
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
 SaveManager:IgnoreThemeSettings()
