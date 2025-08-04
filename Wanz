@@ -22,19 +22,35 @@ local Options = Fluent.Options
 do
     Fluent:Notify({
         Title = "Notification",
-        Content = "This is a notification",
-        SubContent = "SubContent",
+        Content = "Script Loaded.",
+        SubContent = "DONE",
         Duration = 5
     })
 
-    Tabs.Main:AddParagraph({
-        Title = "Farms",
-        Content = "You Lazy"
-    })
+-- Select Units
 
+local AvailableUnits = {}
+for i = 1, 3 do
+    local slot = game.Players.LocalPlayer:FindFirstChild("CharValue") and game.Players.LocalPlayer.CharValue:FindFirstChild("Slot" .. i)
+    if slot and slot:FindFirstChild("Units") then
+        for _, unit in pairs(slot.Units:GetChildren()) do
+            if table.find(AvailableUnits, unit.Name) == nil then
+                table.insert(AvailableUnits, unit.Name)
+            end
+        end
+    end
+end
+
+local UnitDropdown = Tabs.Main:AddDropdown("UnitDropdown", {
+    Title = "Select Unit",
+    Values = AvailableUnits,
+    Multi = false,
+    Default = nil,
+})
+    
 -- Toggles
 
-    local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
+local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
     Title = "Auto Farm",
     Default = false
 })
@@ -43,29 +59,34 @@ AutoFarmToggle:OnChanged(function(Value)
     if Value then
         task.spawn(function()
             while Options.AutoFarm.Value do
+                local SelectedUnit = Options.UnitDropdown.Value
+                if not SelectedUnit or SelectedUnit == "" then
+                    warn("No unit selected")
+                    task.wait(0.5)
+                    continue
+                end
+
                 local EnemyFolder = workspace:FindFirstChild("Enemy")
                 local MobFolder = EnemyFolder and EnemyFolder:FindFirstChild("Mob")
-                
+
                 if MobFolder then
                     for _, mob in ipairs(MobFolder:GetChildren()) do
                         if not Options.AutoFarm.Value then break end
-
                         if mob:IsA("Model") and mob:FindFirstChild("HumanoidRootPart") then
-                            local player = game.Players.LocalPlayer
-                            local char = player.Character
+                            -- Teleport
+                            local char = game.Players.LocalPlayer.Character
                             local hrp = char and char:FindFirstChild("HumanoidRootPart")
-
                             if hrp then
-                                -- Teleport close to the mob
                                 hrp.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
                             end
 
-                            -- Simulate left click
-                            local vim = game:GetService("VirtualInputManager")
-                            vim:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                            vim:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-
-                            task.wait(0.15)
+                            -- Fire Combat event with selected unit
+                            local args = {
+                                [1] = SelectedUnit,
+                                [2] = 1 -- Slot1, can adjust if needed
+                            }
+                            game:GetService("ReplicatedStorage"):WaitForChild("Events"):WaitForChild("Combat"):FireServer(unpack(args))
+                            task.wait(0.2)
                         end
                     end
                 end
@@ -75,42 +96,6 @@ AutoFarmToggle:OnChanged(function(Value)
         end)
     end
 end)
-
-
-    local Dropdown = Tabs.Main:AddDropdown("Dropdown", {
-        Title = "Dropdown",
-        Values = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen"},
-        Multi = false,
-        Default = 1,
-    })
-
-    Dropdown:SetValue("four")
-
-    Dropdown:OnChanged(function(Value)
-        print("Dropdown changed:", Value)
-    end)
-
-    local MultiDropdown = Tabs.Main:AddDropdown("MultiDropdown", {
-        Title = "Dropdown",
-        Description = "You can select multiple values.",
-        Values = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen"},
-        Multi = true,
-        Default = {"seven", "twelve"},
-    })
-
-    MultiDropdown:SetValue({
-        three = true,
-        five = true,
-        seven = false
-    })
-
-    MultiDropdown:OnChanged(function(Value)
-        local Values = {}
-        for Value, State in next, Value do
-            table.insert(Values, Value)
-        end
-        print("Mutlidropdown changed:", table.concat(Values, ", "))
-    end)
 
 -- SETTINGS
 
