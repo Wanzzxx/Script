@@ -28,42 +28,54 @@ do
     })
 
     Tabs.Main:AddParagraph({
-        Title = "Paragraph",
-        Content = "This is a paragraph.\nSecond line!"
+        Title = "Farms",
+        Content = "You Lazy"
     })
 
-    Tabs.Main:AddButton({
-        Title = "Button",
-        Description = "Very important button",
-        Callback = function()
-            Window:Dialog({
-                Title = "Title",
-                Content = "This is a dialog",
-                Buttons = {
-                    {
-                        Title = "Confirm",
-                        Callback = function()
-                            print("Confirmed the dialog.")
+-- Toggles
+
+    local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
+    Title = "Auto Farm",
+    Default = false
+})
+
+AutoFarmToggle:OnChanged(function(Value)
+    if Value then
+        task.spawn(function()
+            while Options.AutoFarm.Value do
+                local EnemyFolder = workspace:FindFirstChild("Enemy")
+                local MobFolder = EnemyFolder and EnemyFolder:FindFirstChild("Mob")
+                
+                if MobFolder then
+                    for _, mob in ipairs(MobFolder:GetChildren()) do
+                        if not Options.AutoFarm.Value then break end
+
+                        if mob:IsA("Model") and mob:FindFirstChild("HumanoidRootPart") then
+                            local player = game.Players.LocalPlayer
+                            local char = player.Character
+                            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+                            if hrp then
+                                -- Teleport close to the mob
+                                hrp.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                            end
+
+                            -- Simulate left click
+                            local vim = game:GetService("VirtualInputManager")
+                            vim:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                            vim:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+
+                            task.wait(0.15)
                         end
-                    },
-                    {
-                        Title = "Cancel",
-                        Callback = function()
-                            print("Cancelled the dialog.")
-                        end
-                    }
-                }
-            })
-        end
-    })
+                    end
+                end
 
-    local Toggle = Tabs.Main:AddToggle("MyToggle", {Title = "Toggle", Default = false })
+                task.wait(0.2)
+            end
+        end)
+    end
+end)
 
-    Toggle:OnChanged(function()
-        print("Toggle changed:", Options.MyToggle.Value)
-    end)
-
-    Options.MyToggle:SetValue(false)
 
     local Dropdown = Tabs.Main:AddDropdown("Dropdown", {
         Title = "Dropdown",
@@ -99,6 +111,8 @@ do
         end
         print("Mutlidropdown changed:", table.concat(Values, ", "))
     end)
+
+-- SETTINGS
 
     local Colorpicker = Tabs.Main:AddColorpicker("Colorpicker", {
         Title = "Colorpicker",
