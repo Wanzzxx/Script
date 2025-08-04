@@ -61,11 +61,9 @@ Options.AutoFarm:OnChanged(function(Value)
                         local mobHRP = closestMob:FindFirstChild("HumanoidRootPart")
                         local mobHumanoid = closestMob:FindFirstChildWhichIsA("Humanoid")
                         if closestDist > ATTACK_RADIUS and closestDist < TELEPORT_RADIUS then
-                            hrp.Anchored = true
                             local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Linear), {CFrame = mobHRP.CFrame * CFrame.new(0, 6, 0)})
                             tween:Play()
                             tween.Completed:Wait()
-                            hrp.Anchored = false
                             task.wait(0.1)
                         end
 
