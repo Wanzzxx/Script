@@ -20,9 +20,10 @@ local Tabs = {
 -- Service
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-
 local Options = Fluent.Options
 
 
@@ -97,9 +98,36 @@ AutoFarmToggle:OnChanged(function(Value)
     end
 end)
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
+-- Auto Skill
+local EnemyFolder = workspace:WaitForChild("Enemy")
+local MobFolder = EnemyFolder:WaitForChild("Mob")
+
+Options.AutoSkillBoss = Tabs.Main:AddToggle("AutoSkillBoss", {
+    Title = "Auto Skill When Bosses",
+    Default = false,
+})
+
+Options.AutoSkillBoss:OnChanged(function(Value)
+    if Value then
+        task.spawn(function()
+            while Options.AutoSkillBoss.Value do
+                if #MobFolder:GetChildren() == 1 then
+                    -- Press Z, X, C, V
+                    for _, key in ipairs({ Enum.KeyCode.Z, Enum.KeyCode.X, Enum.KeyCode.C, Enum.KeyCode.V }) do
+                        pcall(function()
+                            VirtualInputManager:SendKeyEvent(true, key, false, game)
+                            task.wait(0.05)
+                            VirtualInputManager:SendKeyEvent(false, key, false, game)
+                        end)
+                        task.wait(0.05)
+                    end
+                end
+                task.wait(1)
+            end
+        end)
+    end
+end)
+
 
 -- AUTO REPLAY TOGGLE
 Options.AutoReplay = Tabs.Main:AddToggle("AutoReplay", {
