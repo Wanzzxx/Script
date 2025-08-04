@@ -26,6 +26,10 @@ local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Options = Fluent.Options
 
+Tabs.Main:AddParagraph({
+        Title = "Farm Menu",
+        Content = "You disgusting little lazy fuck"
+    })
 
 -- Toggles
 
@@ -128,6 +132,10 @@ Options.AutoSkillBoss:OnChanged(function(Value)
     end
 end)
 
+Tabs.Main:AddParagraph({
+        Title = "Game Menu",
+        Content = "Auto Next/Retry"
+    })
 
 -- AUTO REPLAY TOGGLE
 Options.AutoReplay = Tabs.Main:AddToggle("AutoReplay", {
