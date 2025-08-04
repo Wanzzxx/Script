@@ -63,7 +63,7 @@ local TweenService = game:GetService("TweenService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local ATTACK_RADIUS = 15
-local TELEPORT_RADIUS = 50
+local TELEPORT_RADIUS = 300
 
 local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
     Title = "Auto Farm (Radius + Tween)",
