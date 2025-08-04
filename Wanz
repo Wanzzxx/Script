@@ -82,6 +82,17 @@ local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
 
 AutoFarmToggle:OnChanged(function(Value)
     if Value then
+        -- Start global LMB spam
+        task.spawn(function()
+            while Options.AutoFarm.Value do
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                task.wait(0.05)
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+                task.wait(0.1)
+            end
+        end)
+
+        -- Start farming loop
         task.spawn(function()
             while Options.AutoFarm.Value do
                 local EnemyFolder = workspace:FindFirstChild("Enemy")
@@ -97,11 +108,8 @@ AutoFarmToggle:OnChanged(function(Value)
                         if mob:IsA("Model") and mobHRP and humanoid and humanoid.Health > 0 then
                             SmoothTeleportTo(mobHRP)
 
-                            -- Attack until mob is dead or toggle off
+                            -- Wait until mob dies
                             while humanoid.Health > 0 and Options.AutoFarm.Value do
-                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                                task.wait(0.05)
-                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
                                 task.wait(0.1)
                             end
                         end
