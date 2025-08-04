@@ -127,11 +127,11 @@ Options.AutoSkillBoss:OnChanged(function(Value)
     end
 end)
 
--- AUTO REPLAY TOGGLE
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
+-- AUTO REPLAY TOGGLE
 Options.AutoReplay = Tabs.Main:AddToggle("AutoReplay", {
     Title = "Auto Replay",
     Default = false,
@@ -186,8 +186,6 @@ Options.AutoNext:OnChanged(function(Value)
         end)
     end
 end)
-
-
 
 -- Settings
 SaveManager:SetLibrary(Fluent)
