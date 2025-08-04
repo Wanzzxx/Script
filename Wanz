@@ -63,28 +63,21 @@ do
         end
     })
 
-local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarm", {
-    Title = "Auto Farm",
-    Default = false
-})
-
 AutoFarmToggle:OnChanged(function(Value)
     if Value then
         _G.Clicking = true
-
-        -- LMB spam
         task.spawn(function()
             while Options.AutoFarm.Value do
                 if _G.Clicking then
                     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                    task.wait(0.03)
+                    task.wait(0.05)
                     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
                 end
-                task.wait(0.03)
+                task.wait(0.05)
             end
         end)
 
-        -- Farm logic
+        -- Farm loop
         task.spawn(function()
             while Options.AutoFarm.Value do
                 local EnemyFolder = workspace:FindFirstChild("Enemy")
@@ -101,14 +94,8 @@ AutoFarmToggle:OnChanged(function(Value)
 
                         if mob:IsA("Model") and mobHRP and humanoid and humanoid.Health > 0 and hrp then
                             _G.Clicking = false
-                            task.wait(0.2) -- let animation reset
-
-                            -- Tween to enemy
-                            local goalCFrame = mobHRP.CFrame * CFrame.new(0, 0, 2)
-                            local tween = TweenService:Create(hrp, TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = goalCFrame})
-                            tween:Play()
-                            tween.Completed:Wait()
-
+                            task.wait(0.2) -- wait for attack stun to end
+                            hrp.CFrame = mobHRP.CFrame * CFrame.new(0, 0, 2)
                             task.wait(0.1)
                             _G.Clicking = true
 
@@ -119,7 +106,7 @@ AutoFarmToggle:OnChanged(function(Value)
                     end
                 end
 
-                task.wait(0.1)
+                task.wait(0.2)
             end
         end)
     else
