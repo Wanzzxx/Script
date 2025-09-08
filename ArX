@@ -348,25 +348,32 @@ local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- bruh
+-- Toggle
 Options.AntiLag = Tabs.Main:AddToggle("AntiLag", {
     Title = "Anti-Lag (Low Quality Mode)",
     Default = false,
 })
 
--- Helper: Clean objects (textures + lighting only)
+-- Helper: Clean objects (textures + lighting + sounds)
 local function cleanObject(obj)
+    -- Textures
     if obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("SurfaceAppearance") then
         obj:Destroy()
     end
+    -- Mesh Textures
     if obj:IsA("MeshPart") then
         obj.TextureID = ""
     elseif obj:IsA("SpecialMesh") then
         obj.TextureId = ""
     end
+    -- Lighting Effects
     if obj:IsA("Sky") or obj:IsA("Atmosphere") or obj:IsA("BloomEffect") 
         or obj:IsA("BlurEffect") or obj:IsA("ColorCorrectionEffect")
         or obj:IsA("SunRaysEffect") or obj:IsA("DepthOfFieldEffect") then
+        obj:Destroy()
+    end
+    -- Sounds
+    if obj:IsA("Sound") or obj:IsA("SoundEffect") then
         obj:Destroy()
     end
 end
@@ -402,7 +409,7 @@ Options.AntiLag:OnChanged(function(enabled)
     if enabled then
         -- Only trigger if no Lobby
         if not Workspace:FindFirstChild("Lobby") then
-            -- 🔹 Remove all textures + lighting
+            -- 🔹 Remove all textures + lighting + sounds
             for _, obj in pairs(Workspace:GetDescendants()) do
                 cleanObject(obj)
             end
