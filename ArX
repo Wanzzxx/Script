@@ -555,6 +555,30 @@ do
     end)
 end
 
+--// Auto Rejoin After 2 Hours
+Options.AutoRejoin2H = Tabs.Misc:AddToggle("AutoRejoin2H", {
+    Title = "Auto Rejoin After 2 Hours",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            task.spawn(function()
+                local Players = game:GetService("Players")
+                local TeleportService = game:GetService("TeleportService")
+                local LocalPlayer = Players.LocalPlayer
+
+                local startTick = tick()
+                while Options.AutoRejoin2H.Value do
+                    task.wait(5)
+                    if tick() - startTick >= 7200 then -- 2 hours
+                        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+                        break
+                    end
+                end
+            end)
+        end
+    end,
+})
+
 -- Toggle: Blackout Screen
 Options.BlackoutScreen = Tabs.Misc:AddToggle("BlackoutScreen", {
     Title = "Full Black Background",
