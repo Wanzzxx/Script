@@ -842,6 +842,22 @@ Tabs.Joiner:AddParagraph({
     Content = ""
 })
 
+-- Joiner Tab Toggle
+Options.AutoSkipBoros = Tabs.Joiner:AddToggle("AutoSkipBoros", {Title = "Auto Skip Boros", Default = false})
+
+local function StartAutoSkipBoros()
+    local CurrentWave = game:GetService("ReplicatedStorage").Values.Waves.CurrentWave
+    CurrentWave:GetPropertyChangedSignal("Value"):Connect(function()
+        if Options.AutoSkipBoros.Value then
+            if CurrentWave.Value == 2 then
+                game:GetService("ReplicatedStorage").Remote.Server.OnGame.RestartMatch:FireServer()
+            end
+        end
+    end)
+end
+
+StartAutoSkipBoros()
+
 -- Auto Join Fall Event
 Options.AutoJoinFallEvent = Tabs.Joiner:AddToggle("AutoJoinFallEvent", {
     Title = "Auto Join Fall Event",
