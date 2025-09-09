@@ -586,6 +586,20 @@ Options.AutoRejoin2H = Tabs.Misc:AddToggle("AutoRejoin2H", {
     end,
 })
 
+-- Yen notify
+Options.DisableYenNotify = Tabs.Misc:AddToggle("DisableYenNotify", {
+    Title = "Disable Yen Notify",
+    Default = false,
+    Callback = function(state)
+        local args = {
+            [1] = "Disable Yen Notify",
+            [2] = state -- true = disable, false = enable
+        }
+        game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("Settings"):WaitForChild("Setting_Event"):FireServer(unpack(args))
+    end
+})
+
+
 -- Toggle: Blackout Screen
 Options.BlackoutScreen = Tabs.Misc:AddToggle("BlackoutScreen", {
     Title = "Full Black Background",
