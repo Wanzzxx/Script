@@ -293,7 +293,7 @@ local function showGameResults()
         end
 
         local resultText = table.concat(lines, "\n")
-        Fluent:Notify({ Title = "Results Notify", Content = resultText, Duration = 6 })
+        Fluent:Notify({ Title = "Results Notify", Content = resultText, Duration = 20 })
         sendWebhook(resultText)
     end)
 end
