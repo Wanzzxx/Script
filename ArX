@@ -122,12 +122,12 @@ end)
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Menu", Icon = "home" }),
-    Roll = Window:AddTab({ Title = "Roll", Icon = "layers" }),
+    Other = Window:AddTab({ Title = "Other Menu", Icon = "layers" }),
     Joiner = Window:AddTab({ Title = "Auto Join", Icon = "users" }),
     Shop = Window:AddTab({ Title = "Shop", Icon = "shopping-cart" }),
     Webhook = Window:AddTab({ Title = "Webhook", Icon = "globe" }),
-    Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
-    Settings = Window:AddTab({ Title = "Pengaturan", Icon = "settings" })
+    Misc = Window:AddTab({ Title = "Other Settings", Icon = "settings" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
 local Options = Fluent.Options
@@ -329,7 +329,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 -- Toggle
-Options.AntiLag = Tabs.Main:AddToggle("AntiLag", {
+Options.AntiLag = Tabs.Misc:AddToggle("AntiLag", {
     Title = "Anti-Lag (Low Quality Mode)",
     Default = false,
 })
@@ -629,7 +629,7 @@ Options.BlackoutScreen:OnChanged(function(state)
 end)
 
 -- Claim Quest
-Options.AutoClaimQuest = Tabs.Misc:AddToggle("AutoClaimQuest", {
+Options.AutoClaimQuest = Tabs.Other:AddToggle("AutoClaimQuest", {
     Title   = "Auto Claim All Quest",
     Default = false
 })
@@ -1398,7 +1398,7 @@ Options.AutoStart:OnChanged(function(state)
 end)
 
 -- Unlock Auto Trait Reroll
-Options.UnlockAutoTrait = Tabs.Roll:AddToggle("UnlockAutoTrait", {
+Options.UnlockAutoTrait = Tabs.Other:AddToggle("UnlockAutoTrait", {
     Title = "Unlock Auto Trait Reroll Gamepass",
     Default = false,
     Callback = function(Value)
