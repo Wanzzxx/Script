@@ -309,38 +309,18 @@ task.spawn(function()
     end
 end)
 
-local selectedSpeed = 1
-local loopActive = true
-
--- Dropdown
-Options.GameSpeed = Tabs.Main:AddDropdown("GameSpeed", {
-    Title = "Change Game Speed",
-    Values = {"1", "2", "3"},
-    Default = "2"
+-- Max Speed
+Options.SetMaxSpeed = Tabs.Main:AddToggle("SetMaxSpeed", {
+    Title = "Set Max GameSpeed",
+    Default = false,
+    Callback = function(state)
+        local args = {
+            [1] = "Auto Set Max Speed",
+            [2] = state -- true = enable, false = disable
+        }
+        game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("Settings"):WaitForChild("Setting_Event"):FireServer(unpack(args))
+    end
 })
-
--- Loop
-task.spawn(function()
-    while task.wait(1) do
-        if loopActive and selectedSpeed then
-            local args = { [1] = selectedSpeed }
-            game:GetService("ReplicatedStorage").Remote.SpeedGamepass:FireServer(unpack(args))
-        end
-    end
-end)
-
--- When dropdown is changed
-Options.GameSpeed:OnChanged(function(speedValue)
-    local speedNum = tonumber(speedValue)
-    if speedNum then
-        selectedSpeed = speedNum
-        Fluent:Notify({
-            Title = "Speed Changed",
-            Content = "Current Speed: " .. speedValue,
-            Duration = 3
-        })
-    end
-end)
 
 -- No lag
 local Workspace = game:GetService("Workspace")
