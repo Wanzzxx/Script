@@ -843,7 +843,7 @@ Tabs.Joiner:AddParagraph({
     Content = ""
 })
 
-Tabs.Joiner:AddButton({
+Tabs.Main:AddButton({
     Title = "Check boros pity",
     Description = "Check your Boros Capsule Pity value",
     Callback = function()
@@ -854,16 +854,20 @@ Tabs.Joiner:AddButton({
         local profile = playerData:FindFirstChild(playerName)
         if profile and profile:FindFirstChild("Profile") and profile.Profile:FindFirstChild("BorusCapsulePity") then
             local pityValue = profile.Profile.BorusCapsulePity.Value
+            local maxPity = 25000
+            local needed = math.max(0, maxPity - pityValue)
+
             Fluent:Notify({
                 Title = "Boros Pity",
-                Content = "Your Boros Capsule Pity is: " .. tostring(pityValue),
-                Duration = 5
+                Content = "Your Boros Capsule Pity is: " .. tostring(pityValue) ..
+                          "\nYou need: " .. tostring(needed) .. " capsule(s) to reach pity.",
+                Duration = 10
             })
         else
             Fluent:Notify({
                 Title = "Boros Pity",
                 Content = "Could not find Boros Capsule Pity for " .. playerName,
-                Duration = 5
+                Duration = 10
             })
         end
     end
