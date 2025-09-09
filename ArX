@@ -843,6 +843,32 @@ Tabs.Joiner:AddParagraph({
     Content = ""
 })
 
+Tabs.Main:AddButton({
+    Title = "Check boros pity",
+    Description = "Check your Boros Capsule Pity value",
+    Callback = function()
+        local player = game:GetService("Players").LocalPlayer
+        local playerName = player.Name
+        local playerData = game:GetService("ReplicatedStorage"):WaitForChild("Player_Data")
+
+        local profile = playerData:FindFirstChild(playerName)
+        if profile and profile:FindFirstChild("Profile") and profile.Profile:FindFirstChild("BorusCapsulePity") then
+            local pityValue = profile.Profile.BorusCapsulePity.Value
+            Fluent:Notify({
+                Title = "Boros Pity",
+                Content = "Your Boros Capsule Pity is: " .. tostring(pityValue),
+                Duration = 5
+            })
+        else
+            Fluent:Notify({
+                Title = "Boros Pity",
+                Content = "Could not find Boros Capsule Pity for " .. playerName,
+                Duration = 5
+            })
+        end
+    end
+})
+
 -- Joiner Tab Toggle
 Options.AutoSkipBoros = Tabs.Joiner:AddToggle("AutoSkipBoros", {Title = "Auto Skip Boros", Default = false})
 
