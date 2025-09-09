@@ -843,7 +843,7 @@ Tabs.Joiner:AddParagraph({
     Content = ""
 })
 
-Tabs.Main:AddButton({
+Tabs.Joiner:AddButton({
     Title = "Check boros pity",
     Description = "Check your Boros Capsule Pity value",
     Callback = function()
