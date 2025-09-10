@@ -429,12 +429,6 @@ Tabs.Joiner:AddParagraph({
     Content = ""
 })
 
-local DifficultyMap = {
-    ["Easy"] = "Easy",
-    ["Normal"] = "Normal",
-    ["Hell"] = "Hell"
-}
-
 Options.DungeonDifficulty = Tabs.Joiner:AddDropdown("DungeonDifficulty", {
     Title = "Dungeon Difficulty",
     Values = {"Easy", "Normal", "Hell"},
@@ -452,27 +446,23 @@ Options.AutoJoinDungeon:OnChanged(function(enabled)
     task.spawn(function()
         while Options.AutoJoinDungeon.Value and not Fluent.Unloaded do
             if workspace:FindFirstChild("Lobby") then
-                local chosen = Options.DungeonDifficulty.Value or "Normal"
-                local difficulty = DifficultyMap[chosen]
+                local difficulty = Options.DungeonDifficulty.Value or "Normal"
 
-                -- Create dungeon room
-                local createArgs = {
+                local args = {
                     [1] = "Dungeon",
                     [2] = { ["Difficulty"] = difficulty }
                 }
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer(unpack(createArgs))
 
-                task.wait(3) -- give time for room creation
-
-                -- Start dungeon
-                local startArgs = {
-                    [1] = "Start"
-                }
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer(unpack(startArgs))
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Remote")
+                    :WaitForChild("Server")
+                    :WaitForChild("PlayRoom")
+                    :WaitForChild("Event")
+                    :FireServer(unpack(args))
 
                 Fluent:Notify({
                     Title = "Auto Join Dungeon",
-                    Content = "Joined Dungeon (" .. difficulty .. ")",
+                    Content = "Requested Dungeon (" .. difficulty .. ")",
                     Duration = 4
                 })
 
