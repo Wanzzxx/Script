@@ -576,6 +576,74 @@ Tabs.Joiner:AddButton({
     end
 })
 
+Options.AutoBuyCapsules = Tabs.Joiner:AddToggle("AutoBuyCapsules", {
+    Title = "Auto Buy 1000 Borus Capsules",
+    Default = false
+})
+
+-- Function to format numbers with commas
+local function formatNumber(num)
+    local formatted = tostring(num)
+    while true do
+        formatted, k = formatted:gsub("^(-?%d+)(%d%d%d)", '%1,%2')
+        if k == 0 then break end
+    end
+    return formatted
+end
+
+task.spawn(function()
+    local lastNotified = false
+    while task.wait(2) do
+        if Options.AutoBuyCapsules.Value then
+            local player = game:GetService("Players").LocalPlayer
+            local playerName = player.Name
+            local playerData = game:GetService("ReplicatedStorage"):WaitForChild("Player_Data")
+            local profile = playerData:FindFirstChild(playerName)
+
+            if profile and profile:FindFirstChild("Data") then
+                local fallCurrency = profile.Data:FindFirstChild("Fall Currency")
+                if fallCurrency then
+                    local pricePerCapsule = 150
+                    local totalCost = 1000 * pricePerCapsule
+
+                    if fallCurrency.Value >= totalCost then
+                        local args = {
+                            [1] = "Borus Capsule",
+                            [2] = 1000
+                        }
+                        game:GetService("ReplicatedStorage")
+                            :WaitForChild("Remote")
+                            :WaitForChild("Server")
+                            :WaitForChild("Gameplay")
+                            :WaitForChild("FallShopExchange")
+                            :FireServer(unpack(args))
+
+                        Fluent:Notify({
+                            Title = "Auto Buy",
+                            Content = "Bought 1000 Borus Capsules!",
+                            Duration = 5
+                        })
+
+                        lastNotified = false -- reset so "not enough" can show again if needed
+                    else
+                        if not lastNotified then
+                            local needed = totalCost - fallCurrency.Value
+                            Fluent:Notify({
+                                Title = "Auto Buy",
+                                Content = "Not Enough Currency, Needs: " .. formatNumber(needed) .. " More",
+                                Duration = 5
+                            })
+                            lastNotified = true
+                        end
+                    end
+                end
+            end
+        else
+            lastNotified = false -- reset when toggle is off
+        end
+    end
+end)
+
 Options.AutoSkipBoros = Tabs.Joiner:AddToggle("AutoSkipBoros", {Title = "Auto Skip Boros", Default = false})
 
 local function StartAutoSkipBoros()
