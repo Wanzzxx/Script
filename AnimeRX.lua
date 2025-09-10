@@ -593,6 +593,7 @@ end
 
 task.spawn(function()
     local lastNotified = false
+    local lastCapsuleCheck = 0
     while task.wait(2) do
         if Options.AutoBuyCapsules.Value then
             local player = game:GetService("Players").LocalPlayer
@@ -600,46 +601,63 @@ task.spawn(function()
             local playerData = game:GetService("ReplicatedStorage"):WaitForChild("Player_Data")
             local profile = playerData:FindFirstChild(playerName)
 
-            if profile and profile:FindFirstChild("Data") then
-                local fallCurrency = profile.Data:FindFirstChild("Fall Currency")
-                if fallCurrency then
-                    local pricePerCapsule = 150
-                    local totalCost = 1000 * pricePerCapsule
+            if profile then
+                -- Auto Buy check
+                if profile:FindFirstChild("Data") then
+                    local fallCurrency = profile.Data:FindFirstChild("Fall Currency")
+                    if fallCurrency then
+                        local pricePerCapsule = 150
+                        local totalCost = 1000 * pricePerCapsule
 
-                    if fallCurrency.Value >= totalCost then
-                        local args = {
-                            [1] = "Borus Capsule",
-                            [2] = 1000
-                        }
-                        game:GetService("ReplicatedStorage")
-                            :WaitForChild("Remote")
-                            :WaitForChild("Server")
-                            :WaitForChild("Gameplay")
-                            :WaitForChild("FallShopExchange")
-                            :FireServer(unpack(args))
+                        if fallCurrency.Value >= totalCost then
+                            local args = {
+                                [1] = "Borus Capsule",
+                                [2] = 1000
+                            }
+                            game:GetService("ReplicatedStorage")
+                                :WaitForChild("Remote")
+                                :WaitForChild("Server")
+                                :WaitForChild("Gameplay")
+                                :WaitForChild("FallShopExchange")
+                                :FireServer(unpack(args))
 
-                        Fluent:Notify({
-                            Title = "Auto Buy",
-                            Content = "Bought 1000 Borus Capsules!",
-                            Duration = 5
-                        })
-
-                        lastNotified = false -- reset so "not enough" can show again if needed
-                    else
-                        if not lastNotified then
-                            local needed = totalCost - fallCurrency.Value
                             Fluent:Notify({
                                 Title = "Auto Buy",
-                                Content = "Not Enough Currency, Needs: " .. formatNumber(needed) .. " More",
+                                Content = "Bought 1000 Borus Capsules!",
                                 Duration = 5
                             })
-                            lastNotified = true
+
+                            lastNotified = false -- reset
+                        else
+                            if not lastNotified then
+                                local needed = totalCost - fallCurrency.Value
+                                Fluent:Notify({
+                                    Title = "Auto Buy",
+                                    Content = "Not Enough Currency, Needs: " .. formatNumber(needed) .. " More",
+                                    Duration = 5
+                                })
+                                lastNotified = true
+                            end
                         end
                     end
                 end
+
+                -- Capsule amount notify every 30s
+                if tick() - lastCapsuleCheck >= 30 then
+                    local capsuleItem = profile:FindFirstChild("Items") and profile.Items:FindFirstChild("Borus Capsule")
+                    if capsuleItem and capsuleItem:FindFirstChild("Amount") then
+                        Fluent:Notify({
+                            Title = "Inventory",
+                            Content = "Borus Capsule You Have: " .. formatNumber(capsuleItem.Amount.Value),
+                            Duration = 30
+                        })
+                    end
+                    lastCapsuleCheck = tick()
+                end
             end
         else
-            lastNotified = false -- reset when toggle is off
+            lastNotified = false
+            lastCapsuleCheck = 0
         end
     end
 end)
