@@ -429,11 +429,19 @@ Tabs.Joiner:AddParagraph({
     Content = ""
 })
 
+-- Store the current chosen difficulty
+local currentDifficulty = "Normal"
+
 Options.DungeonDifficulty = Tabs.Joiner:AddDropdown("DungeonDifficulty", {
     Title = "Dungeon Difficulty",
     Values = {"Easy", "Normal", "Hell"},
     Default = "Normal"
 })
+
+-- Update variable when changed
+Options.DungeonDifficulty:OnChanged(function(value)
+    currentDifficulty = value
+end)
 
 Options.AutoJoinDungeon = Tabs.Joiner:AddToggle("AutoJoinDungeon", {
     Title = "Auto Join Dungeon",
@@ -446,11 +454,9 @@ Options.AutoJoinDungeon:OnChanged(function(enabled)
     task.spawn(function()
         while Options.AutoJoinDungeon.Value and not Fluent.Unloaded do
             if workspace:FindFirstChild("Lobby") then
-                local difficulty = Options.DungeonDifficulty.Value or "Normal"
-
                 local args = {
                     [1] = "Dungeon",
-                    [2] = { ["Difficulty"] = difficulty }
+                    [2] = { ["Difficulty"] = currentDifficulty }
                 }
 
                 game:GetService("ReplicatedStorage")
@@ -462,7 +468,7 @@ Options.AutoJoinDungeon:OnChanged(function(enabled)
 
                 Fluent:Notify({
                     Title = "Auto Join Dungeon",
-                    Content = "Requested Dungeon (" .. difficulty .. ")",
+                    Content = "Requested Dungeon (" .. currentDifficulty .. ")",
                     Duration = 4
                 })
 
