@@ -454,6 +454,8 @@ Options.AutoJoinDungeon:OnChanged(function(enabled)
     task.spawn(function()
         while Options.AutoJoinDungeon.Value and not Fluent.Unloaded do
             if workspace:FindFirstChild("Lobby") then
+                task.wait(3) -- ⏳ delay before sending remote
+
                 local args = {
                     [1] = "Dungeon",
                     [2] = { ["Difficulty"] = currentDifficulty }
