@@ -5,8 +5,8 @@ local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.
 
 -- Create Window
 local Window = Fluent:CreateWindow({
-    Title = "Fishing Macro",
-    SubTitle = "by you",
+    Title = "Fish It [Wanz HUB]",
+    SubTitle = "PRIVATE TESTING",
     TabWidth = 160,
     Size = UDim2.fromOffset(480, 360),
     Acrylic = true,
