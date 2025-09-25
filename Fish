@@ -203,7 +203,7 @@ local function getModelCFrame(model)
     return nil
 end
 
--- 🟢 Teleport to NPC
+--  Teleport to NPC
 Options.TeleportNPC = Tabs.Teleport:AddDropdown("TeleportNPC", {
     Title = "Teleport to NPC",
     Values = getChildNames(workspace:WaitForChild("NPC")),
@@ -224,7 +224,7 @@ Options.TeleportNPC:OnChanged(function(selected)
     end
 end)
 
--- 🟣 Teleport to Misc
+--  Teleport to Misc
 Options.TeleportMisc = Tabs.Teleport:AddDropdown("TeleportMisc", {
     Title = "Teleport to Misc",
     Values = getChildNames(workspace:WaitForChild("!!! MENU RINGS")),
@@ -250,8 +250,8 @@ SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
 SaveManager:IgnoreThemeSettings()
 SaveManager:SetIgnoreIndexes({})
-InterfaceManager:SetFolder("W-HubFISH")
-SaveManager:SetFolder("W-HubFISH/specific-game")
+InterfaceManager:SetFolder("W-Hub")
+SaveManager:SetFolder("W-Hub/FishIt")
 
 InterfaceManager:BuildInterfaceSection(Tabs.Settings)
 SaveManager:BuildConfigSection(Tabs.Settings)
