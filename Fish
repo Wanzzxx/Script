@@ -1,5 +1,7 @@
 -- Load Fluent UI
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
 -- Create Window
 local Window = Fluent:CreateWindow({
@@ -60,7 +62,7 @@ Options.AutoFishing:OnChanged(function()
                 task.wait(0.4)
 
                 -- Step 4: Wait 1.5s before FishingCompleted
-                task.wait(0.7)
+                task.wait(1)
                 FishingCompleted:FireServer()
 
                 task.wait(1) -- delay before next loop
