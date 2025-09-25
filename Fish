@@ -137,6 +137,57 @@ Options.TeleportIsland:OnChanged(function(selected)
     end
 end)
 
+local Player = game:GetService("Players").LocalPlayer
+
+-- Helper: get children names
+local function getChildNames(parent)
+    local names = {}
+    for _, child in ipairs(parent:GetChildren()) do
+        table.insert(names, child.Name)
+    end
+    return names
+end
+
+-- 🟢 Teleport to NPC
+Options.TeleportNPC = Tabs.Teleport:AddDropdown("TeleportNPC", {
+    Title = "Teleport to NPC",
+    Values = getChildNames(workspace:WaitForChild("NPC")),
+    Default = nil
+})
+
+Options.TeleportNPC:OnChanged(function(selected)
+    if not selected then return end
+    local target = workspace.NPC:FindFirstChild(selected)
+    if target and target:IsA("BasePart") then
+        Player.Character:WaitForChild("HumanoidRootPart").CFrame = target.CFrame + Vector3.new(0, 5, 0)
+        Fluent:Notify({
+            Title = "Teleport",
+            Content = "Teleported to NPC: " .. selected,
+            Duration = 4
+        })
+    end
+end)
+
+-- 🟣 Teleport to Misc
+Options.TeleportMisc = Tabs.Teleport:AddDropdown("TeleportMisc", {
+    Title = "Teleport to Misc",
+    Values = getChildNames(workspace:WaitForChild("!!! MENU RINGS")),
+    Default = nil
+})
+
+Options.TeleportMisc:OnChanged(function(selected)
+    if not selected then return end
+    local target = workspace["!!! MENU RINGS"]:FindFirstChild(selected)
+    if target and target:IsA("BasePart") then
+        Player.Character:WaitForChild("HumanoidRootPart").CFrame = target.CFrame + Vector3.new(0, 5, 0)
+        Fluent:Notify({
+            Title = "Teleport",
+            Content = "Teleported to Misc: " .. selected,
+            Duration = 4
+        })
+    end
+end)
+
 -- Settings Section
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
