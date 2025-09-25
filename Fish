@@ -111,59 +111,61 @@ Options.AutoFishing:OnChanged(function()
     end
 end)
 
--- Save Location
 local Player = game:GetService("Players").LocalPlayer
 local savedFishingCFrame = nil
 
--- Save Location Button
-Tabs.Teleport:AddButton("Save Fishing Location", function()
-    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        savedFishingCFrame = hrp.CFrame
-        Fluent:Notify({
-            Title = "Fishing Spot",
-            Content = "Saved your fishing location!",
-            Duration = 4
-        })
-    else
-        Fluent:Notify({
-            Title = "Fishing Spot",
-            Content = "Failed to save (no HumanoidRootPart)",
-            Duration = 4
-        })
-    end
-end)
-
--- Teleport to Saved Location Toggle (teleports + starts auto fishing)
-Options.TeleportSaved = Tabs.Teleport:AddToggle("TeleportSaved", {
-    Title = "Teleport To Saved Location",
-    Default = false
-})
-
-Options.TeleportSaved:OnChanged(function(state)
-    if state then
-        if savedFishingCFrame and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-            -- Teleport
-            Player.Character.HumanoidRootPart.CFrame = savedFishingCFrame + Vector3.new(0, 5, 0)
-
+-- 🟢 Save Fishing Location Button
+Tabs.Teleport:AddButton({
+    Title = "Save Fishing Location",
+    Callback = function()
+        local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            savedFishingCFrame = hrp.CFrame
             Fluent:Notify({
                 Title = "Fishing Spot",
-                Content = "Teleported to saved location!",
+                Content = "Saved your fishing location!",
                 Duration = 4
             })
-
-            task.wait(1) -- ⏳ small delay before auto fishing
-            Options.AutoFishing:SetValue(true)
         else
             Fluent:Notify({
                 Title = "Fishing Spot",
-                Content = "No saved location found. Save one first!",
+                Content = "Failed to save (no HumanoidRootPart)",
                 Duration = 4
             })
-            Options.TeleportSaved:SetValue(false)
         end
     end
-end)
+})
+
+-- 🟣 Teleport to Saved Location Toggle
+Options.TeleportSaved = Tabs.Teleport:AddToggle("TeleportSaved", {
+    Title = "Teleport To Saved Location",
+    Default = false,
+    Callback = function(state)
+        if state then
+            if savedFishingCFrame and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+                -- Teleport
+                Player.Character.HumanoidRootPart.CFrame = savedFishingCFrame + Vector3.new(0, 5, 0)
+
+                Fluent:Notify({
+                    Title = "Fishing Spot",
+                    Content = "Teleported to saved location!",
+                    Duration = 4
+                })
+
+                task.wait(1) -- small delay
+                Options.AutoFishing:SetValue(true) -- auto enable fishing
+            else
+                Fluent:Notify({
+                    Title = "Fishing Spot",
+                    Content = "No saved location found. Save one first!",
+                    Duration = 4
+                })
+                Options.TeleportSaved:SetValue(false)
+            end
+        end
+    end
+})
+
 
 -- Sell All Fish Toggle
 Options.SellAllFish = Tabs.Main:AddToggle("SellAllFish", {
