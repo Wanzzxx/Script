@@ -73,6 +73,8 @@ local FishingCompleted = Net:WaitForChild("RE/FishingCompleted")
 local SellAllItems = Net:WaitForChild("RF/SellAllItems")
 
 -- Auto Fishing Toggle
+local firstAutoFishingRun = true
+
 Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", {
     Title = "Auto Fishing",
     Default = false
@@ -83,6 +85,12 @@ Options.AutoFishing:OnChanged(function()
         Fluent:Notify({ Title = "Fishing", Content = "Auto fishing started", Duration = 5 })
         
         task.spawn(function()
+            -- wait 3s only on the first run
+            if firstAutoFishingRun then
+                task.wait(3)
+                firstAutoFishingRun = false
+            end
+
             while Options.AutoFishing.Value do
                 -- Step 1: EquipToolFromHotbar
                 local args0 = {1}
