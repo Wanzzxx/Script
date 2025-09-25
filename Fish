@@ -131,7 +131,7 @@ if isfile and isfile(saveFile) then
 end
 
 -- Save Fishing Location Button
-Tabs.Teleport:AddButton({
+Tabs.Main:AddButton({
     Title = "Save Fishing Location",
     Callback = function()
         local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
@@ -157,7 +157,7 @@ Tabs.Teleport:AddButton({
 })
 
 -- Teleport to Saved Location Toggle
-Options.TeleportSaved = Tabs.Teleport:AddToggle("TeleportSaved", {
+Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
     Title = "Teleport To Saved Location",
     Default = false,
     Callback = function(state)
