@@ -94,14 +94,48 @@ Options.SellAllFish:OnChanged(function()
     end
 end)
 
--- Select first tab
-Window:SelectTab(1)
+-- Teleport
 
-Fluent:Notify({
-    Title = "Fishing Script",
-    Content = "Loaded successfully!",
-    Duration = 8
+-- Teleport Dropdown
+local TeleportParent = workspace:WaitForChild("!!!! ISLAND LOCATIONS !!!!")
+local Player = game:GetService("Players").LocalPlayer
+
+-- Function to refresh island names
+local function getIslandNames()
+    local names = {}
+    for _, child in ipairs(TeleportParent:GetChildren()) do
+        table.insert(names, child.Name)
+    end
+    return names
+end
+
+Options.TeleportIsland = Tabs.Teleport:AddDropdown("TeleportIsland", {
+    Title = "Teleport to Island",
+    Values = getIslandNames(),
+    Default = nil
 })
+
+-- Update dropdown if new islands are added
+TeleportParent.ChildAdded:Connect(function()
+    Options.TeleportIsland:SetValues(getIslandNames())
+end)
+TeleportParent.ChildRemoved:Connect(function()
+    Options.TeleportIsland:SetValues(getIslandNames())
+end)
+
+-- Handle teleport when changed
+Options.TeleportIsland:OnChanged(function(selected)
+    if not selected then return end
+    local target = TeleportParent:FindFirstChild(selected)
+    if target and target:IsA("BasePart") then
+        Player.Character:WaitForChild("HumanoidRootPart").CFrame = target.CFrame + Vector3.new(0, 5, 0)
+        Fluent:Notify({
+            Title = "Teleport",
+            Content = "Teleported to " .. selected,
+            Duration = 4
+        })
+    end
+end)
 
 -- Settings Section
 SaveManager:SetLibrary(Fluent)
