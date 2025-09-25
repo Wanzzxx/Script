@@ -111,12 +111,11 @@ Options.AutoFishing:OnChanged(function()
     end
 end)
 
--- Persistent Save Fishing Location
 local Player = game:GetService("Players").LocalPlayer
 local savedFishingCFrame = nil
 local saveFile = "FishingLocation.txt"
 
--- Try to load saved location from file
+-- Load saved location if file exists
 if isfile and isfile(saveFile) then
     local data = readfile(saveFile)
     local x, y, z = string.match(data, "([^,]+),([^,]+),([^,]+)")
@@ -124,7 +123,7 @@ if isfile and isfile(saveFile) then
         savedFishingCFrame = CFrame.new(tonumber(x), tonumber(y), tonumber(z))
         Fluent:Notify({
             Title = "Fishing Spot",
-            Content = "Loaded saved fishing location!",
+            Content = "Loaded saved fishing location",
             Duration = 4
         })
     end
@@ -137,13 +136,12 @@ Tabs.Main:AddButton({
         local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
         if hrp then
             savedFishingCFrame = hrp.CFrame
-            -- Save only the position (not rotation) to file
             if writefile then
                 writefile(saveFile, string.format("%f,%f,%f", hrp.Position.X, hrp.Position.Y, hrp.Position.Z))
             end
             Fluent:Notify({
                 Title = "Fishing Spot",
-                Content = "Saved your fishing location!",
+                Content = "Saved your fishing location",
                 Duration = 4
             })
         else
@@ -163,23 +161,16 @@ Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
     Callback = function(state)
         if state then
             if savedFishingCFrame and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-                -- Teleport
                 Player.Character.HumanoidRootPart.CFrame = savedFishingCFrame + Vector3.new(0, 5, 0)
-
                 Fluent:Notify({
                     Title = "Fishing Spot",
-                    Content = "Teleported to saved location!",
+                    Content = "Teleported to saved location",
                     Duration = 4
                 })
-
-                task.wait(1) -- ⏳ small delay before auto fishing
-                if Options.AutoFishing then
-                    Options.AutoFishing:SetValue(true)
-                end
             else
                 Fluent:Notify({
                     Title = "Fishing Spot",
-                    Content = "No saved location found. Save one first!",
+                    Content = "No saved location found. Save one first",
                     Duration = 4
                 })
                 Options.TeleportSaved:SetValue(false)
