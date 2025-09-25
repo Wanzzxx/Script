@@ -225,81 +225,64 @@ end)
 
 -- Teleport
 
--- Helper: check if teleport is allowed
-local function canTeleport()
-    return not (Options.AutoFishing.Value and Options.TeleportSaved.Value)
+-- Teleport parent folders
+local TeleportParent = workspace:FindFirstChild("!!!! ISLAND LOCATIONS !!!!")
+local NPCFolder = workspace:FindFirstChild("NPC")
+local MiscFolder = workspace:FindFirstChild("!!! MENU RINGS")
+
+-- Helper functions
+local function getChildNames(parent)
+    local names = {}
+    if parent then
+        for _, child in ipairs(parent:GetChildren()) do
+            table.insert(names, child.Name)
+        end
+    end
+    return names
 end
 
--- Handle teleport when island changed
-Options.TeleportIsland:OnChanged(function(selected)
-    if not selected then return end
-    if not canTeleport() then
-        Fluent:Notify({
-            Title = "Teleport",
-            Content = "Teleport blocked (AutoFishing + TeleportSaved active)",
-            Duration = 4
-        })
-        return
+local function getModelCFrame(model)
+    if model:IsA("Model") then
+        if model.PrimaryPart then
+            return model.PrimaryPart.CFrame
+        elseif model:FindFirstChild("HumanoidRootPart") then
+            return model.HumanoidRootPart.CFrame
+        else
+            local firstPart = model:FindFirstChildWhichIsA("BasePart")
+            if firstPart then
+                return firstPart.CFrame
+            end
+        end
+    elseif model:IsA("BasePart") then
+        return model.CFrame
     end
+    return nil
+end
 
-    local target = TeleportParent:FindFirstChild(selected)
-    if target and target:IsA("BasePart") then
-        Player.Character:WaitForChild("HumanoidRootPart").CFrame = target.CFrame + Vector3.new(0, 5, 0)
-        Fluent:Notify({
-            Title = "Teleport",
-            Content = "Teleported to " .. selected,
-            Duration = 4
-        })
-    end
-end)
+-- Create dropdowns safely
+if TeleportParent then
+    Options.TeleportIsland = Tabs.Teleport:AddDropdown("TeleportIsland", {
+        Title = "Teleport to Island",
+        Values = getChildNames(TeleportParent),
+        Default = nil
+    })
+end
 
--- Teleport to NPC
-Options.TeleportNPC:OnChanged(function(selected)
-    if not selected then return end
-    if not canTeleport() then
-        Fluent:Notify({
-            Title = "Teleport",
-            Content = "Teleport blocked (AutoFishing + TeleportSaved active)",
-            Duration = 4
-        })
-        return
-    end
+if NPCFolder then
+    Options.TeleportNPC = Tabs.Teleport:AddDropdown("TeleportNPC", {
+        Title = "Teleport to NPC",
+        Values = getChildNames(NPCFolder),
+        Default = nil
+    })
+end
 
-    local target = workspace.NPC:FindFirstChild(selected)
-    local cf = target and getModelCFrame(target)
-    if cf then
-        Player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
-        Fluent:Notify({
-            Title = "Teleport",
-            Content = "Teleported to NPC: " .. selected,
-            Duration = 4
-        })
-    end
-end)
-
--- Teleport to Misc
-Options.TeleportMisc:OnChanged(function(selected)
-    if not selected then return end
-    if not canTeleport() then
-        Fluent:Notify({
-            Title = "Teleport",
-            Content = "Teleport blocked (AutoFishing + TeleportSaved active)",
-            Duration = 4
-        })
-        return
-    end
-
-    local target = workspace["!!! MENU RINGS"]:FindFirstChild(selected)
-    local cf = target and getModelCFrame(target)
-    if cf then
-        Player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
-        Fluent:Notify({
-            Title = "Teleport",
-            Content = "Teleported to Misc: " .. selected,
-            Duration = 4
-        })
-    end
-end)
+if MiscFolder then
+    Options.TeleportMisc = Tabs.Teleport:AddDropdown("TeleportMisc", {
+        Title = "Teleport to Misc",
+        Values = getChildNames(MiscFolder),
+        Default = nil
+    })
+end
 
 -- Settings Section
 SaveManager:SetLibrary(Fluent)
