@@ -72,10 +72,10 @@ local RequestFishingMinigameStarted = Net:WaitForChild("RF/RequestFishingMinigam
 local FishingCompleted = Net:WaitForChild("RE/FishingCompleted")
 local SellAllItems = Net:WaitForChild("RF/SellAllItems")
 
--- Auto Fishing Step 3 delay (default 1.5s)
+-- AutoComplete Delay
 Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
-    Title = "Bypass Catch Fish Delay (s)",
-    Default = "1.5",
+    Title = "Bypass Catch Delay (s)",
+    Default = "4",
     Placeholder = "Enter seconds",
     Numeric = true,   -- only numbers
     Finished = true,  -- callback only runs when pressing Enter
@@ -90,7 +90,7 @@ Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
         else
             Fluent:Notify({
                 Title = "Fishing Delay",
-                Content = "Invalid number, using default (1.5)",
+                Content = "Invalid number, using default (4)",
                 Duration = 4
             })
         end
