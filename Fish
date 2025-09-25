@@ -72,6 +72,31 @@ local RequestFishingMinigameStarted = Net:WaitForChild("RF/RequestFishingMinigam
 local FishingCompleted = Net:WaitForChild("RE/FishingCompleted")
 local SellAllItems = Net:WaitForChild("RF/SellAllItems")
 
+-- Auto Fishing Step 3 delay (default 1.5s)
+Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
+    Title = "Bypass Catch Fish Delay (s)",
+    Default = "1.5",
+    Placeholder = "Enter seconds",
+    Numeric = true,   -- only numbers
+    Finished = true,  -- callback only runs when pressing Enter
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then
+            Fluent:Notify({
+                Title = "Fishing Delay",
+                Content = "Set delay to " .. num .. " seconds",
+                Duration = 4
+            })
+        else
+            Fluent:Notify({
+                Title = "Fishing Delay",
+                Content = "Invalid number, using default (1.5)",
+                Duration = 4
+            })
+        end
+    end
+})
+
 -- Auto Fishing Toggle
 local firstAutoFishingRun = true
 
@@ -107,9 +132,11 @@ Options.AutoFishing:OnChanged(function()
                 RequestFishingMinigameStarted:InvokeServer(unpack(args2))
                 task.wait(0.4)
 
-                -- Step 4: Wait 1.5s before FishingCompleted
-                task.wait(1)
-                FishingCompleted:FireServer()
+                -- Step 4: Wait user-defined delay before FishingCompleted
+local delayTime = tonumber(Options.FishingDelay.Value) or 4
+task.wait(delayTime)
+FishingCompleted:FireServer()
+
 
                 task.wait(1) -- delay before next loop
             end
