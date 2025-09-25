@@ -225,36 +225,23 @@ end)
 
 -- Teleport
 
--- Teleport Dropdown
-local TeleportParent = workspace:WaitForChild("!!!! ISLAND LOCATIONS !!!!")
-local Player = game:GetService("Players").LocalPlayer
-
--- Function to refresh island names
-local function getIslandNames()
-    local names = {}
-    for _, child in ipairs(TeleportParent:GetChildren()) do
-        table.insert(names, child.Name)
-    end
-    return names
+-- Helper: check if teleport is allowed
+local function canTeleport()
+    return not (Options.AutoFishing.Value and Options.TeleportSaved.Value)
 end
 
-Options.TeleportIsland = Tabs.Teleport:AddDropdown("TeleportIsland", {
-    Title = "Teleport to Island",
-    Values = getIslandNames(),
-    Default = nil
-})
-
--- Update dropdown if new islands are added
-TeleportParent.ChildAdded:Connect(function()
-    Options.TeleportIsland:SetValues(getIslandNames())
-end)
-TeleportParent.ChildRemoved:Connect(function()
-    Options.TeleportIsland:SetValues(getIslandNames())
-end)
-
--- Handle teleport when changed
+-- Handle teleport when island changed
 Options.TeleportIsland:OnChanged(function(selected)
     if not selected then return end
+    if not canTeleport() then
+        Fluent:Notify({
+            Title = "Teleport",
+            Content = "Teleport blocked (AutoFishing + TeleportSaved active)",
+            Duration = 4
+        })
+        return
+    end
+
     local target = TeleportParent:FindFirstChild(selected)
     if target and target:IsA("BasePart") then
         Player.Character:WaitForChild("HumanoidRootPart").CFrame = target.CFrame + Vector3.new(0, 5, 0)
@@ -266,41 +253,18 @@ Options.TeleportIsland:OnChanged(function(selected)
     end
 end)
 
--- Helper: get children names
-local function getChildNames(parent)
-    local names = {}
-    for _, child in ipairs(parent:GetChildren()) do
-        table.insert(names, child.Name)
-    end
-    return names
-end
-
--- Helper: get CFrame from model
-local function getModelCFrame(model)
-    if model:IsA("Model") then
-        if model.PrimaryPart then
-            return model.PrimaryPart.CFrame
-        elseif model:FindFirstChild("HumanoidRootPart") then
-            return model.HumanoidRootPart.CFrame
-        else
-            local firstPart = model:FindFirstChildWhichIsA("BasePart")
-            if firstPart then
-                return firstPart.CFrame
-            end
-        end
-    end
-    return nil
-end
-
---  Teleport to NPC
-Options.TeleportNPC = Tabs.Teleport:AddDropdown("TeleportNPC", {
-    Title = "Teleport to NPC",
-    Values = getChildNames(workspace:WaitForChild("NPC")),
-    Default = nil
-})
-
+-- Teleport to NPC
 Options.TeleportNPC:OnChanged(function(selected)
     if not selected then return end
+    if not canTeleport() then
+        Fluent:Notify({
+            Title = "Teleport",
+            Content = "Teleport blocked (AutoFishing + TeleportSaved active)",
+            Duration = 4
+        })
+        return
+    end
+
     local target = workspace.NPC:FindFirstChild(selected)
     local cf = target and getModelCFrame(target)
     if cf then
@@ -313,15 +277,18 @@ Options.TeleportNPC:OnChanged(function(selected)
     end
 end)
 
---  Teleport to Misc
-Options.TeleportMisc = Tabs.Teleport:AddDropdown("TeleportMisc", {
-    Title = "Teleport to Misc",
-    Values = getChildNames(workspace:WaitForChild("!!! MENU RINGS")),
-    Default = nil
-})
-
+-- Teleport to Misc
 Options.TeleportMisc:OnChanged(function(selected)
     if not selected then return end
+    if not canTeleport() then
+        Fluent:Notify({
+            Title = "Teleport",
+            Content = "Teleport blocked (AutoFishing + TeleportSaved active)",
+            Duration = 4
+        })
+        return
+    end
+
     local target = workspace["!!! MENU RINGS"]:FindFirstChild(selected)
     local cf = target and getModelCFrame(target)
     if cf then
