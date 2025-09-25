@@ -1,0 +1,99 @@
+-- Load Fluent UI
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+-- Create Window
+local Window = Fluent:CreateWindow({
+    Title = "Fishing Macro",
+    SubTitle = "by you",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(480, 360),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+-- Tabs
+local Tabs = {
+    Main = Window:AddTab({ Title = "Fishing", Icon = "fish" })
+}
+
+local Options = Fluent.Options
+
+-- References
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+
+local EquipToolFromHotbar = Net:WaitForChild("RE/EquipToolFromHotbar")
+local ChargeFishingRod = Net:WaitForChild("RF/ChargeFishingRod")
+local RequestFishingMinigameStarted = Net:WaitForChild("RF/RequestFishingMinigameStarted")
+local FishingCompleted = Net:WaitForChild("RE/FishingCompleted")
+local SellAllItems = Net:WaitForChild("RF/SellAllItems")
+
+-- Auto Fishing Toggle
+Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", {
+    Title = "Auto Fishing",
+    Default = false
+})
+
+Options.AutoFishing:OnChanged(function()
+    if Options.AutoFishing.Value then
+        Fluent:Notify({ Title = "Fishing", Content = "Auto fishing started", Duration = 5 })
+        
+        task.spawn(function()
+            while Options.AutoFishing.Value do
+                -- Step 1: EquipToolFromHotbar
+                local args0 = {1}
+                EquipToolFromHotbar:FireServer(unpack(args0))
+                task.wait(0.4)
+
+                -- Step 2: ChargeFishingRod
+                local args1 = {1758804029.427071}
+                ChargeFishingRod:InvokeServer(unpack(args1))
+                task.wait(0.4)
+
+                -- Step 3: RequestFishingMinigameStarted
+                local args2 = {-1.233184814453125, 0.9974901105656968}
+                RequestFishingMinigameStarted:InvokeServer(unpack(args2))
+                task.wait(0.4)
+
+                -- Step 4: Wait 1.5s before FishingCompleted
+                task.wait(1.5)
+                FishingCompleted:FireServer()
+
+                task.wait(1) -- delay before next loop
+            end
+        end)
+    else
+        Fluent:Notify({ Title = "Fishing", Content = "Auto fishing stopped", Duration = 5 })
+    end
+end)
+
+-- Sell All Fish Toggle
+Options.SellAllFish = Tabs.Main:AddToggle("SellAllFish", {
+    Title = "Sell All Fish",
+    Default = false
+})
+
+Options.SellAllFish:OnChanged(function()
+    if Options.SellAllFish.Value then
+        Fluent:Notify({ Title = "Fishing", Content = "Auto selling fish started", Duration = 5 })
+        
+        task.spawn(function()
+            while Options.SellAllFish.Value do
+                SellAllItems:InvokeServer()
+                task.wait(1) -- fire every 1s
+            end
+        end)
+    else
+        Fluent:Notify({ Title = "Fishing", Content = "Auto selling fish stopped", Duration = 5 })
+    end
+end)
+
+-- Select first tab
+Window:SelectTab(1)
+
+Fluent:Notify({
+    Title = "Fishing Script",
+    Content = "Loaded successfully!",
+    Duration = 8
+})
