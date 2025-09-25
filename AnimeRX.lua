@@ -1,4 +1,3 @@
-
 -- Global Section
 if game.PlaceId ~= 72829404259339 then return end
 
@@ -1463,8 +1462,8 @@ SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
 SaveManager:IgnoreThemeSettings()
 SaveManager:SetIgnoreIndexes({})
-InterfaceManager:SetFolder("W-Hub")
-SaveManager:SetFolder("W-Hub/specific-game")
+InterfaceManager:SetFolder("W-HubARX")
+SaveManager:SetFolder("W-HubARX/specific-game")
 
 InterfaceManager:BuildInterfaceSection(Tabs.Settings)
 SaveManager:BuildConfigSection(Tabs.Settings)
