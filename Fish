@@ -134,18 +134,17 @@ Tabs.Teleport:AddButton("Save Fishing Location", function()
     end
 end)
 
--- Teleport to Saved Location Toggle
+-- Teleport to Saved Location Toggle (teleports + starts auto fishing)
 Options.TeleportSaved = Tabs.Teleport:AddToggle("TeleportSaved", {
     Title = "Teleport To Saved Location",
     Default = false
 })
 
 Options.TeleportSaved:OnChanged(function(state)
-    if state and savedFishingCFrame then
-        local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
+    if state then
+        if savedFishingCFrame and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
             -- Teleport
-            hrp.CFrame = savedFishingCFrame + Vector3.new(0, 5, 0)
+            Player.Character.HumanoidRootPart.CFrame = savedFishingCFrame + Vector3.new(0, 5, 0)
 
             Fluent:Notify({
                 Title = "Fishing Spot",
@@ -154,16 +153,15 @@ Options.TeleportSaved:OnChanged(function(state)
             })
 
             task.wait(1) -- ⏳ small delay before auto fishing
-            -- Trigger Auto Fishing toggle
             Options.AutoFishing:SetValue(true)
+        else
+            Fluent:Notify({
+                Title = "Fishing Spot",
+                Content = "No saved location found. Save one first!",
+                Duration = 4
+            })
+            Options.TeleportSaved:SetValue(false)
         end
-    elseif state and not savedFishingCFrame then
-        Fluent:Notify({
-            Title = "Fishing Spot",
-            Content = "No saved location found. Save one first!",
-            Duration = 4
-        })
-        Options.TeleportSaved:SetValue(false)
     end
 end)
 
@@ -230,8 +228,6 @@ Options.TeleportIsland:OnChanged(function(selected)
         })
     end
 end)
-
-local Player = game:GetService("Players").LocalPlayer
 
 -- Helper: get children names
 local function getChildNames(parent)
