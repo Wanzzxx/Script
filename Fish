@@ -1,3 +1,9 @@
+if game.PlaceId ~= 121864768012064 then return end
+
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
 -- Load Fluent UI
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
