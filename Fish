@@ -148,7 +148,23 @@ local function getChildNames(parent)
     return names
 end
 
--- Teleport to NPC
+-- Helper: get teleport CFrame
+local function getTeleportCFrame(obj)
+    if obj:IsA("BasePart") then
+        return obj.CFrame
+    elseif obj:IsA("Model") then
+        if obj.PrimaryPart then
+            return obj.PrimaryPart.CFrame
+        elseif obj:FindFirstChild("HumanoidRootPart") then
+            return obj.HumanoidRootPart.CFrame
+        elseif obj:FindFirstChildWhichIsA("BasePart") then
+            return obj:FindFirstChildWhichIsA("BasePart").CFrame
+        end
+    end
+    return nil
+end
+
+-- 🟢 Teleport to NPC
 Options.TeleportNPC = Tabs.Teleport:AddDropdown("TeleportNPC", {
     Title = "Teleport to NPC",
     Values = getChildNames(workspace:WaitForChild("NPC")),
@@ -158,17 +174,24 @@ Options.TeleportNPC = Tabs.Teleport:AddDropdown("TeleportNPC", {
 Options.TeleportNPC:OnChanged(function(selected)
     if not selected then return end
     local target = workspace.NPC:FindFirstChild(selected)
-    if target and target:IsA("BasePart") then
-        Player.Character:WaitForChild("HumanoidRootPart").CFrame = target.CFrame + Vector3.new(0, 5, 0)
+    local cf = target and getTeleportCFrame(target)
+    if cf then
+        Player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
         Fluent:Notify({
             Title = "Teleport",
             Content = "Teleported to NPC: " .. selected,
             Duration = 4
         })
+    else
+        Fluent:Notify({
+            Title = "Teleport",
+            Content = "Could not teleport to NPC: " .. selected,
+            Duration = 4
+        })
     end
 end)
 
--- Teleport to Misc
+-- 🟣 Teleport to Misc
 Options.TeleportMisc = Tabs.Teleport:AddDropdown("TeleportMisc", {
     Title = "Teleport to Misc",
     Values = getChildNames(workspace:WaitForChild("!!! MENU RINGS")),
@@ -178,11 +201,18 @@ Options.TeleportMisc = Tabs.Teleport:AddDropdown("TeleportMisc", {
 Options.TeleportMisc:OnChanged(function(selected)
     if not selected then return end
     local target = workspace["!!! MENU RINGS"]:FindFirstChild(selected)
-    if target and target:IsA("BasePart") then
-        Player.Character:WaitForChild("HumanoidRootPart").CFrame = target.CFrame + Vector3.new(0, 5, 0)
+    local cf = target and getTeleportCFrame(target)
+    if cf then
+        Player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
         Fluent:Notify({
             Title = "Teleport",
             Content = "Teleported to Misc: " .. selected,
+            Duration = 4
+        })
+    else
+        Fluent:Notify({
+            Title = "Teleport",
+            Content = "Could not teleport to Misc: " .. selected,
             Duration = 4
         })
     end
