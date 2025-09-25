@@ -60,7 +60,7 @@ Options.AutoFishing:OnChanged(function()
                 task.wait(0.4)
 
                 -- Step 4: Wait 1.5s before FishingCompleted
-                task.wait(1.5)
+                task.wait(0.7)
                 FishingCompleted:FireServer()
 
                 task.wait(1) -- delay before next loop
