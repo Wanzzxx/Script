@@ -111,16 +111,36 @@ Options.AutoFishing:OnChanged(function()
     end
 end)
 
+-- Persistent Save Fishing Location
 local Player = game:GetService("Players").LocalPlayer
 local savedFishingCFrame = nil
+local saveFile = "FishingLocation.txt"
 
--- 🟢 Save Fishing Location Button
-Tabs.Main:AddButton({
+-- Try to load saved location from file
+if isfile and isfile(saveFile) then
+    local data = readfile(saveFile)
+    local x, y, z = string.match(data, "([^,]+),([^,]+),([^,]+)")
+    if x and y and z then
+        savedFishingCFrame = CFrame.new(tonumber(x), tonumber(y), tonumber(z))
+        Fluent:Notify({
+            Title = "Fishing Spot",
+            Content = "Loaded saved fishing location!",
+            Duration = 4
+        })
+    end
+end
+
+-- Save Fishing Location Button
+Tabs.Teleport:AddButton({
     Title = "Save Fishing Location",
     Callback = function()
         local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
         if hrp then
             savedFishingCFrame = hrp.CFrame
+            -- Save only the position (not rotation) to file
+            if writefile then
+                writefile(saveFile, string.format("%f,%f,%f", hrp.Position.X, hrp.Position.Y, hrp.Position.Z))
+            end
             Fluent:Notify({
                 Title = "Fishing Spot",
                 Content = "Saved your fishing location!",
@@ -136,8 +156,8 @@ Tabs.Main:AddButton({
     end
 })
 
--- 🟣 Teleport to Saved Location Toggle
-Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
+-- Teleport to Saved Location Toggle
+Options.TeleportSaved = Tabs.Teleport:AddToggle("TeleportSaved", {
     Title = "Teleport To Saved Location",
     Default = false,
     Callback = function(state)
@@ -152,8 +172,10 @@ Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
                     Duration = 4
                 })
 
-                task.wait(1) -- small delay
-                Options.AutoFishing:SetValue(true) -- auto enable fishing
+                task.wait(1) -- ⏳ small delay before auto fishing
+                if Options.AutoFishing then
+                    Options.AutoFishing:SetValue(true)
+                end
             else
                 Fluent:Notify({
                     Title = "Fishing Spot",
@@ -165,7 +187,6 @@ Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
         end
     end
 })
-
 
 -- Sell All Fish Toggle
 Options.SellAllFish = Tabs.Main:AddToggle("SellAllFish", {
