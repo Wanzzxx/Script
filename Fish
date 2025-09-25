@@ -24,6 +24,7 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
+-- Logo toggle
 local logoGui = Instance.new("ScreenGui")
 logoGui.Name = "FluentLogoToggle"
 logoGui.ResetOnSpawn = false
@@ -43,9 +44,7 @@ local function toggleFluent()
     isMinimized = not isMinimized
     Window:Minimize(isMinimized)
 end
-
 logoButton.Activated:Connect(toggleFluent)
-
 UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe and input.KeyCode == Enum.KeyCode.LeftControl then
         toggleFluent()
@@ -59,86 +58,56 @@ local Tabs = {
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
-
 local Options = Fluent.Options
 
 -- References
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-
 local EquipToolFromHotbar = Net:WaitForChild("RE/EquipToolFromHotbar")
 local ChargeFishingRod = Net:WaitForChild("RF/ChargeFishingRod")
 local RequestFishingMinigameStarted = Net:WaitForChild("RF/RequestFishingMinigameStarted")
 local FishingCompleted = Net:WaitForChild("RE/FishingCompleted")
 local SellAllItems = Net:WaitForChild("RF/SellAllItems")
 
--- AutoComplete Delay
+-- Fishing Delay input
 Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
     Title = "Bypass Catch Delay (s)",
     Default = "4",
     Placeholder = "Enter seconds",
-    Numeric = true,   -- only numbers
-    Finished = true,  -- callback only runs when pressing Enter
+    Numeric = true,
+    Finished = true,
     Callback = function(Value)
         local num = tonumber(Value)
         if num then
-            Fluent:Notify({
-                Title = "Fishing Delay",
-                Content = "Set delay to " .. num .. " seconds",
-                Duration = 4
-            })
+            Fluent:Notify({ Title = "Fishing Delay", Content = "Set delay to " .. num .. " seconds", Duration = 4 })
         else
-            Fluent:Notify({
-                Title = "Fishing Delay",
-                Content = "Invalid number, using default (4)",
-                Duration = 4
-            })
+            Fluent:Notify({ Title = "Fishing Delay", Content = "Invalid number, using default (4)", Duration = 4 })
         end
     end
 })
 
--- Auto Fishing Toggle
+-- Auto Fishing
 local firstAutoFishingRun = true
-
-Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", {
-    Title = "Auto Fishing",
-    Default = false
-})
-
+Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", { Title = "Auto Fishing", Default = false })
 Options.AutoFishing:OnChanged(function()
     if Options.AutoFishing.Value then
         Fluent:Notify({ Title = "Fishing", Content = "Auto fishing started", Duration = 5 })
-        
         task.spawn(function()
-            -- wait 3s only on the first run
             if firstAutoFishingRun then
                 task.wait(3)
                 firstAutoFishingRun = false
             end
-
             while Options.AutoFishing.Value do
-                -- Step 1: EquipToolFromHotbar
-                local args0 = {1}
-                EquipToolFromHotbar:FireServer(unpack(args0))
+                EquipToolFromHotbar:FireServer(1)
                 task.wait(0.4)
-
-                -- Step 2: ChargeFishingRod
-                local args1 = {1758804029.427071}
-                ChargeFishingRod:InvokeServer(unpack(args1))
+                ChargeFishingRod:InvokeServer(1758804029.427071)
                 task.wait(0.4)
-
-                -- Step 3: RequestFishingMinigameStarted
-                local args2 = {-1.233184814453125, 0.9974901105656968}
-                RequestFishingMinigameStarted:InvokeServer(unpack(args2))
+                RequestFishingMinigameStarted:InvokeServer(-1.233184814453125, 0.9974901105656968)
                 task.wait(0.4)
-
-                -- Step 4: Wait user-defined delay before FishingCompleted
-local delayTime = tonumber(Options.FishingDelay.Value) or 4
-task.wait(delayTime)
-FishingCompleted:FireServer()
-
-
-                task.wait(1) -- delay before next loop
+                local delayTime = tonumber(Options.FishingDelay.Value) or 4
+                task.wait(delayTime)
+                FishingCompleted:FireServer()
+                task.wait(1)
             end
         end)
     else
@@ -146,29 +115,24 @@ FishingCompleted:FireServer()
     end
 end)
 
--- Persistent Save Fishing Location (preserve facing)
-local savedFishingPos = nil    -- Vector3
-local savedFishingLook = nil   -- Vector3
+-- Save / Teleport fishing location
+local savedFishingPos, savedFishingLook
 local saveFile = "FishingLocation.txt"
-
--- try to load saved location (pos + lookVector)
 if isfile and isfile(saveFile) then
     local data = readfile(saveFile)
     local px, py, pz, lx, ly, lz = string.match(data, "([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+)")
     if px and lx then
-        savedFishingPos  = Vector3.new(tonumber(px), tonumber(py), tonumber(pz))
+        savedFishingPos = Vector3.new(tonumber(px), tonumber(py), tonumber(pz))
         savedFishingLook = Vector3.new(tonumber(lx), tonumber(ly), tonumber(lz))
         Fluent:Notify({ Title = "Fishing Spot", Content = "Loaded saved fishing location", Duration = 4 })
     end
 end
-
--- Save Fishing Location button (Main tab)
 Tabs.Main:AddButton({
     Title = "Save Fishing Location",
     Callback = function()
         local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         if hrp then
-            savedFishingPos  = hrp.Position
+            savedFishingPos = hrp.Position
             savedFishingLook = hrp.CFrame.LookVector
             if writefile then
                 writefile(saveFile, string.format("%f,%f,%f,%f,%f,%f",
@@ -176,46 +140,35 @@ Tabs.Main:AddButton({
                     savedFishingLook.X, savedFishingLook.Y, savedFishingLook.Z))
             end
             Fluent:Notify({ Title = "Fishing Spot", Content = "Saved your fishing location", Duration = 4 })
-        else
-            Fluent:Notify({ Title = "Fishing Spot", Content = "Failed to save (no HumanoidRootPart)", Duration = 4 })
         end
     end
 })
-
--- Teleport to Saved Location toggle (Main tab)
 Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
     Title = "Teleport To Saved Location",
     Default = false,
     Callback = function(state)
-        if state then
-            if savedFishingPos and savedFishingLook and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local hrp = player.Character.HumanoidRootPart
-                local targetPos = savedFishingPos + Vector3.new(0, 5, 0)                  -- small Y offset
-                local lookTarget = targetPos + savedFishingLook                          -- preserve facing
-                hrp.CFrame = CFrame.new(targetPos, lookTarget)
-                Fluent:Notify({ Title = "Fishing Spot", Content = "Teleported to saved location", Duration = 4 })
-            else
-                Fluent:Notify({ Title = "Fishing Spot", Content = "No saved location found. Save one first", Duration = 4 })
-                Options.TeleportSaved:SetValue(false)
-            end
+        if state and savedFishingPos and savedFishingLook then
+            local hrp = player.Character:WaitForChild("HumanoidRootPart")
+            local targetPos = savedFishingPos + Vector3.new(0, 5, 0)
+            local lookTarget = targetPos + savedFishingLook
+            hrp.CFrame = CFrame.new(targetPos, lookTarget)
+            Fluent:Notify({ Title = "Fishing Spot", Content = "Teleported to saved location", Duration = 4 })
+        elseif state then
+            Fluent:Notify({ Title = "Fishing Spot", Content = "No saved location found", Duration = 4 })
+            Options.TeleportSaved:SetValue(false)
         end
     end
 })
 
--- Sell All Fish Toggle
-Options.SellAllFish = Tabs.Main:AddToggle("SellAllFish", {
-    Title = "Sell All Fish",
-    Default = false
-})
-
+-- Auto Sell
+Options.SellAllFish = Tabs.Main:AddToggle("SellAllFish", { Title = "Sell All Fish", Default = false })
 Options.SellAllFish:OnChanged(function()
     if Options.SellAllFish.Value then
         Fluent:Notify({ Title = "Fishing", Content = "Auto selling fish started", Duration = 5 })
-        
         task.spawn(function()
             while Options.SellAllFish.Value do
                 SellAllItems:InvokeServer()
-                task.wait(1) -- fire every 1s
+                task.wait(1)
             end
         end)
     else
@@ -223,62 +176,75 @@ Options.SellAllFish:OnChanged(function()
     end
 end)
 
--- Teleport
+-- Teleport setup
+local TeleportParent = workspace:FindFirstChild("!!!! ISLAND LOCATIONS !!!!")
+local NPCFolder = workspace:FindFirstChild("NPC")
+local MiscFolder = workspace:FindFirstChild("!!! MENU RINGS")
 
--- === TELEPORT HANDLERS ===
-
--- Prevent teleport if both AutoFishing + TeleportSaved are active
+local function getChildNames(parent)
+    local names = {}
+    if parent then
+        for _, child in ipairs(parent:GetChildren()) do
+            table.insert(names, child.Name)
+        end
+    end
+    return names
+end
+local function getModelCFrame(model)
+    if model:IsA("Model") then
+        if model.PrimaryPart then return model.PrimaryPart.CFrame end
+        if model:FindFirstChild("HumanoidRootPart") then return model.HumanoidRootPart.CFrame end
+        local firstPart = model:FindFirstChildWhichIsA("BasePart")
+        if firstPart then return firstPart.CFrame end
+    elseif model:IsA("BasePart") then
+        return model.CFrame
+    end
+    return nil
+end
 local function canTeleport()
     return not (Options.AutoFishing.Value and Options.TeleportSaved.Value)
 end
 
--- Island teleport
-if Options.TeleportIsland then
+-- Dropdowns
+if TeleportParent then
+    Options.TeleportIsland = Tabs.Teleport:AddDropdown("TeleportIsland", {
+        Title = "Teleport to Island",
+        Values = getChildNames(TeleportParent),
+        Default = nil
+    })
     Options.TeleportIsland:OnChanged(function(selected)
-        if not selected or not canTeleport() then
-            if not canTeleport() then
-                Fluent:Notify({ Title = "Teleport", Content = "Blocked (AutoFishing + TeleportSaved active)", Duration = 4 })
-            end
-            return
-        end
-        local target = TeleportParent:FindFirstChild(selected)
-        local cf = target and getModelCFrame(target)
+        if not selected or not canTeleport() then return end
+        local cf = getModelCFrame(TeleportParent:FindFirstChild(selected))
         if cf then
             player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
             Fluent:Notify({ Title = "Teleport", Content = "Teleported to Island: " .. selected, Duration = 4 })
         end
     end)
 end
-
--- NPC teleport
-if Options.TeleportNPC then
+if NPCFolder then
+    Options.TeleportNPC = Tabs.Teleport:AddDropdown("TeleportNPC", {
+        Title = "Teleport to NPC",
+        Values = getChildNames(NPCFolder),
+        Default = nil
+    })
     Options.TeleportNPC:OnChanged(function(selected)
-        if not selected or not canTeleport() then
-            if not canTeleport() then
-                Fluent:Notify({ Title = "Teleport", Content = "Blocked (AutoFishing + TeleportSaved active)", Duration = 4 })
-            end
-            return
-        end
-        local target = NPCFolder:FindFirstChild(selected)
-        local cf = target and getModelCFrame(target)
+        if not selected or not canTeleport() then return end
+        local cf = getModelCFrame(NPCFolder:FindFirstChild(selected))
         if cf then
             player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
             Fluent:Notify({ Title = "Teleport", Content = "Teleported to NPC: " .. selected, Duration = 4 })
         end
     end)
 end
-
--- Misc teleport
-if Options.TeleportMisc then
+if MiscFolder then
+    Options.TeleportMisc = Tabs.Teleport:AddDropdown("TeleportMisc", {
+        Title = "Teleport to Misc",
+        Values = getChildNames(MiscFolder),
+        Default = nil
+    })
     Options.TeleportMisc:OnChanged(function(selected)
-        if not selected or not canTeleport() then
-            if not canTeleport() then
-                Fluent:Notify({ Title = "Teleport", Content = "Blocked (AutoFishing + TeleportSaved active)", Duration = 4 })
-            end
-            return
-        end
-        local target = MiscFolder:FindFirstChild(selected)
-        local cf = target and getModelCFrame(target)
+        if not selected or not canTeleport() then return end
+        local cf = getModelCFrame(MiscFolder:FindFirstChild(selected))
         if cf then
             player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
             Fluent:Notify({ Title = "Teleport", Content = "Teleported to Misc: " .. selected, Duration = 4 })
@@ -286,21 +252,19 @@ if Options.TeleportMisc then
     end)
 end
 
--- Settings Section
+-- Settings
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
 SaveManager:IgnoreThemeSettings()
 SaveManager:SetIgnoreIndexes({})
 InterfaceManager:SetFolder("W-Hub")
 SaveManager:SetFolder("W-Hub/FishIt")
-
 InterfaceManager:BuildInterfaceSection(Tabs.Settings)
 SaveManager:BuildConfigSection(Tabs.Settings)
 
+-- Anti-AFK
 task.spawn(function()
     local VirtualUser = game:GetService("VirtualUser")
-    local player = game:GetService("Players").LocalPlayer
-
     player.Idled:Connect(function()
         VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
         task.wait(1)
