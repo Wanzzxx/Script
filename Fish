@@ -148,7 +148,7 @@ local function getChildNames(parent)
     return names
 end
 
--- 🟢 Teleport to NPC
+-- Teleport to NPC
 Options.TeleportNPC = Tabs.Teleport:AddDropdown("TeleportNPC", {
     Title = "Teleport to NPC",
     Values = getChildNames(workspace:WaitForChild("NPC")),
@@ -168,7 +168,7 @@ Options.TeleportNPC:OnChanged(function(selected)
     end
 end)
 
--- 🟣 Teleport to Misc
+-- Teleport to Misc
 Options.TeleportMisc = Tabs.Teleport:AddDropdown("TeleportMisc", {
     Title = "Teleport to Misc",
     Values = getChildNames(workspace:WaitForChild("!!! MENU RINGS")),
