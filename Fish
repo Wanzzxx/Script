@@ -83,6 +83,10 @@ local function getModelCFrame(model)
     return nil
 end
 
+local function canTeleport()
+    return not (Options.AutoFishing.Value and Options.TeleportSaved.Value)
+end
+
 -- References
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
@@ -335,10 +339,6 @@ Options.TeleportEvent = Tabs.Event:AddToggle("TeleportEvent", {
 local TeleportParent = workspace:FindFirstChild("!!!! ISLAND LOCATIONS !!!!")
 local NPCFolder = workspace:FindFirstChild("NPC")
 local MiscFolder = workspace:FindFirstChild("!!! MENU RINGS")
-
-local function canTeleport()
-    return not (Options.AutoFishing.Value and Options.TeleportSaved.Value)
-end
 
 -- Dropdowns
 if TeleportParent then
