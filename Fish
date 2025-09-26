@@ -61,6 +61,34 @@ local Tabs = {
 }
 local Options = Fluent.Options
 
+-- Utility functions (must be defined before they are used)
+local function getChildNames(parent)
+    local names = {}
+    if parent then
+        for _, child in ipairs(parent:GetChildren()) do
+            table.insert(names, child.Name)
+        end
+    end
+    return names
+end
+
+local function getModelCFrame(model)
+    if not model then return nil end
+    if model:IsA("Model") then
+        if model.PrimaryPart then return model.PrimaryPart.CFrame end
+        if model:FindFirstChild("HumanoidRootPart") then return model.HumanoidRootPart.CFrame end
+        local firstPart = model:FindFirstChildWhichIsA("BasePart", true)
+        if firstPart then return firstPart.CFrame end
+    elseif model:IsA("BasePart") then
+        return model.CFrame
+    end
+    return nil
+end
+
+local function canTeleport()
+    return not (Options.AutoFishing.Value and Options.TeleportSaved.Value)
+end
+
 -- References
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
@@ -250,30 +278,6 @@ Options.TeleportEvent = Tabs.Event:AddToggle("TeleportEvent", {
 local TeleportParent = workspace:FindFirstChild("!!!! ISLAND LOCATIONS !!!!")
 local NPCFolder = workspace:FindFirstChild("NPC")
 local MiscFolder = workspace:FindFirstChild("!!! MENU RINGS")
-
-local function getChildNames(parent)
-    local names = {}
-    if parent then
-        for _, child in ipairs(parent:GetChildren()) do
-            table.insert(names, child.Name)
-        end
-    end
-    return names
-end
-local function getModelCFrame(model)
-    if model:IsA("Model") then
-        if model.PrimaryPart then return model.PrimaryPart.CFrame end
-        if model:FindFirstChild("HumanoidRootPart") then return model.HumanoidRootPart.CFrame end
-        local firstPart = model:FindFirstChildWhichIsA("BasePart")
-        if firstPart then return firstPart.CFrame end
-    elseif model:IsA("BasePart") then
-        return model.CFrame
-    end
-    return nil
-end
-local function canTeleport()
-    return not (Options.AutoFishing.Value and Options.TeleportSaved.Value)
-end
 
 -- Dropdowns
 if TeleportParent then
