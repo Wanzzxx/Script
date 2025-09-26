@@ -54,6 +54,7 @@ end)
 -- Tabs
 local Tabs = {
     Main = Window:AddTab({ Title = "Fishing", Icon = "users" }),
+    Event = Window:AddTab({ Title = "Fish Events", Icon = "users" }),
     Teleport = Window:AddTab({ Title = "Teleport", Icon = "home" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
@@ -175,6 +176,63 @@ Options.SellAllFish:OnChanged(function()
         Fluent:Notify({ Title = "Fishing", Content = "Auto selling fish stopped", Duration = 5 })
     end
 end)
+
+-- === EVENT SECTION ===
+
+local EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
+
+-- Helper: get children names safely
+local function getChildNames(parent)
+    local names = {}
+    if parent then
+        for _, child in ipairs(parent:GetChildren()) do
+            table.insert(names, child.Name)
+        end
+    end
+    return names
+end
+
+-- Auto Fishing Event Dropdown + Refresh
+if EventFolder then
+    Options.AutoFishingEvent = Tabs.Main:AddDropdown("AutoFishingEvent", {
+        Title = "Auto Fishing Event",
+        Values = getChildNames(EventFolder),
+        Default = nil
+    })
+
+    Tabs.Main:AddButton({
+        Title = "Refresh Events",
+        Callback = function()
+            Options.AutoFishingEvent:SetValues(getChildNames(EventFolder))
+            Fluent:Notify({ Title = "Events", Content = "Auto Fishing Events refreshed", Duration = 3 })
+        end
+    })
+end
+
+-- Teleport to Event Dropdown (NO refresh here)
+if EventFolder then
+    Options.TeleportEvent = Tabs.Teleport:AddDropdown("TeleportEvent", {
+        Title = "Teleport To Event",
+        Values = getChildNames(EventFolder),
+        Default = nil
+    })
+
+    Options.TeleportEvent:OnChanged(function(selected)
+        if not selected then return end
+        if not canTeleport() then
+            Fluent:Notify({ Title = "Teleport", Content = "Blocked (AutoFishing + TeleportSaved active)", Duration = 4 })
+            return
+        end
+        local target = EventFolder:FindFirstChild(selected)
+        local cf = target and getModelCFrame(target)
+        if cf then
+            local hrp = player.Character:WaitForChild("HumanoidRootPart")
+            hrp.CFrame = cf + Vector3.new(0, 5, 0) -- slightly above ground
+            hrp.Anchored = true                    -- anchored so you stand still
+            Fluent:Notify({ Title = "Teleport", Content = "Teleported & Anchored at Event: " .. selected, Duration = 4 })
+        end
+    end)
+end
 
 -- Teleport setup
 local TeleportParent = workspace:FindFirstChild("!!!! ISLAND LOCATIONS !!!!")
