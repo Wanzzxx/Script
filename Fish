@@ -53,9 +53,9 @@ end)
 
 -- Tabs
 local Tabs = {
-    Main = Window:AddTab({ Title = "Fishing", Icon = "shrimp" }),
-    Event = Window:AddTab({ Title = "Fish Events", Icon = "app-window" }),
-    Teleport = Window:AddTab({ Title = "Teleport", Icon = "map" }),
+    Main = Window:AddTab({ Title = "Fishing", Icon = "users" }),
+    Event = Window:AddTab({ Title = "Fish Events", Icon = "map" }),
+    Teleport = Window:AddTab({ Title = "Teleport", Icon = "globe" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
