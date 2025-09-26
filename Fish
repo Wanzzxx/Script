@@ -116,7 +116,7 @@ Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
 })
 
 -- Auto Reset If Stuck
-Options.AutoResetStuck = Tabs.Misc:AddToggle("AutoResetStuck", {
+Options.AutoResetStuck = Tabs.Main:AddToggle("AutoResetStuck", {
     Title = "Auto Reset If Fish Stuck",
     Default = false,
     Callback = function(state)
@@ -137,7 +137,7 @@ Options.AutoResetStuck = Tabs.Misc:AddToggle("AutoResetStuck", {
                         local child8 = display and display:GetChildren()[8]
                         if not child8 then
                             stuckTime += 1
-                            if stuckTime >= 8 then
+                            if stuckTime >= 20 then
                                 local char = player.Character
                                 local hum = char and char:FindFirstChild("Humanoid")
                                 if hum then
