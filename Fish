@@ -230,6 +230,8 @@ Options.AutoFishOnSpawned = Tabs.Event:AddToggle("AutoFishOnSpawned", {
     end
 })
 
+local EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
+
 -- One-time connections (outside the toggle)
 if EventFolder then
     EventFolder.ChildAdded:Connect(function(child)
