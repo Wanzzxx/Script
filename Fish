@@ -116,7 +116,7 @@ Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
 })
 
 -- Auto Reset Character Every (s)
-Options.AutoReset = Tabs.Misc:AddInput("AutoReset", {
+Options.AutoReset = Tabs.Main:AddInput("AutoReset", {
     Title = "Auto Reset Character Every (s)",
     Default = "",
     Placeholder = "Enter seconds",
@@ -468,30 +468,35 @@ InterfaceManager:BuildInterfaceSection(Tabs.Settings)
 SaveManager:BuildConfigSection(Tabs.Settings)
 
 -- Detect Zero Hp
+local function handleDeath()
+    if Options.AutoFishing.Value then
+        Options.AutoFishing:SetValue(false)
+    end
+    if Options.TeleportSaved.Value then
+        Options.TeleportSaved:SetValue(false)
+    end
+
+    -- Wait for respawn
+    player.CharacterAdded:Wait()
+    local newChar = player.Character or player.CharacterAdded:Wait()
+    local newHum = newChar:WaitForChild("Humanoid")
+
+    -- Wait until fully alive
+    repeat task.wait() until newHum.Health > 0
+    task.wait(3)
+
+    if newHum.Health > 0 then
+        Options.AutoFishing:SetValue(true)
+        Options.TeleportSaved:SetValue(true)
+    end
+end
+
 task.spawn(function()
     while task.wait(1) do
         local char = player.Character
         local hum = char and char:FindFirstChild("Humanoid")
-        if hum then
-            if hum.Health <= 0 then
-                -- Disable both
-                if Options.AutoFishing.Value then
-                    Options.AutoFishing:SetValue(false)
-                end
-                if Options.TeleportSaved.Value then
-                    Options.TeleportSaved:SetValue(false)
-                end
-                -- Wait until alive again
-                task.spawn(function()
-                    repeat task.wait(0.5) until hum and hum.Health > 0
-                    task.wait(3)
-                    -- Re-enable after 3s if alive
-                    if hum.Health > 0 then
-                        Options.AutoFishing:SetValue(true)
-                        Options.TeleportSaved:SetValue(true)
-                    end
-                end)
-            end
+        if hum and hum.Health <= 0 then
+            handleDeath()
         end
     end
 end)
