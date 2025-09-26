@@ -115,7 +115,7 @@ Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
     end
 })
 
--- Auto Reset If Stuck (Main Tab, missing child[8] for 20s)
+-- Auto Reset If Stuck (Main Tab)
 Options.AutoResetStuck = Tabs.Main:AddToggle("AutoResetStuck", {
     Title = "Auto Reset If Stuck",
     Default = false,
@@ -127,32 +127,39 @@ Options.AutoResetStuck = Tabs.Main:AddToggle("AutoResetStuck", {
                 Duration = 4
             })
             task.spawn(function()
-                local stuckTime = 0
                 while Options.AutoResetStuck.Value do
-                    local display = player:FindFirstChild("PlayerGui")
-                        and player.PlayerGui:FindFirstChild("Backpack")
-                        and player.PlayerGui.Backpack:FindFirstChild("Display")
+                    local stuckTime = 0
 
-                    local fishSlot = display and display:GetChildren()[8]
-                    if not fishSlot then
-                        stuckTime += 1
-                        if stuckTime >= 20 then -- 20 seconds without fish
-                            local char = player.Character
-                            local hum = char and char:FindFirstChild("Humanoid")
-                            if hum then
-                                hum.Health = 0 -- force reset
-                                Fluent:Notify({
-                                    Title = "Auto Reset",
-                                    Content = "Character reset (no fish slot for 20s)",
-                                    Duration = 4
-                                })
+                    -- Reset timer on character respawn
+                    player.CharacterAdded:Connect(function()
+                        stuckTime = 0
+                    end)
+
+                    while Options.AutoResetStuck.Value and player.Character do
+                        local display = player:FindFirstChild("PlayerGui")
+                            and player.PlayerGui:FindFirstChild("Backpack")
+                            and player.PlayerGui.Backpack:FindFirstChild("Display")
+
+                        local fishSlot = display and display:GetChildren()[8]
+                        if not fishSlot then
+                            stuckTime += 1
+                            if stuckTime >= 20 then
+                                local hum = player.Character and player.Character:FindFirstChild("Humanoid")
+                                if hum then
+                                    hum.Health = 0 -- reset
+                                    Fluent:Notify({
+                                        Title = "Auto Reset",
+                                        Content = "No Fish Found, Resetting.",
+                                        Duration = 4
+                                    })
+                                end
+                                stuckTime = 0
                             end
-                            stuckTime = 0
+                        else
+                            stuckTime = 0 -- reset if fish slot found
                         end
-                    else
-                        stuckTime = 0 -- reset timer if fish appears again
+                        task.wait(1)
                     end
-                    task.wait(1)
                 end
             end)
         else
