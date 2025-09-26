@@ -204,9 +204,6 @@ local function canTeleport()
     return not (Options.AutoFishing.Value and Options.TeleportSaved.Value)
 end
 
--- === EVENT TAB ===
-Tabs.Event = Window:AddTab({ Title = "Event", Icon = "flag" })
-
 local EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
 
 -- Auto Fishing Event Dropdown + Refresh
