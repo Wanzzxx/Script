@@ -133,8 +133,10 @@ Options.AutoReset = Tabs.Main:AddInput("AutoReset", {
             task.spawn(function()
                 while tonumber(Options.AutoReset.Value) and tonumber(Options.AutoReset.Value) > 0 do
                     task.wait(tonumber(Options.AutoReset.Value))
-                    if player.Character and player.Character:FindFirstChild("Humanoid") then
-                        player:LoadCharacter()
+                    local char = player.Character
+                    local hum = char and char:FindFirstChild("Humanoid")
+                    if hum then
+                        hum.Health = 0 -- force reset
                     end
                 end
             end)
