@@ -209,29 +209,46 @@ if EventFolder then
     })
 end
 
--- Teleport to Event Dropdown (NO refresh here)
+-- Teleport To Event Toggle
 if EventFolder then
-    Options.TeleportEvent = Tabs.Teleport:AddDropdown("TeleportEvent", {
+    Options.TeleportEvent = Tabs.Teleport:AddToggle("TeleportEvent", {
         Title = "Teleport To Event",
-        Values = getChildNames(EventFolder),
-        Default = nil
-    })
+        Default = false,
+        Callback = function(state)
+            if state then
+                local selected = Options.AutoFishingEvent and Options.AutoFishingEvent.Value
+                if not selected then
+                    Fluent:Notify({ Title = "Teleport", Content = "Select an Event in 'Auto Fishing Event' first", Duration = 4 })
+                    Options.TeleportEvent:SetValue(false)
+                    return
+                end
+                if not canTeleport() then
+                    Fluent:Notify({ Title = "Teleport", Content = "Blocked (AutoFishing + TeleportSaved active)", Duration = 4 })
+                    Options.TeleportEvent:SetValue(false)
+                    return
+                end
 
-    Options.TeleportEvent:OnChanged(function(selected)
-        if not selected then return end
-        if not canTeleport() then
-            Fluent:Notify({ Title = "Teleport", Content = "Blocked (AutoFishing + TeleportSaved active)", Duration = 4 })
-            return
+                local target = EventFolder:FindFirstChild(selected)
+                local cf = target and getModelCFrame(target)
+                if cf then
+                    local hrp = player.Character:WaitForChild("HumanoidRootPart")
+                    hrp.CFrame = cf + Vector3.new(0, 5, 0) -- slightly above
+                    hrp.Anchored = true
+                    Fluent:Notify({ Title = "Teleport", Content = "Teleported & Anchored at Event: " .. selected, Duration = 4 })
+                else
+                    Fluent:Notify({ Title = "Teleport", Content = "Event not found: " .. selected, Duration = 4 })
+                    Options.TeleportEvent:SetValue(false)
+                end
+            else
+                -- Unanchor when toggle is off
+                local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    hrp.Anchored = false
+                    Fluent:Notify({ Title = "Teleport", Content = "Unanchored, free to move again", Duration = 4 })
+                end
+            end
         end
-        local target = EventFolder:FindFirstChild(selected)
-        local cf = target and getModelCFrame(target)
-        if cf then
-            local hrp = player.Character:WaitForChild("HumanoidRootPart")
-            hrp.CFrame = cf + Vector3.new(0, 5, 0) -- slightly above ground
-            hrp.Anchored = true                    -- anchored so you stand still
-            Fluent:Notify({ Title = "Teleport", Content = "Teleported & Anchored at Event: " .. selected, Duration = 4 })
-        end
-    end)
+    })
 end
 
 -- Teleport setup
