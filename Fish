@@ -326,6 +326,26 @@ if MiscFolder then
     end)
 end
 
+-- Misc
+
+-- Fish Radar Toggle (Misc Tab)
+Options.FishRadar = Tabs.Misc:AddToggle("FishRadar", {
+    Title = "Fish Radar",
+    Default = false,
+    Callback = function(state)
+        local args = {
+            [1] = state -- true = enable, false = disable
+        }
+        local Net = game:GetService("ReplicatedStorage")
+            .Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
+
+        local updateRadar = Net:FindFirstChild("RF/UpdateFishingRadar")
+        if updateRadar then
+            updateRadar:InvokeServer(unpack(args))
+        end
+    end
+})
+
 -- Settings
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
