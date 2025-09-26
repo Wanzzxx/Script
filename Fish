@@ -132,7 +132,7 @@ Options.AutoFishing:OnChanged(function()
                 ChargeFishingRod:InvokeServer(1758804029.427071)
                 task.wait(0.4)
                 RequestFishingMinigameStarted:InvokeServer(-1.233184814453125, 0.9974901105656968)
-                task.wait(0.1)
+                task.wait(0.4)
                 local delayTime = tonumber(Options.FishingDelay.Value) or 4
                 task.wait(delayTime)
                 FishingCompleted:FireServer()
