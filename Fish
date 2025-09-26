@@ -71,11 +71,19 @@ local function getChildNames(parent)
     return names
 end
 
+-- Updated to support nested inner models (e.g., Megalodon Hunt)
 local function getModelCFrame(model)
+    if not model then return nil end
     if model:IsA("Model") then
         if model.PrimaryPart then return model.PrimaryPart.CFrame end
         if model:FindFirstChild("HumanoidRootPart") then return model.HumanoidRootPart.CFrame end
-        local firstPart = model:FindFirstChildWhichIsA("BasePart")
+        local inner = model:FindFirstChildWhichIsA("Model")
+        if inner then
+            if inner.PrimaryPart then return inner.PrimaryPart.CFrame end
+            local part = inner:FindFirstChildWhichIsA("BasePart", true)
+            if part then return part.CFrame end
+        end
+        local firstPart = model:FindFirstChildWhichIsA("BasePart", true)
         if firstPart then return firstPart.CFrame end
     elseif model:IsA("BasePart") then
         return model.CFrame
@@ -211,18 +219,13 @@ Options.AutoFishOnSpawned = Tabs.Event:AddToggle("AutoFishOnSpawned", {
         if state then
             Fluent:Notify({ Title = "Events", Content = "Auto Fish On Spawned Events enabled", Duration = 4 })
         else
-            -- When turned OFF → teleport back to saved location
             if savedFishingPos and savedFishingLook then
                 local hrp = player.Character:WaitForChild("HumanoidRootPart")
                 local targetPos = savedFishingPos + Vector3.new(0, 5, 0)
                 local lookTarget = targetPos + savedFishingLook
                 hrp.CFrame = CFrame.new(targetPos, lookTarget)
                 hrp.Anchored = false
-                Fluent:Notify({
-                    Title = "Events",
-                    Content = "Disabled & teleported back to saved fishing spot",
-                    Duration = 4
-                })
+                Fluent:Notify({ Title = "Events", Content = "Disabled & teleported back to saved fishing spot", Duration = 4 })
             else
                 Fluent:Notify({ Title = "Events", Content = "Disabled but no saved fishing spot found", Duration = 4 })
             end
@@ -234,6 +237,18 @@ local EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!
 
 -- One-time connections (outside the toggle)
 if EventFolder then
+    for _, child in ipairs(EventFolder:GetChildren()) do
+        if Options.AutoFishOnSpawned and Options.AutoFishOnSpawned.Value then
+            local cf = getModelCFrame(child)
+            if cf then
+                local hrp = player.Character:WaitForChild("HumanoidRootPart")
+                hrp.CFrame = cf + Vector3.new(0, 5, 0)
+                hrp.Anchored = true
+                Fluent:Notify({ Title = "Events", Content = "Teleported & Anchored at existing event: " .. child.Name, Duration = 4 })
+            end
+        end
+    end
+
     EventFolder.ChildAdded:Connect(function(child)
         if Options.AutoFishOnSpawned and Options.AutoFishOnSpawned.Value then
             local cf = getModelCFrame(child)
@@ -241,11 +256,7 @@ if EventFolder then
                 local hrp = player.Character:WaitForChild("HumanoidRootPart")
                 hrp.CFrame = cf + Vector3.new(0, 5, 0)
                 hrp.Anchored = true
-                Fluent:Notify({
-                    Title = "Events",
-                    Content = "Teleported & Anchored at spawned event: " .. child.Name,
-                    Duration = 4
-                })
+                Fluent:Notify({ Title = "Events", Content = "Teleported & Anchored at spawned event: " .. child.Name, Duration = 4 })
             end
         end
     end)
@@ -258,26 +269,19 @@ if EventFolder then
                 local lookTarget = targetPos + savedFishingLook
                 hrp.CFrame = CFrame.new(targetPos, lookTarget)
                 hrp.Anchored = false
-                Fluent:Notify({
-                    Title = "Events",
-                    Content = "No events left, teleported back to saved fishing spot",
-                    Duration = 4
-                })
+                Fluent:Notify({ Title = "Events", Content = "No events left, teleported back to saved fishing spot", Duration = 4 })
             end
         end
     end)
 end
 
 -- === EVENT SECTION ===
-
--- Auto Fishing Event Dropdown
 Options.AutoFishingEvent = Tabs.Event:AddDropdown("AutoFishingEvent", {
     Title = "Auto Fishing Event",
     Values = EventFolder and getChildNames(EventFolder) or {},
     Default = nil
 })
 
--- Refresh Button
 Tabs.Event:AddButton({
     Title = "Refresh Events",
     Callback = function()
@@ -292,7 +296,6 @@ Tabs.Event:AddButton({
     end
 })
 
--- Teleport To Event Toggle
 Options.TeleportEvent = Tabs.Event:AddToggle("TeleportEvent", {
     Title = "Teleport To Event",
     Default = false,
@@ -304,7 +307,6 @@ Options.TeleportEvent = Tabs.Event:AddToggle("TeleportEvent", {
                 return
             end
             if not canTeleport() then
-                -- Do nothing but allow toggle to stay ON
                 Fluent:Notify({ Title = "Teleport", Content = "Blocked (TeleportSaved active)", Duration = 4 })
                 return
             end
@@ -326,7 +328,6 @@ Options.TeleportEvent = Tabs.Event:AddToggle("TeleportEvent", {
                 Fluent:Notify({ Title = "Teleport", Content = "Event not found: " .. selected, Duration = 4 })
             end
         else
-            -- Unanchor when toggle is off
             local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
             if hrp then
                 hrp.Anchored = false
