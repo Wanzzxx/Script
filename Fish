@@ -194,13 +194,13 @@ end
 
 -- Auto Fishing Event Dropdown + Refresh
 if EventFolder then
-    Options.AutoFishingEvent = Tabs.Main:AddDropdown("AutoFishingEvent", {
+    Options.AutoFishingEvent = Tabs.Event:AddDropdown("AutoFishingEvent", {
         Title = "Auto Fishing Event",
         Values = getChildNames(EventFolder),
         Default = nil
     })
 
-    Tabs.Main:AddButton({
+    Tabs.Event:AddButton({
         Title = "Refresh Events",
         Callback = function()
             Options.AutoFishingEvent:SetValues(getChildNames(EventFolder))
@@ -211,7 +211,7 @@ end
 
 -- Teleport To Event Toggle
 if EventFolder then
-    Options.TeleportEvent = Tabs.Teleport:AddToggle("TeleportEvent", {
+    Options.TeleportEvent = Tabs.Event:AddToggle("TeleportEvent", {
         Title = "Teleport To Event",
         Default = false,
         Callback = function(state)
