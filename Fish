@@ -345,6 +345,27 @@ Tabs.Teleport:AddButton({
     end
 })
 
+-- Teleport to Ghostfinn Rod Location
+Tabs.Teleport:AddButton({
+    Title = "Ghostfinn Rod Location [Deep Sea Quest]",
+    Callback = function()
+        local hrp = player.Character and player.Character:WaitForChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = CFrame.new(
+                -3745.10962, -136.108429, -1049.05969,
+                 0.962240815,  5.12529708e-09,  0.272199631,
+                -1.09520455e-08, 1,             1.98869046e-08,
+                -0.272199631,   -2.2117133e-08, 0.962240815
+            )
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Teleported to Ghostfinn Rod Location",
+                Duration = 4
+            })
+        end
+    end
+})
+
 -- Teleport to Ares Rod Stand
 Tabs.Teleport:AddButton({
     Title = "Ares Rod Location [3M Coins]",
