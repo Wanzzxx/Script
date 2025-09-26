@@ -100,7 +100,7 @@ local SellAllItems = Net:WaitForChild("RF/SellAllItems")
 
 -- Fishing Delay input
 Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
-    Title = "Bypass Catch Delay (s)",
+    Title = "Set Catch Delay(s)",
     Default = "4",
     Placeholder = "Enter seconds",
     Numeric = true,
