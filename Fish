@@ -115,35 +115,53 @@ Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
     end
 })
 
--- Auto Reset Character Every (s)
-Options.AutoReset = Tabs.Main:AddInput("AutoReset", {
-    Title = "Auto Reset Character Every (s)",
-    Default = "",
-    Placeholder = "Enter seconds",
-    Numeric = true,
-    Finished = true,
-    Callback = function(Value)
-        local num = tonumber(Value)
-        if num and num > 0 then
+-- Auto Reset If Stuck
+Options.AutoResetStuck = Tabs.Misc:AddToggle("AutoResetStuck", {
+    Title = "Auto Reset If Fish Stuck",
+    Default = false,
+    Callback = function(state)
+        if state then
             Fluent:Notify({
                 Title = "Auto Reset",
-                Content = "Character will reset every " .. num .. " seconds",
+                Content = "Enabled",
                 Duration = 4
             })
             task.spawn(function()
-                while tonumber(Options.AutoReset.Value) and tonumber(Options.AutoReset.Value) > 0 do
-                    task.wait(tonumber(Options.AutoReset.Value))
-                    local char = player.Character
-                    local hum = char and char:FindFirstChild("Humanoid")
-                    if hum then
-                        hum.Health = 0 -- force reset
+                while Options.AutoResetStuck.Value do
+                    local stuckTime = 0
+                    while Options.AutoResetStuck.Value do
+                        local display = player:FindFirstChild("PlayerGui")
+                            and player.PlayerGui:FindFirstChild("Backpack")
+                            and player.PlayerGui.Backpack:FindFirstChild("Display")
+
+                        local child8 = display and display:GetChildren()[8]
+                        if not child8 then
+                            stuckTime += 1
+                            if stuckTime >= 8 then
+                                local char = player.Character
+                                local hum = char and char:FindFirstChild("Humanoid")
+                                if hum then
+                                    hum.Health = 0 -- reset character
+                                    Fluent:Notify({
+                                        Title = "Auto Reset",
+                                        Content = "Character reset (stuck detected)",
+                                        Duration = 4
+                                    })
+                                end
+                                break
+                            end
+                        else
+                            stuckTime = 0 -- reset counter if normal
+                        end
+                        task.wait(1)
                     end
+                    task.wait(1)
                 end
             end)
         else
             Fluent:Notify({
                 Title = "Auto Reset",
-                Content = "Auto Reset disabled",
+                Content = "Disabled",
                 Duration = 4
             })
         end
