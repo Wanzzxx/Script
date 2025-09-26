@@ -177,11 +177,7 @@ Options.SellAllFish:OnChanged(function()
     end
 end)
 
--- === EVENT SECTION ===
-
-local EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
-
--- Helper: get children names safely
+-- === HELPERS (only define once, above Event Section) ===
 local function getChildNames(parent)
     local names = {}
     if parent then
@@ -191,6 +187,27 @@ local function getChildNames(parent)
     end
     return names
 end
+
+local function getModelCFrame(model)
+    if model:IsA("Model") then
+        if model.PrimaryPart then return model.PrimaryPart.CFrame end
+        if model:FindFirstChild("HumanoidRootPart") then return model.HumanoidRootPart.CFrame end
+        local firstPart = model:FindFirstChildWhichIsA("BasePart")
+        if firstPart then return firstPart.CFrame end
+    elseif model:IsA("BasePart") then
+        return model.CFrame
+    end
+    return nil
+end
+
+local function canTeleport()
+    return not (Options.AutoFishing.Value and Options.TeleportSaved.Value)
+end
+
+-- === EVENT TAB ===
+Tabs.Event = Window:AddTab({ Title = "Event", Icon = "flag" })
+
+local EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
 
 -- Auto Fishing Event Dropdown + Refresh
 if EventFolder then
@@ -232,7 +249,7 @@ if EventFolder then
                 local cf = target and getModelCFrame(target)
                 if cf then
                     local hrp = player.Character:WaitForChild("HumanoidRootPart")
-                    hrp.CFrame = cf + Vector3.new(0, 5, 0) -- slightly above
+                    hrp.CFrame = cf + Vector3.new(0, 5, 0)
                     hrp.Anchored = true
                     Fluent:Notify({ Title = "Teleport", Content = "Teleported & Anchored at Event: " .. selected, Duration = 4 })
                 else
