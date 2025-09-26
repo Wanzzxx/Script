@@ -177,50 +177,13 @@ Options.SellAllFish:OnChanged(function()
     end
 end)
 
--- Auto Fish On Spawned Events
+-- Auto Fish On Spawned Events toggle
 Options.AutoFishOnSpawned = Tabs.Event:AddToggle("AutoFishOnSpawned", {
     Title = "Auto Fish On Spawned Events",
     Default = false,
     Callback = function(state)
         if state then
             Fluent:Notify({ Title = "Events", Content = "Auto Fish On Spawned Events enabled", Duration = 4 })
-
-            -- Watch for events being added
-            EventFolder.ChildAdded:Connect(function(child)
-                if Options.AutoFishOnSpawned.Value then
-                    local cf = getModelCFrame(child)
-                    if cf then
-                        local hrp = player.Character:WaitForChild("HumanoidRootPart")
-                        hrp.CFrame = cf + Vector3.new(0, 5, 0)
-                        hrp.Anchored = true
-                        Fluent:Notify({
-                            Title = "Events",
-                            Content = "Teleported & Anchored at spawned event: " .. child.Name,
-                            Duration = 4
-                        })
-                    end
-                end
-            end)
-
-            -- Watch for events being removed
-            EventFolder.ChildRemoved:Connect(function()
-                if Options.AutoFishOnSpawned.Value and #EventFolder:GetChildren() == 0 then
-                    -- Teleport back to saved location
-                    if savedFishingPos and savedFishingLook then
-                        local hrp = player.Character:WaitForChild("HumanoidRootPart")
-                        local targetPos = savedFishingPos + Vector3.new(0, 5, 0)
-                        local lookTarget = targetPos + savedFishingLook
-                        hrp.CFrame = CFrame.new(targetPos, lookTarget)
-                        hrp.Anchored = false
-                        Fluent:Notify({
-                            Title = "Events",
-                            Content = "No events left, teleported back to saved fishing spot",
-                            Duration = 4
-                        })
-                    end
-                end
-            end)
-
         else
             -- When turned OFF → teleport back to saved location
             if savedFishingPos and savedFishingLook then
@@ -235,15 +198,47 @@ Options.AutoFishOnSpawned = Tabs.Event:AddToggle("AutoFishOnSpawned", {
                     Duration = 4
                 })
             else
-                Fluent:Notify({
-                    Title = "Events",
-                    Content = "Disabled but no saved fishing spot found",
-                    Duration = 4
-                })
+                Fluent:Notify({ Title = "Events", Content = "Disabled but no saved fishing spot found", Duration = 4 })
             end
         end
     end
 })
+
+-- One-time connections (outside the toggle)
+if EventFolder then
+    EventFolder.ChildAdded:Connect(function(child)
+        if Options.AutoFishOnSpawned and Options.AutoFishOnSpawned.Value then
+            local cf = getModelCFrame(child)
+            if cf then
+                local hrp = player.Character:WaitForChild("HumanoidRootPart")
+                hrp.CFrame = cf + Vector3.new(0, 5, 0)
+                hrp.Anchored = true
+                Fluent:Notify({
+                    Title = "Events",
+                    Content = "Teleported & Anchored at spawned event: " .. child.Name,
+                    Duration = 4
+                })
+            end
+        end
+    end)
+
+    EventFolder.ChildRemoved:Connect(function()
+        if Options.AutoFishOnSpawned and Options.AutoFishOnSpawned.Value and #EventFolder:GetChildren() == 0 then
+            if savedFishingPos and savedFishingLook then
+                local hrp = player.Character:WaitForChild("HumanoidRootPart")
+                local targetPos = savedFishingPos + Vector3.new(0, 5, 0)
+                local lookTarget = targetPos + savedFishingLook
+                hrp.CFrame = CFrame.new(targetPos, lookTarget)
+                hrp.Anchored = false
+                Fluent:Notify({
+                    Title = "Events",
+                    Content = "No events left, teleported back to saved fishing spot",
+                    Duration = 4
+                })
+            end
+        end
+    end)
+end
 
 -- === EVENT SECTION ===
 local EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
