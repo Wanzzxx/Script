@@ -258,8 +258,8 @@ Options.TeleportEvent = Tabs.Event:AddToggle("TeleportEvent", {
             if cf then
                 local hrp = player.Character:WaitForChild("HumanoidRootPart")
                 hrp.CFrame = cf + Vector3.new(0, 5, 0)
-                hrp.Anchored = true
-                Fluent:Notify({ Title = "Teleport", Content = "Teleported & Anchored at Event: " .. selected, Duration = 4 })
+                hrp.Anchored = false
+                Fluent:Notify({ Title = "Teleport", Content = "Found Event: " .. selected, Duration = 4 })
             else
                 Fluent:Notify({ Title = "Teleport", Content = "Event not found: " .. selected, Duration = 4 })
             end
