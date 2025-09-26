@@ -269,7 +269,6 @@ if EventFolder then
 end
 
 -- === EVENT SECTION ===
-local EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
 
 -- Auto Fishing Event Dropdown
 Options.AutoFishingEvent = Tabs.Event:AddDropdown("AutoFishingEvent", {
