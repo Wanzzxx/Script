@@ -326,6 +326,63 @@ if MiscFolder then
     end)
 end
 
+-- Teleport to Enchanting Altar
+Tabs.Teleport:AddButton({
+    Title = "Teleport To Enchanting Altar",
+    Callback = function()
+        local altar = workspace:FindFirstChild("! ENCHANTING ALTAR !")
+        if altar and altar:FindFirstChild("EnchantLocation") then
+            local cf = getModelCFrame(altar.EnchantLocation)
+            if cf then
+                player.Character:WaitForChild("HumanoidRootPart").CFrame = cf
+                Fluent:Notify({
+                    Title = "Teleport",
+                    Content = "Teleported to Enchanting Altar",
+                    Duration = 4
+                })
+            end
+        end
+    end
+})
+
+-- Teleport to Ares Rod Stand
+Tabs.Teleport:AddButton({
+    Title = "Ares Rod Location [3M Coins]",
+    Callback = function()
+        local menu = workspace:FindFirstChild("!!! MENU RINGS")
+        if menu and menu:FindFirstChild("Ares Rod Stand") then
+            local cf = getModelCFrame(menu["Ares Rod Stand"])
+            if cf then
+                player.Character:WaitForChild("HumanoidRootPart").CFrame = cf
+                Fluent:Notify({
+                    Title = "Teleport",
+                    Content = "Teleported to Ares Rod Stand",
+                    Duration = 4
+                })
+            end
+        end
+    end
+})
+
+-- Teleport to Angler Rod Stand
+Tabs.Teleport:AddButton({
+    Title = "Angler Rod Location [8M Coins]",
+    Callback = function()
+        local menu = workspace:FindFirstChild("!!! MENU RINGS")
+        if menu and menu:FindFirstChild("Angler Rod Stand") then
+            local cf = getModelCFrame(menu["Angler Rod Stand"])
+            if cf then
+                player.Character:WaitForChild("HumanoidRootPart").CFrame = cf
+                Fluent:Notify({
+                    Title = "Teleport",
+                    Content = "Teleported to Angler Rod Stand",
+                    Duration = 4
+                })
+            end
+        end
+    end
+})
+
 -- Misc
 
 -- Fish Radar Toggle (Misc Tab)
