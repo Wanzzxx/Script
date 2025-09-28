@@ -193,7 +193,7 @@ Options.AutoFishing:OnChanged(function()
                 local delayTime = tonumber(Options.FishingDelay.Value) or 4
                 task.wait(delayTime)
                 FishingCompleted:FireServer()
-                task.wait(1)
+                task.wait(0.1)
             end
         end)
     else
