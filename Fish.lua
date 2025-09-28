@@ -100,7 +100,7 @@ local SellAllItems = Net:WaitForChild("RF/SellAllItems")
 
 -- Fishing Delay input
 Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
-    Title = "Set Catch Delay(s)",
+    Title = "Set Catch Delay (s)",
     Default = "4",
     Placeholder = "Enter seconds",
     Numeric = true,
@@ -110,7 +110,7 @@ Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
         if num then
             Fluent:Notify({ Title = "Fishing Delay", Content = "Set delay to " .. num .. " seconds", Duration = 4 })
         else
-            Fluent:Notify({ Title = "Fishing Delay", Content = "Invalid number, using default (4)", Duration = 4 })
+            Fluent:Notify({ Title = "Fishing Delay", Content = "Invalid number, using default (4) seconds", Duration = 4 })
         end
     end
 })
@@ -123,7 +123,7 @@ Options.AutoResetStuck = Tabs.Main:AddToggle("AutoResetStuck", {
         if state then
             Fluent:Notify({
                 Title = "Auto Reset",
-                Content = "Auto Reset If Stuck enabled",
+                Content = "Enabled",
                 Duration = 4
             })
             task.spawn(function()
@@ -165,7 +165,7 @@ Options.AutoResetStuck = Tabs.Main:AddToggle("AutoResetStuck", {
         else
             Fluent:Notify({
                 Title = "Auto Reset",
-                Content = "Auto Reset If Stuck disabled",
+                Content = "Disabled",
                 Duration = 4
             })
         end
@@ -214,7 +214,7 @@ if isfile and isfile(saveFile) then
     end
 end
 Tabs.Main:AddButton({
-    Title = "Save Fishing Location",
+    Title = "Set Fishing Location",
     Callback = function()
         local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         if hrp then
@@ -225,7 +225,7 @@ Tabs.Main:AddButton({
                     savedFishingPos.X, savedFishingPos.Y, savedFishingPos.Z,
                     savedFishingLook.X, savedFishingLook.Y, savedFishingLook.Z))
             end
-            Fluent:Notify({ Title = "Fishing Spot", Content = "Saved your fishing location", Duration = 4 })
+            Fluent:Notify({ Title = "Successfully", Content = "Saved your fishing location", Duration = 4 })
         end
     end
 })
@@ -238,9 +238,9 @@ Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
             local targetPos = savedFishingPos + Vector3.new(0, 5, 0)
             local lookTarget = targetPos + savedFishingLook
             hrp.CFrame = CFrame.new(targetPos, lookTarget)
-            Fluent:Notify({ Title = "Fishing Spot", Content = "Teleported to saved location", Duration = 4 })
+            Fluent:Notify({ Title = "Teleporting", Content = "Teleported to saved location", Duration = 4 })
         elseif state then
-            Fluent:Notify({ Title = "Fishing Spot", Content = "No saved location found", Duration = 4 })
+            Fluent:Notify({ Title = "Set Your Fishing Location First!", Content = "No saved location found", Duration = 4 })
             Options.TeleportSaved:SetValue(false)
         end
     end
@@ -250,7 +250,7 @@ Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
 Options.SellAllFish = Tabs.Main:AddToggle("SellAllFish", { Title = "Sell All Fish", Default = false })
 Options.SellAllFish:OnChanged(function()
     if Options.SellAllFish.Value then
-        Fluent:Notify({ Title = "Fishing", Content = "Auto selling fish started", Duration = 5 })
+        Fluent:Notify({ Title = "Auto Sell", Content = "Enabled", Duration = 5 })
         task.spawn(function()
             while Options.SellAllFish.Value do
                 SellAllItems:InvokeServer()
@@ -258,7 +258,7 @@ Options.SellAllFish:OnChanged(function()
             end
         end)
     else
-        Fluent:Notify({ Title = "Fishing", Content = "Auto selling fish stopped", Duration = 5 })
+        Fluent:Notify({ Title = "Auto Sell", Content = "Disabled", Duration = 5 })
     end
 end)
 
