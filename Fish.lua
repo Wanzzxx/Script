@@ -1,59 +1,67 @@
--- Fish It converted to MacLib UI (no Fluent / no SaveManager)
 if game.PlaceId ~= 121864768012064 then return end
-if not game:IsLoaded() then game.Loaded:Wait() end
 
--- Load MacLib (Example style)
-local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/releases/latest/download/maclib.txt"))()
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
 
-local Window = MacLib:Window({
+-- Load Fluent UI
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+-- Create Window
+local Window = Fluent:CreateWindow({
     Title = "Fish It [Wanz HUB]",
-    Subtitle = "PRIVATE TESTING",
-    Size = UDim2.fromOffset(720, 450),
-    Keybind = Enum.KeyCode.LeftControl,
-    AcrylicBlur = true,
+    SubTitle = "PRIVATE TESTING",
+    TabWidth = 120,
+    Size = UDim2.fromOffset(480, 360),
+    Acrylic = true,
+    Theme = "Darker",
+    MinimizeKey = Enum.KeyCode.LeftControl
 })
 
--- Create tab group + tabs
-local tabGroups = { TabGroup1 = Window:TabGroup() }
-local tabs = {
-    Main = tabGroups.TabGroup1:Tab({ Name = "Fishing" }),
-    Event = tabGroups.TabGroup1:Tab({ Name = "Fish Events" }),
-    Teleport = tabGroups.TabGroup1:Tab({ Name = "Teleport" }),
-    Misc = tabGroups.TabGroup1:Tab({ Name = "Misc" }),
-    Settings = tabGroups.TabGroup1:Tab({ Name = "Settings" })
-}
-
--- sections (Main)
-local mainLeft = tabs.Main:Section({ Side = "Left" })
-local mainRight = tabs.Main:Section({ Side = "Right" })
-
--- sections (Event)
-local eventLeft = tabs.Event:Section({ Side = "Left" })
-local eventRight = tabs.Event:Section({ Side = "Right" })
-
--- sections (Teleport)
-local teleportLeft = tabs.Teleport:Section({ Side = "Left" })
-local teleportRight = tabs.Teleport:Section({ Side = "Right" })
-
--- sections (Misc)
-local miscLeft = tabs.Misc:Section({ Side = "Left" })
-local miscRight = tabs.Misc:Section({ Side = "Right" })
-
--- small utility & references
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
-local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-local EquipToolFromHotbar = Net:WaitForChild("RE/EquipToolFromHotbar")
-local ChargeFishingRod = Net:WaitForChild("RF/ChargeFishingRod")
-local RequestFishingMinigameStarted = Net:WaitForChild("RF/RequestFishingMinigameStarted")
-local FishingCompleted = Net:WaitForChild("RE/FishingCompleted")
-local SellAllItems = Net:WaitForChild("RF/SellAllItems")
-local UpdateFishingRadar = Net:FindFirstChild("RF/UpdateFishingRadar") -- may be nil
+-- Logo toggle
+local logoGui = Instance.new("ScreenGui")
+logoGui.Name = "FluentLogoToggle"
+logoGui.ResetOnSpawn = false
+logoGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+logoGui.Parent = player:WaitForChild("PlayerGui")
 
--- helpers
+local logoButton = Instance.new("ImageButton")
+logoButton.Name = "LogoButton"
+logoButton.Size = UDim2.new(0, 50, 0, 50)
+logoButton.Position = UDim2.new(0, 10, 0, 10)
+logoButton.BackgroundTransparency = 1
+logoButton.Image = "rbxassetid://98905775020119"
+logoButton.Parent = logoGui
+
+local isMinimized = false
+local function toggleFluent()
+    isMinimized = not isMinimized
+    Window:Minimize(isMinimized)
+end
+logoButton.Activated:Connect(toggleFluent)
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.LeftControl then
+        toggleFluent()
+    end
+end)
+
+-- Tabs
+local Tabs = {
+    Main = Window:AddTab({ Title = "Fishing", Icon = "users" }),
+    Event = Window:AddTab({ Title = "Fish Events", Icon = "map" }),
+    Teleport = Window:AddTab({ Title = "Teleport", Icon = "globe" }),
+    Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
+local Options = Fluent.Options
+
+-- Utility functions (must be defined before they are used)
 local function getChildNames(parent)
     local names = {}
     if parent then
@@ -64,18 +72,11 @@ local function getChildNames(parent)
     return names
 end
 
--- recursive model cframe resolver (supports inner models)
 local function getModelCFrame(model)
     if not model then return nil end
     if model:IsA("Model") then
         if model.PrimaryPart then return model.PrimaryPart.CFrame end
         if model:FindFirstChild("HumanoidRootPart") then return model.HumanoidRootPart.CFrame end
-        -- check inner models first
-        local inner = model:FindFirstChildWhichIsA("Model")
-        if inner then
-            local cf = getModelCFrame(inner)
-            if cf then return cf end
-        end
         local firstPart = model:FindFirstChildWhichIsA("BasePart", true)
         if firstPart then return firstPart.CFrame end
     elseif model:IsA("BasePart") then
@@ -85,227 +86,325 @@ local function getModelCFrame(model)
 end
 
 local function canTeleport()
-    -- guarded: you may want to block teleports when TeleportSaved and AutoFishing active
-    local af = autoFishingToggle and autoFishingToggle:GetState()
-    local ts = teleportSavedToggle and teleportSavedToggle:GetState()
-    return not (af and ts)
+    return not (Options.AutoFishing.Value and Options.TeleportSaved.Value)
 end
 
--- state holders
-local savedFishingPos, savedFishingLook = nil, nil
+-- References
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+local EquipToolFromHotbar = Net:WaitForChild("RE/EquipToolFromHotbar")
+local ChargeFishingRod = Net:WaitForChild("RF/ChargeFishingRod")
+local RequestFishingMinigameStarted = Net:WaitForChild("RF/RequestFishingMinigameStarted")
+local FishingCompleted = Net:WaitForChild("RE/FishingCompleted")
+local SellAllItems = Net:WaitForChild("RF/SellAllItems")
 
--- UI ELEMENTS AND LOGIC
--- Main tab: controls (left)
-local autoFishingToggle = mainLeft:Toggle({
-    Name = "Auto Fishing",
-    Default = false,
-    Callback = function(state)
-        Window:Notify({
-            Title = "Auto Fishing",
-            Description = (val and "Auto fishing started" or "Auto fishing stopped"),
-            Lifetime = 4
-        })
+-- Fishing Delay input
+Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
+    Title = "Set Catch Delay(s)",
+    Default = "4",
+    Placeholder = "Enter seconds",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then
+            Fluent:Notify({ Title = "Fishing Delay", Content = "Set delay to " .. num .. " seconds", Duration = 4 })
+        else
+            Fluent:Notify({ Title = "Fishing Delay", Content = "Invalid number, using default (4)", Duration = 4 })
+        end
     end
 })
 
-local fishingDelayInput = mainLeft:Input({
-    Name = "Set Catch Delay (s)",
-    Placeholder = "4",
+-- Auto Reset If Stuck (Main Tab)
+Options.AutoResetStuck = Tabs.Main:AddToggle("AutoResetStuck", {
+    Title = "Auto Reset If Stuck",
+    Default = false,
     Callback = function(state)
-        local num = tonumber(val) or 4
-        Window:Notify({ Title = "Fishing Delay", Description = "Set delay to "..num.."s", Lifetime = 3 })
-    end
-}, "FishingDelay")
+        if state then
+            Fluent:Notify({
+                Title = "Auto Reset",
+                Content = "Auto Reset If Stuck enabled",
+                Duration = 4
+            })
+            task.spawn(function()
+                while Options.AutoResetStuck.Value do
+                    local stuckTime = 0
 
-local saveLocationButton = mainLeft:Button({
-    Name = "Save Fishing Location",
+                    -- Reset timer on character respawn
+                    player.CharacterAdded:Connect(function()
+                        stuckTime = 0
+                    end)
+
+                    while Options.AutoResetStuck.Value and player.Character do
+                        local display = player:FindFirstChild("PlayerGui")
+                            and player.PlayerGui:FindFirstChild("Backpack")
+                            and player.PlayerGui.Backpack:FindFirstChild("Display")
+
+                        local fishSlot = display and display:GetChildren()[8]
+                        if not fishSlot then
+                            stuckTime += 1
+                            if stuckTime >= 20 then
+                                local hum = player.Character and player.Character:FindFirstChild("Humanoid")
+                                if hum then
+                                    hum.Health = 0 -- reset
+                                    Fluent:Notify({
+                                        Title = "Auto Reset",
+                                        Content = "No Fish Found, Resetting.",
+                                        Duration = 4
+                                    })
+                                end
+                                stuckTime = 0
+                            end
+                        else
+                            stuckTime = 0 -- reset if fish slot found
+                        end
+                        task.wait(1)
+                    end
+                end
+            end)
+        else
+            Fluent:Notify({
+                Title = "Auto Reset",
+                Content = "Auto Reset If Stuck disabled",
+                Duration = 4
+            })
+        end
+    end
+})
+
+-- Auto Fishing
+local firstAutoFishingRun = true
+Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", { Title = "Auto Fishing", Default = false })
+Options.AutoFishing:OnChanged(function()
+    if Options.AutoFishing.Value then
+        Fluent:Notify({ Title = "Fishing", Content = "Auto fishing started", Duration = 5 })
+        task.spawn(function()
+            if firstAutoFishingRun then
+                task.wait(3)
+                firstAutoFishingRun = false
+            end
+            while Options.AutoFishing.Value do
+                EquipToolFromHotbar:FireServer(1)
+                task.wait(0.4)
+                ChargeFishingRod:InvokeServer(1758804029.427071)
+                task.wait(0.4)
+                RequestFishingMinigameStarted:InvokeServer(-1.233184814453125, 0.9974901105656968)
+                task.wait(0.4)
+                local delayTime = tonumber(Options.FishingDelay.Value) or 4
+                task.wait(delayTime)
+                FishingCompleted:FireServer()
+                task.wait(1)
+            end
+        end)
+    else
+        Fluent:Notify({ Title = "Fishing", Content = "Auto fishing stopped", Duration = 5 })
+    end
+end)
+
+-- Save / Teleport fishing location
+local savedFishingPos, savedFishingLook
+local saveFile = "FishingLocation.txt"
+if isfile and isfile(saveFile) then
+    local data = readfile(saveFile)
+    local px, py, pz, lx, ly, lz = string.match(data, "([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+)")
+    if px and lx then
+        savedFishingPos = Vector3.new(tonumber(px), tonumber(py), tonumber(pz))
+        savedFishingLook = Vector3.new(tonumber(lx), tonumber(ly), tonumber(lz))
+        Fluent:Notify({ Title = "Fishing Spot", Content = "Loaded saved fishing location", Duration = 4 })
+    end
+end
+Tabs.Main:AddButton({
+    Title = "Save Fishing Location",
     Callback = function()
         local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         if hrp then
             savedFishingPos = hrp.Position
             savedFishingLook = hrp.CFrame.LookVector
-            Window:Notify({ Title = "Fishing Spot", Description = "Saved your fishing location", Lifetime = 4 })
-        end
-    end
-})
-
-local teleportSavedToggle = mainLeft:Toggle({
-    Name = "Teleport To Saved Location",
-    Default = false,
-    Callback = function(state)
-        if state then
-            if savedFishingPos and savedFishingLook then
-                local hrp = player.Character and player.Character:WaitForChild("HumanoidRootPart")
-                local targetPos = savedFishingPos + Vector3.new(0,5,0)
-                local lookTarget = targetPos + savedFishingLook
-                hrp.CFrame = CFrame.new(targetPos, lookTarget)
-                Window:Notify({ Title = "Teleport", Description = "Teleported to saved location", Lifetime = 4 })
-            else
-                Window:Notify({ Title = "Teleport", Description = "No saved location found", Lifetime = 4 })
-                teleportSavedToggle:SetState(false)
+            if writefile then
+                writefile(saveFile, string.format("%f,%f,%f,%f,%f,%f",
+                    savedFishingPos.X, savedFishingPos.Y, savedFishingPos.Z,
+                    savedFishingLook.X, savedFishingLook.Y, savedFishingLook.Z))
             end
-        else
-            -- turning off does nothing special
+            Fluent:Notify({ Title = "Fishing Spot", Content = "Saved your fishing location", Duration = 4 })
+        end
+    end
+})
+Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
+    Title = "Teleport To Saved Location",
+    Default = false,
+    Callback = function(state)
+        if state and savedFishingPos and savedFishingLook then
+            local hrp = player.Character:WaitForChild("HumanoidRootPart")
+            local targetPos = savedFishingPos + Vector3.new(0, 5, 0)
+            local lookTarget = targetPos + savedFishingLook
+            hrp.CFrame = CFrame.new(targetPos, lookTarget)
+            Fluent:Notify({ Title = "Fishing Spot", Content = "Teleported to saved location", Duration = 4 })
+        elseif state then
+            Fluent:Notify({ Title = "Fishing Spot", Content = "No saved location found", Duration = 4 })
+            Options.TeleportSaved:SetValue(false)
         end
     end
 })
 
--- Auto Reset If Stuck (Main)
-local autoResetStuckToggle = mainLeft:Toggle({
-    Name = "Auto Reset If Stuck",
-    Default = false,
-    Callback = function(state)
-        Window:Notify({ Title = "Auto Reset", Description = state and "Auto Reset If Stuck enabled" or "Auto Reset If Stuck disabled", Lifetime = 4 })
+-- Auto Sell
+Options.SellAllFish = Tabs.Main:AddToggle("SellAllFish", { Title = "Sell All Fish", Default = false })
+Options.SellAllFish:OnChanged(function()
+    if Options.SellAllFish.Value then
+        Fluent:Notify({ Title = "Fishing", Content = "Auto selling fish started", Duration = 5 })
+        task.spawn(function()
+            while Options.SellAllFish.Value do
+                SellAllItems:InvokeServer()
+                task.wait(8)
+            end
+        end)
+    else
+        Fluent:Notify({ Title = "Fishing", Content = "Auto selling fish stopped", Duration = 5 })
     end
-})
+end)
 
--- Auto Sell (Main right)
-local autoSellToggle = mainRight:Toggle({
-    Name = "Sell All Fish (Auto Sell)",
-    Default = false,
-    Callback = function(val)
-        Window:Notify({ Title = "Auto Sell", Description = val and "Auto selling fish started" or "Auto selling fish stopped", Lifetime = 4 })
-    end
-})
-
--- Event tab: dropdown + refresh + teleport toggle
+-- === EVENT SECTION ===
 local EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
-local eventOptions = getChildNames(EventFolder)
-local autoFishingEventDropdown = eventLeft:Dropdown({
-    Name = "Auto Fishing Event",
-    Multi = false,
-    Options = eventOptions,
-    Default = nil,
-    Callback = function(selection)
-        -- selection available
-    end
-}, "AutoFishingEvent")
 
-eventLeft:Button({
-    Name = "Refresh Events",
+-- Auto Fishing Event Dropdown
+Options.AutoFishingEvent = Tabs.Event:AddDropdown("AutoFishingEvent", {
+    Title = "Auto Fishing Event",
+    Values = EventFolder and getChildNames(EventFolder) or {},
+    Default = nil
+})
+
+-- Refresh Button
+Tabs.Event:AddButton({
+    Title = "Refresh Events",
     Callback = function()
         EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
         if EventFolder then
-            autoFishingEventDropdown:UpdateOptions(getChildNames(EventFolder))
-            Window:Notify({ Title = "Events", Description = "Events refreshed", Lifetime = 3 })
+            Options.AutoFishingEvent:SetValues(getChildNames(EventFolder))
+            Fluent:Notify({ Title = "Events", Content = "Events refreshed", Duration = 3 })
         else
-            autoFishingEventDropdown:UpdateOptions({})
-            Window:Notify({ Title = "Events", Description = "Props folder not found", Lifetime = 3 })
+            Options.AutoFishingEvent:SetValues({})
+            Fluent:Notify({ Title = "Events", Content = "Props folder not found", Duration = 3 })
         end
     end
 })
 
-local teleportEventToggle = eventLeft:Toggle({
-    Name = "Teleport To Event",
+-- Teleport To Event Toggle
+Options.TeleportEvent = Tabs.Event:AddToggle("TeleportEvent", {
+    Title = "Teleport To Event",
     Default = false,
     Callback = function(state)
         if state then
-            local selected = autoFishingEventDropdown:GetValue()
+            local selected = Options.AutoFishingEvent and Options.AutoFishingEvent.Value
             if not selected then
-                Window:Notify({ Title = "Teleport", Description = "Select an Event first", Lifetime = 4 })
-                teleportEventToggle:SetState(false)
+                Fluent:Notify({ Title = "Teleport", Content = "Select an Event in 'Auto Fishing Event' first", Duration = 4 })
                 return
             end
             if not canTeleport() then
-                Window:Notify({ Title = "Teleport", Description = "Blocked (TeleportSaved active)", Lifetime = 4 })
-                teleportEventToggle:SetState(false)
+                -- Do nothing but allow toggle to stay ON
+                Fluent:Notify({ Title = "Teleport", Content = "Blocked (TeleportSaved active)", Duration = 4 })
                 return
             end
+
             EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
             if not EventFolder then
-                Window:Notify({ Title = "Teleport", Description = "Props folder not found", Lifetime = 4 })
-                teleportEventToggle:SetState(false)
+                Fluent:Notify({ Title = "Teleport", Content = "Props folder not found", Duration = 4 })
                 return
             end
+
             local target = EventFolder:FindFirstChild(selected)
             local cf = target and getModelCFrame(target)
             if cf then
-                local hrp = player.Character and player.Character:WaitForChild("HumanoidRootPart")
-                hrp.CFrame = cf + Vector3.new(0,5,0)
+                local hrp = player.Character:WaitForChild("HumanoidRootPart")
+                hrp.CFrame = cf + Vector3.new(0, 5, 0)
                 hrp.Anchored = false
-                Window:Notify({ Title = "Teleport", Description = "Found Event: "..selected, Lifetime = 4 })
+                Fluent:Notify({ Title = "Teleport", Content = "Found Event: " .. selected, Duration = 4 })
             else
-                Window:Notify({ Title = "Teleport", Description = "Event not found: "..selected, Lifetime = 4 })
+                Fluent:Notify({ Title = "Teleport", Content = "Event not found: " .. selected, Duration = 4 })
             end
         else
+            -- Unanchor when toggle is off
             local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then hrp.Anchored = false end
-            Window:Notify({ Title = "Teleport", Description = "Unanchored", Lifetime = 3 })
+            if hrp then
+                hrp.Anchored = false
+                Fluent:Notify({ Title = "Teleport", Content = "Unanchored, free to move again", Duration = 4 })
+            end
         end
     end
 })
 
--- Teleport tab: dropdowns & buttons
+-- Teleport setup
 local TeleportParent = workspace:FindFirstChild("!!!! ISLAND LOCATIONS !!!!")
 local NPCFolder = workspace:FindFirstChild("NPC")
 local MiscFolder = workspace:FindFirstChild("!!! MENU RINGS")
 
+-- Dropdowns
 if TeleportParent then
-    local islandNames = getChildNames(TeleportParent)
-    teleportLeft:Dropdown({
-        Name = "Teleport to Island",
-        Multi = false,
-        Options = islandNames,
-        Callback = function(selected)
-            if not selected or not canTeleport() then return end
-            local cf = getModelCFrame(TeleportParent:FindFirstChild(selected))
-            if cf then
-                player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0,5,0)
-                Window:Notify({ Title = "Teleport", Description = "Teleported to Island: "..selected, Lifetime = 4 })
-            end
+    Options.TeleportIsland = Tabs.Teleport:AddDropdown("TeleportIsland", {
+        Title = "Teleport to Island",
+        Values = getChildNames(TeleportParent),
+        Default = nil
+    })
+    Options.TeleportIsland:OnChanged(function(selected)
+        if not selected or not canTeleport() then return end
+        local cf = getModelCFrame(TeleportParent:FindFirstChild(selected))
+        if cf then
+            player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
+            Fluent:Notify({ Title = "Teleport", Content = "Teleported to Island: " .. selected, Duration = 4 })
         end
-    }, "TeleportIsland")
+    end)
 end
-
 if NPCFolder then
-    teleportLeft:Dropdown({
-        Name = "Teleport to NPC",
-        Multi = false,
-        Options = getChildNames(NPCFolder),
-        Callback = function(selected)
-            if not selected or not canTeleport() then return end
-            local cf = getModelCFrame(NPCFolder:FindFirstChild(selected))
-            if cf then
-                player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0,5,0)
-                Window:Notify({ Title = "Teleport", Description = "Teleported to NPC: "..selected, Lifetime = 4 })
-            end
+    Options.TeleportNPC = Tabs.Teleport:AddDropdown("TeleportNPC", {
+        Title = "Teleport to NPC",
+        Values = getChildNames(NPCFolder),
+        Default = nil
+    })
+    Options.TeleportNPC:OnChanged(function(selected)
+        if not selected or not canTeleport() then return end
+        local cf = getModelCFrame(NPCFolder:FindFirstChild(selected))
+        if cf then
+            player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
+            Fluent:Notify({ Title = "Teleport", Content = "Teleported to NPC: " .. selected, Duration = 4 })
         end
-    }, "TeleportNPC")
+    end)
 end
-
 if MiscFolder then
-    teleportLeft:Dropdown({
-        Name = "Teleport to Misc",
-        Multi = false,
-        Options = getChildNames(MiscFolder),
-        Callback = function(selected)
-            if not selected or not canTeleport() then return end
-            local cf = getModelCFrame(MiscFolder:FindFirstChild(selected))
-            if cf then
-                player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0,5,0)
-                Window:Notify({ Title = "Teleport", Description = "Teleported to Misc: "..selected, Lifetime = 4 })
-            end
+    Options.TeleportMisc = Tabs.Teleport:AddDropdown("TeleportMisc", {
+        Title = "Teleport to Misc",
+        Values = getChildNames(MiscFolder),
+        Default = nil
+    })
+    Options.TeleportMisc:OnChanged(function(selected)
+        if not selected or not canTeleport() then return end
+        local cf = getModelCFrame(MiscFolder:FindFirstChild(selected))
+        if cf then
+            player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
+            Fluent:Notify({ Title = "Teleport", Content = "Teleported to Misc: " .. selected, Duration = 4 })
         end
-    }, "TeleportMisc")
+    end)
 end
 
--- Teleport buttons (right)
-teleportRight:Button({
-    Name = "Teleport To Enchanting Altar",
+-- Teleport to Enchanting Altar
+Tabs.Teleport:AddButton({
+    Title = "Teleport To Enchanting Altar",
     Callback = function()
         local altar = workspace:FindFirstChild("! ENCHANTING ALTAR !")
         if altar and altar:FindFirstChild("EnchantLocation") then
             local cf = getModelCFrame(altar.EnchantLocation)
             if cf then
                 player.Character:WaitForChild("HumanoidRootPart").CFrame = cf
-                Window:Notify({ Title = "Teleport", Description = "Teleported to Enchanting Altar", Lifetime = 4 })
+                Fluent:Notify({
+                    Title = "Teleport",
+                    Content = "Teleported to Enchanting Altar",
+                    Duration = 4
+                })
             end
         end
     end
 })
 
-teleportRight:Button({
-    Name = "Ghostfinn Rod Location [Deep Sea Quest]",
+-- Teleport to Ghostfinn Rod Location
+Tabs.Teleport:AddButton({
+    Title = "Ghostfinn Rod Location [Deep Sea Quest]",
     Callback = function()
         local hrp = player.Character and player.Character:WaitForChild("HumanoidRootPart")
         if hrp then
@@ -315,140 +414,104 @@ teleportRight:Button({
                 -1.09520455e-08, 1,             1.98869046e-08,
                 -0.272199631,   -2.2117133e-08, 0.962240815
             )
-            Window:Notify({ Title = "Teleport", Description = "Teleported to Ghostfinn Rod Location", Lifetime = 4 })
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Teleported to Ghostfinn Rod Location",
+                Duration = 4
+            })
         end
     end
 })
 
-teleportRight:Button({
-    Name = "Ares Rod Location [3M Coins]",
+-- Teleport to Ares Rod Stand
+Tabs.Teleport:AddButton({
+    Title = "Ares Rod Location [3M Coins]",
     Callback = function()
         local menu = workspace:FindFirstChild("!!! MENU RINGS")
         if menu and menu:FindFirstChild("Ares Rod Stand") then
             local cf = getModelCFrame(menu["Ares Rod Stand"])
             if cf then
                 player.Character:WaitForChild("HumanoidRootPart").CFrame = cf
-                Window:Notify({ Title = "Teleport", Description = "Teleported to Ares Rod Stand", Lifetime = 4 })
+                Fluent:Notify({
+                    Title = "Teleport",
+                    Content = "Teleported to Ares Rod Stand",
+                    Duration = 4
+                })
             end
         end
     end
 })
 
-teleportRight:Button({
-    Name = "Angler Rod Location [8M Coins]",
+-- Teleport to Angler Rod Stand
+Tabs.Teleport:AddButton({
+    Title = "Angler Rod Location [8M Coins]",
     Callback = function()
         local menu = workspace:FindFirstChild("!!! MENU RINGS")
         if menu and menu:FindFirstChild("Angler Rod Stand") then
             local cf = getModelCFrame(menu["Angler Rod Stand"])
             if cf then
                 player.Character:WaitForChild("HumanoidRootPart").CFrame = cf
-                Window:Notify({ Title = "Teleport", Description = "Teleported to Angler Rod Stand", Lifetime = 4 })
+                Fluent:Notify({
+                    Title = "Teleport",
+                    Content = "Teleported to Angler Rod Stand",
+                    Duration = 4
+                })
             end
         end
     end
 })
 
--- Misc tab: fish radar toggle
-miscLeft:Toggle({
-    Name = "Fish Radar",
+-- Misc
+
+-- Fish Radar Toggle (Misc Tab)
+Options.FishRadar = Tabs.Misc:AddToggle("FishRadar", {
+    Title = "Fish Radar",
     Default = false,
     Callback = function(state)
-        if UpdateFishingRadar then
-            pcall(function()
-                UpdateFishingRadar:InvokeServer(state)
-            end)
-            Window:Notify({ Title = "Radar", Description = state and "Fish Radar enabled" or "Fish Radar disabled", Lifetime = 3 })
-        else
-            Window:Notify({ Title = "Radar", Description = "UpdateFishingRadar remote not found", Lifetime = 3 })
+        local args = {
+            [1] = state -- true = enable, false = disable
+        }
+        local Net = game:GetService("ReplicatedStorage")
+            .Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
+
+        local updateRadar = Net:FindFirstChild("RF/UpdateFishingRadar")
+        if updateRadar then
+            updateRadar:InvokeServer(unpack(args))
         end
     end
 })
 
--- Settings: simple notifications / controls
-tabs.Settings:Section({ Side = "Left" }):Label({ Text = "Settings (no save manager in this build)" })
+-- Settings
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("W-Hub")
+SaveManager:SetFolder("W-Hub/FishIt")
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
 
--- CORE BEHAVIOR (non-UI)
--- AutoSell loop
-task.spawn(function()
-    while task.wait(8) do
-        if autoSellToggle:GetState() then
-            pcall(function() SellAllItems:InvokeServer() end)
-        end
-    end
-end)
-
--- AutoFishing loop (fixed, keeps hardcoded values)
-task.spawn(function()
-    local firstRun = true
-    while task.wait(0.5) do
-        if autoFishingToggle:GetState() then
-            if firstRun then task.wait(3); firstRun = false end
-            pcall(function()
-                EquipToolFromHotbar:FireServer(1)
-                task.wait(0.4)
-                ChargeFishingRod:InvokeServer(1758804029.427071)
-                task.wait(0.4)
-                RequestFishingMinigameStarted:InvokeServer(-1.233184814453125, 0.9974901105656968)
-                task.wait(0.4)
-                local delayTime = tonumber(fishingDelayInput:GetValue()) or 4
-                task.wait(delayTime)
-                FishingCompleted:FireServer()
-            end)
-        end
-    end
-end)
-
--- Auto Reset If Stuck: check child[8] missing continuously for 20s
-task.spawn(function()
-    while task.wait(1) do
-        if autoResetStuckToggle:GetState() then
-            local stuckTime = 0
-            while autoResetStuckToggle:GetState() do
-                -- reset stuckTime on respawn
-                local respawnConn
-                respawnConn = player.CharacterAdded:Connect(function()
-                    stuckTime = 0
-                    if respawnConn then respawnConn:Disconnect(); respawnConn = nil end
-                end)
-
-                local display = player:FindFirstChild("PlayerGui")
-                    and player.PlayerGui:FindFirstChild("Backpack")
-                    and player.PlayerGui.Backpack:FindFirstChild("Display")
-                local fishSlot = display and display:GetChildren()[8]
-                if not fishSlot then
-                    stuckTime = stuckTime + 1
-                    if stuckTime >= 20 then
-                        local hum = player.Character and player.Character:FindFirstChild("Humanoid")
-                        if hum then
-                            hum.Health = 0
-                            Window:Notify({ Title = "Auto Reset", Description = "No Fish Found - Resetting", Lifetime = 4 })
-                        end
-                        stuckTime = 0
-                    end
-                else
-                    stuckTime = 0
-                end
-                task.wait(1)
-            end
-        end
-    end
-end)
-
--- Detect zero HP & auto re-enable toggles after respawn
--- Handle death: disable toggles, then re-enable after respawn
+-- Detect Zero Hp
 local function handleDeath()
-    if autoFishingToggle:GetState() then autoFishingToggle:SetValue(false) end
-    if teleportSavedToggle:GetState() then teleportSavedToggle:SetValue(false) end
+    if Options.AutoFishing.Value then
+        Options.AutoFishing:SetValue(false)
+    end
+    if Options.TeleportSaved.Value then
+        Options.TeleportSaved:SetValue(false)
+    end
 
-    local newChar = player.CharacterAdded:Wait()
+    -- Wait for respawn
+    player.CharacterAdded:Wait()
+    local newChar = player.Character or player.CharacterAdded:Wait()
     local newHum = newChar:WaitForChild("Humanoid")
 
+    -- Wait until fully alive
     repeat task.wait() until newHum.Health > 0
     task.wait(3)
 
     if newHum.Health > 0 then
-        autoFishingToggle:SetValue(true)
-        teleportSavedToggle:SetValue(true)
+        Options.AutoFishing:SetValue(true)
+        Options.TeleportSaved:SetValue(true)
     end
 end
 
@@ -466,18 +529,12 @@ end)
 task.spawn(function()
     local VirtualUser = game:GetService("VirtualUser")
     player.Idled:Connect(function()
-        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
         task.wait(1)
-        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
     end)
 end)
 
-MacLib:SetFolder("Maclib")
-tabs.Settings:InsertConfigSection("Left")
-
-Window.onUnloaded(function()
-	print("Unloaded!")
-end)
-
-tabs.Main:Select()
-MacLib:LoadAutoLoadConfig()
+Window:SelectTab(1)
+Fluent:Notify({ Title = "Fluent", Content = "Loaded.", Duration = 8 })
+SaveManager:LoadAutoloadConfig()
