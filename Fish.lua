@@ -99,7 +99,7 @@ local savedFishingPos, savedFishingLook = nil, nil
 local autoFishingToggle = mainLeft:Toggle({
     Name = "Auto Fishing",
     Default = false,
-    Callback = function(val)
+    Callback = function(state)
         Window:Notify({
             Title = "Auto Fishing",
             Description = (val and "Auto fishing started" or "Auto fishing stopped"),
@@ -111,7 +111,7 @@ local autoFishingToggle = mainLeft:Toggle({
 local fishingDelayInput = mainLeft:Input({
     Name = "Set Catch Delay (s)",
     Placeholder = "4",
-    Callback = function(val)
+    Callback = function(state)
         local num = tonumber(val) or 4
         Window:Notify({ Title = "Fishing Delay", Description = "Set delay to "..num.."s", Lifetime = 3 })
     end
@@ -352,7 +352,7 @@ teleportRight:Button({
 miscLeft:Toggle({
     Name = "Fish Radar",
     Default = false,
-    Callback = function(value)
+    Callback = function(state)
         if UpdateFishingRadar then
             pcall(function()
                 UpdateFishingRadar:InvokeServer(state)
@@ -381,7 +381,7 @@ end)
 task.spawn(function()
     local firstRun = true
     while task.wait(0.5) do
-        if autoFishingToggle:GetValue() then
+        if autoFishingToggle:GetState() then
             if firstRun then task.wait(3); firstRun = false end
             pcall(function()
                 EquipToolFromHotbar:FireServer(1)
@@ -401,9 +401,9 @@ end)
 -- Auto Reset If Stuck: check child[8] missing continuously for 20s
 task.spawn(function()
     while task.wait(1) do
-        if autoResetStuckToggle:GetValur() then
+        if autoResetStuckToggle:GetState() then
             local stuckTime = 0
-            while autoResetStuckToggle:GetValue() do
+            while autoResetStuckToggle:GetState() do
                 -- reset stuckTime on respawn
                 local respawnConn
                 respawnConn = player.CharacterAdded:Connect(function()
@@ -437,8 +437,8 @@ end)
 -- Detect zero HP & auto re-enable toggles after respawn
 -- Handle death: disable toggles, then re-enable after respawn
 local function handleDeath()
-    if autoFishingToggle:GetValue() then autoFishingToggle:SetValue(false) end
-    if teleportSavedToggle:GetValue() then teleportSavedToggle:SetValue(false) end
+    if autoFishingToggle:GetState() then autoFishingToggle:SetValue(false) end
+    if teleportSavedToggle:GetState() then teleportSavedToggle:SetValue(false) end
 
     local newChar = player.CharacterAdded:Wait()
     local newHum = newChar:WaitForChild("Humanoid")
