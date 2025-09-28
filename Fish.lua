@@ -8,7 +8,7 @@ local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/re
 local Window = MacLib:Window({
     Title = "Fish It [Wanz HUB]",
     Subtitle = "PRIVATE TESTING",
-    Size = UDim2.fromOffset(868, 650),
+    Size = UDim2.fromOffset(720, 650),
     Keybind = Enum.KeyCode.LeftControl,
     AcrylicBlur = true,
 })
