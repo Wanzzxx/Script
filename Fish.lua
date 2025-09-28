@@ -149,7 +149,7 @@ Options.AutoResetStuck = Tabs.Main:AddToggle("AutoResetStuck", {
                                     hum.Health = 0 -- reset
                                     Fluent:Notify({
                                         Title = "Auto Reset",
-                                        Content = "No Fish Found, Resetting.",
+                                        Content = "You seemed stuck there? Arise.",
                                         Duration = 4
                                     })
                                 end
@@ -177,7 +177,7 @@ local firstAutoFishingRun = true
 Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", { Title = "Auto Fishing", Default = false })
 Options.AutoFishing:OnChanged(function()
     if Options.AutoFishing.Value then
-        Fluent:Notify({ Title = "Fishing", Content = "Auto fishing started", Duration = 5 })
+        Fluent:Notify({ Title = "Auto Fishing", Content = "Enabled", Duration = 5 })
         task.spawn(function()
             if firstAutoFishingRun then
                 task.wait(3)
@@ -197,7 +197,7 @@ Options.AutoFishing:OnChanged(function()
             end
         end)
     else
-        Fluent:Notify({ Title = "Fishing", Content = "Auto fishing stopped", Duration = 5 })
+        Fluent:Notify({ Title = "Auto Fishing", Content = "Disabled", Duration = 5 })
     end
 end)
 
