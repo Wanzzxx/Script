@@ -481,5 +481,5 @@ Window.onUnloaded(function()
 	print("Unloaded!")
 end)
 
-tabs.Main:Select(1)
+tabs.Main:Select()
 MacLib:LoadAutoLoadConfig()
