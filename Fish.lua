@@ -57,6 +57,7 @@ local Tabs = {
     Event = Window:AddTab({ Title = "Fish Events", Icon = "map" }),
     Teleport = Window:AddTab({ Title = "Teleport", Icon = "globe" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
+    Webhook = Window:AddTab({ Title = "Webhook", Icon = "globe" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" }),
     About = Window:AddTab({ Title = "About Script", Icon = "settings" })
 }
@@ -481,6 +482,135 @@ Options.FishRadar = Tabs.Misc:AddToggle("FishRadar", {
         end
     end
 })
+
+-- WebHook Link
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Executor HTTP wrapper
+local function httpRequest(opts)
+    local req = (syn and syn.request) or (http and http.request) or http_request or request
+    if req then
+        return req(opts)
+    else
+        warn("No HTTP request function available.")
+        return nil
+    end
+end
+
+-- Fluent UI Inputs
+Options.WebhookLink = Tabs.Misc:AddInput("WebhookLink", {
+    Title = "Webhook Link",
+    Default = "",
+    Placeholder = "Enter your Discord webhook link",
+    Numeric = false,
+    Finished = true,
+})
+
+Options.WebhookDelay = Tabs.Misc:AddInput("WebhookDelay", {
+    Title = "Webhook Delay (s)",
+    Default = "30",
+    Placeholder = "Enter seconds",
+    Numeric = true,
+    Finished = true,
+})
+
+Options.SendWebhook = Tabs.Misc:AddToggle("SendWebhook", {
+    Title = "Send Webhook",
+    Default = false,
+})
+
+-- Data tracking
+local fishLog = {}
+local lastCurrency = 0
+local coinsGained = 0
+
+-- Helpers
+local function sendWebhook()
+    local webhookURL = Options.WebhookLink.Value
+    if webhookURL == "" then return end
+
+    -- Currency info
+    local currencyLabel = player.PlayerGui["Rod Shop"].Main.Content.Top.CurrencyCounterFrame.CurrencyFrame.Counter
+    local currentCurrency = tonumber(currencyLabel.Text:gsub("%D", "")) or 0
+    local gained = coinsGained
+    coinsGained = 0
+    lastCurrency = currentCurrency
+
+    -- Fish info
+    local fishText = table.concat(fishLog, "\n")
+    if fishText == "" then
+        fishText = "No fish logged this interval."
+    end
+    fishLog = {}
+
+    local payload = {
+        username = "Wanz Hub Tracker",
+        embeds = {{
+            title = "Fishing Log",
+            description = "**Fish You Got:**\n" .. fishText .. "\n\n**Currency You Got:**\n+" .. tostring(gained) ..
+                          "\n**Your Current Currency:** " .. tostring(currentCurrency),
+            color = 3447003,
+            footer = { text = "Player: " .. player.Name }
+        }}
+    }
+
+    httpRequest({
+        Url = webhookURL,
+        Method = "POST",
+        Headers = { ["Content-Type"] = "application/json" },
+        Body = HttpService:JSONEncode(payload)
+    })
+end
+
+-- Monitor fish catches (slot 8)
+task.spawn(function()
+    local display = player:WaitForChild("PlayerGui"):WaitForChild("Backpack"):WaitForChild("Display")
+    local slot = display:WaitForChild("8", 5) or display:GetChildren()[8]
+
+    while true do
+        if slot then
+            slot.ChildAdded:Connect(function(child)
+                if child:IsA("TextLabel") and child.Text ~= "" then
+                    table.insert(fishLog, child.Text)
+                end
+            end)
+            slot.ChildRemoved:Connect(function(child)
+                if child:IsA("TextLabel") and child.Text ~= "" then
+                    table.insert(fishLog, child.Text)
+                end
+            end)
+        end
+        task.wait(5)
+    end
+end)
+
+-- Monitor currency change
+task.spawn(function()
+    local counter = player.PlayerGui["Rod Shop"].Main.Content.Top.CurrencyCounterFrame.CurrencyFrame.Counter
+    lastCurrency = tonumber(counter.Text:gsub("%D", "")) or 0
+    counter:GetPropertyChangedSignal("Text"):Connect(function()
+        local newVal = tonumber(counter.Text:gsub("%D", "")) or 0
+        if newVal > lastCurrency then
+            coinsGained = coinsGained + (newVal - lastCurrency)
+        end
+        lastCurrency = newVal
+    end)
+end)
+
+-- Send loop
+task.spawn(function()
+    while task.wait(1) do
+        if Options.SendWebhook.Value then
+            local delay = tonumber(Options.WebhookDelay.Value) or 30
+            task.wait(delay)
+            if Options.SendWebhook.Value then
+                sendWebhook()
+            end
+        end
+    end
+end)
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
