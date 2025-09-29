@@ -256,7 +256,7 @@ Options.SellAllFish:OnChanged(function()
         task.spawn(function()
             while Options.SellAllFish.Value do
                 SellAllItems:InvokeServer()
-                task.wait(8)
+                task.wait(30)
             end
         end)
     else
@@ -509,7 +509,7 @@ local function cleanText(str)
 end
 
 -- Fluent Inputs
-Options.WebhookLink = Tabs.Misc:AddInput("WebhookLink", {
+Options.WebhookLink = Tabs.Webhook:AddInput("WebhookLink", {
     Title = "Webhook Link",
     Default = "",
     Placeholder = "Enter your Discord webhook link",
@@ -517,15 +517,15 @@ Options.WebhookLink = Tabs.Misc:AddInput("WebhookLink", {
     Finished = true,
 })
 
-Options.WebhookDelay = Tabs.Misc:AddInput("WebhookDelay", {
-    Title = "Webhook Delay (s)",
+Options.WebhookDelay = Tabs.Webhook:AddInput("WebhookDelay", {
+    Title = "Webhook Delay (Set Below 30s Might Not Accurate For Webhook)",
     Default = "30",
     Placeholder = "Enter seconds",
     Numeric = true,
     Finished = true,
 })
 
-Options.SendWebhook = Tabs.Misc:AddToggle("SendWebhook", {
+Options.SendWebhook = Tabs.Webhook:AddToggle("SendWebhook", {
     Title = "Send Webhook",
     Default = false,
 })
