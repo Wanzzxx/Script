@@ -185,15 +185,15 @@ Options.AutoFishing:OnChanged(function()
             end
             while Options.AutoFishing.Value do
                 EquipToolFromHotbar:FireServer(1)
-                task.wait(0)
+                task.wait(0.1)
                 ChargeFishingRod:InvokeServer(1758804029.427071)
-                task.wait(0)
+                task.wait(0.1)
                 RequestFishingMinigameStarted:InvokeServer(-1.233184814453125, 0.9974901105656968)
-                task.wait(0)
+                task.wait(0.1)
                 local delayTime = tonumber(Options.FishingDelay.Value) or 4
                 task.wait(delayTime)
                 FishingCompleted:FireServer()
-                task.wait(0)
+                task.wait(0.1)
             end
         end)
     else
