@@ -256,7 +256,7 @@ Options.SellAllFish:OnChanged(function()
         task.spawn(function()
             while Options.SellAllFish.Value do
                 SellAllItems:InvokeServer()
-                task.wait(30)
+                task.wait(5)
             end
         end)
     else
@@ -518,8 +518,8 @@ Options.WebhookLink = Tabs.Webhook:AddInput("WebhookLink", {
 })
 
 Options.WebhookDelay = Tabs.Webhook:AddInput("WebhookDelay", {
-    Title = "Webhook Delay (Set Below 30s Might Not Accurate For Webhook)",
-    Default = "30",
+    Title = "Webhook Delay",
+    Default = "10",
     Placeholder = "Enter seconds",
     Numeric = true,
     Finished = true,
