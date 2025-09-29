@@ -256,7 +256,7 @@ Options.SellAllFish:OnChanged(function()
         task.spawn(function()
             while Options.SellAllFish.Value do
                 SellAllItems:InvokeServer()
-                task.wait(5)
+                task.wait(3)
             end
         end)
     else
