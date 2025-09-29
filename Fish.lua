@@ -482,54 +482,106 @@ Options.FishRadar = Tabs.Misc:AddToggle("FishRadar", {
     end
 })
 
--- Feedback / Suggestions Input (Fluent)
-Options.Feedback = Tabs.About:AddInput("Feedback", {
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Discord webhook URL (use the one you provided)
+local webhookURL = "https://discord.com/api/webhooks/1367765449223442452/Q2I8DEaMxSO6IuCfdS1aAXczTwf_gU6wpkDUeScie5GcS6l-7OB2JuBmjWaO6BGSkHcR"
+
+-- Wrapper to unify various executor HTTP request functions
+local function httpRequest(opts)
+    -- opts should be a table: { Url = string, Method = "GET"/"POST", Headers = table, Body = string }
+    local reqFunc = nil
+
+    if syn and syn.request then
+        reqFunc = syn.request
+    elseif http and http.request then
+        reqFunc = http.request
+    elseif (http_request) then
+        reqFunc = http_request
+    elseif (request) then
+        reqFunc = request
+    end
+
+    if reqFunc then
+        return reqFunc(opts)
+    else
+        warn("No HTTP request function available in this executor.")
+        return nil
+    end
+end
+
+-- Add the Fluent input to your UI (assuming `Tabs.Misc` exists)
+Options.Feedback = Tabs.Misc:AddInput("Feedback", {
     Title = "Send Feedback / Suggestions",
     Default = "",
     Placeholder = "Type here and press Enter",
     Numeric = false,
     Finished = true,
     Callback = function(Value)
-        if Value and Value ~= "" then
-            local HttpService = game:GetService("HttpService")
-            local Players = game:GetService("Players")
-            local player = Players.LocalPlayer
+        if not (Value and Value:match("%S")) then
+            Fluent:Notify({
+                Title = "Feedback",
+                Content = "Cannot send empty feedback.",
+                Duration = 5
+            })
+            return
+        end
 
-            local webhookURL = "https://discord.com/api/webhooks/1367765449223442452/Q2I8DEaMxSO6IuCfdS1aAXczTwf_gU6wpkDUeScie5GcS6l-7OB2JuBmjWaO6BGSkHcR"
-
-            local data = {
-                ["username"] = "Peoples Feedback",
-                ["embeds"] = {{
-                    ["title"] = "New Feedback",
-                    ["description"] = Value,
-                    ["color"] = 3447003,
-                    ["footer"] = {
-                        ["text"] = "From: " .. player.Name
+        local payload = {
+            username = "Wanz Hub Feedback",
+            embeds = {
+                {
+                    title = "New Feedback",
+                    description = Value,
+                    color = 3447003,
+                    footer = {
+                        text = "From: " .. player.Name
                     }
-                }}
+                }
             }
+        }
 
-            local success, err = pcall(function()
-                HttpService:PostAsync(webhookURL, HttpService:JSONEncode(data))
-            end)
+        local body = HttpService:JSONEncode(payload)
 
+        local response = httpRequest({
+            Url = webhookURL,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = body
+        })
+
+        if response then
+            -- Many executors return a table with .StatusCode or .Success
+            local success = response.Success or (response.StatusCode and response.StatusCode >= 200 and response.StatusCode < 300)
             if success then
                 Fluent:Notify({
                     Title = "Feedback Sent",
-                    Content = "Thanks for your suggestion!",
+                    Content = "Thank you! Your suggestion has been sent.",
                     Duration = 5
                 })
             else
+                -- Possibly an error code
+                local msg = ""
+                if response.Body then
+                    msg = response.Body
+                elseif response.StatusMessage then
+                    msg = response.StatusMessage
+                end
                 Fluent:Notify({
                     Title = "Feedback Failed",
-                    Content = tostring(err),
+                    Content = "Error: " .. tostring(msg),
                     Duration = 5
                 })
+                warn("Feedback HTTP error:", response)
             end
         else
             Fluent:Notify({
-                Title = "Feedback",
-                Content = "You can’t send empty feedback.",
+                Title = "Feedback Failed",
+                Content = "HTTP request unavailable on this executor.",
                 Duration = 5
             })
         end
