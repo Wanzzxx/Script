@@ -500,8 +500,13 @@ local function httpRequest(opts)
     end
 end
 
+-- strip Roblox rich text tags like <font ...>
+local function stripRichText(str)
+    return str:gsub("<[^>]->", "")
+end
+
 -- Fluent Inputs
-Options.WebhookLink = Tabs.Misc:AddInput("WebhookLink", {
+Options.WebhookLink = Tabs.Webhook:AddInput("WebhookLink", {
     Title = "Webhook Link",
     Default = "",
     Placeholder = "Enter your Discord webhook link",
@@ -509,7 +514,7 @@ Options.WebhookLink = Tabs.Misc:AddInput("WebhookLink", {
     Finished = true,
 })
 
-Options.WebhookDelay = Tabs.Misc:AddInput("WebhookDelay", {
+Options.WebhookDelay = Tabs.Webhook:AddInput("WebhookDelay", {
     Title = "Webhook Delay (s)",
     Default = "30",
     Placeholder = "Enter seconds",
@@ -517,16 +522,15 @@ Options.WebhookDelay = Tabs.Misc:AddInput("WebhookDelay", {
     Finished = true,
 })
 
-Options.SendWebhook = Tabs.Misc:AddToggle("SendWebhook", {
+Options.SendWebhook = Tabs.Webhook:AddToggle("SendWebhook", {
     Title = "Send Webhook",
     Default = false,
 })
 
 -- Data logs
 local fishLog, coinLog = {}, {}
-local lastCurrency = 0
 
--- ===== FISH DEBUG (slot 8) =====
+-- ===== FISH LOGGER (slot 8) =====
 task.spawn(function()
     local display = player.PlayerGui:WaitForChild("Backpack"):WaitForChild("Display")
     while true do
@@ -536,8 +540,8 @@ task.spawn(function()
                 and slot8.Inner:FindFirstChild("Tags") 
                 and slot8.Inner.Tags:FindFirstChild("ItemName")
             if itemName and itemName:IsA("TextLabel") and itemName.Text ~= "" then
-                table.insert(fishLog, "+1 " .. itemName.Text)
-                slot8.AncestryChanged:Wait() -- wait until sold/removed
+                table.insert(fishLog, "+1 " .. stripRichText(itemName.Text))
+                slot8.AncestryChanged:Wait()
             else
                 task.wait(0.1)
             end
@@ -547,10 +551,10 @@ task.spawn(function()
     end
 end)
 
--- ===== COINS DEBUG (Sold messages) =====
+-- ===== COINS LOGGER (Sold messages) =====
 player.PlayerGui.DescendantAdded:Connect(function(obj)
     if obj:IsA("TextLabel") and obj.Text:match("Sold") then
-        table.insert(coinLog, obj.Text)
+        table.insert(coinLog, stripRichText(obj.Text))
     end
 end)
 
@@ -559,15 +563,12 @@ local function sendWebhook()
     local webhookURL = Options.WebhookLink.Value
     if webhookURL == "" then return end
 
-    -- Current currency
     local counter = player.PlayerGui["Rod Shop"].Main.Content.Top.CurrencyCounterFrame.CurrencyFrame.Counter
-    local currentCurrency = counter and counter.Text or "Unknown"
+    local currentCurrency = counter and stripRichText(counter.Text) or "Unknown"
 
-    -- Fish block
     local fishText = #fishLog > 0 and table.concat(fishLog, "\n") or "No fish logged."
     fishLog = {}
 
-    -- Coins block
     local coinsText = #coinLog > 0 and table.concat(coinLog, "\n") or "No coins logged."
     coinLog = {}
 
