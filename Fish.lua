@@ -513,7 +513,7 @@ local function httpRequest(opts)
 end
 
 -- Add the Fluent input to your UI (assuming `Tabs.Misc` exists)
-Options.Feedback = Tabs.Misc:AddInput("Feedback", {
+Options.Feedback = Tabs.About:AddInput("Feedback", {
     Title = "Send Feedback / Suggestions",
     Default = "",
     Placeholder = "Type here and press Enter",
