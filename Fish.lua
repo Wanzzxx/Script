@@ -465,7 +465,7 @@ Tabs.Teleport:AddButton({
 
 -- Misc
 
--- Fish Radar Toggle (Misc Tab)
+-- Fish Radar
 Options.FishRadar = Tabs.Misc:AddToggle("FishRadar", {
     Title = "Fish Radar",
     Default = false,
@@ -482,6 +482,26 @@ Options.FishRadar = Tabs.Misc:AddToggle("FishRadar", {
         end
     end
 })
+
+-- Diving Gear
+Options.DivingGear = Tabs.Misc:AddToggle("DivingGear", {
+    Title = "Diving Gear",
+    Default = false,
+    Callback = function(state)
+        local rs = game:GetService("ReplicatedStorage")
+        local netFolder = rs.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net
+
+        if state then
+            -- ON → equip oxygen tank
+            local args = { [1] = 105 }
+            netFolder:FindFirstChild("RF/EquipOxygenTank"):InvokeServer(unpack(args))
+        else
+            -- OFF → unequip oxygen tank
+            netFolder:FindFirstChild("RF/UnequipOxygenTank"):InvokeServer()
+        end
+    end
+})
+
 
 -- WebHook Link
 
