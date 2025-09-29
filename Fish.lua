@@ -512,11 +512,11 @@ local function httpRequest(opts)
     end
 end
 
--- Add the Fluent input to your UI (assuming `Tabs.Misc` exists)
+-- About Script
 Options.Feedback = Tabs.About:AddInput("Feedback", {
-    Title = "Send Feedback / Suggestions",
+    Title = "Send Suggestions",
     Default = "",
-    Placeholder = "Type here and press Enter",
+    Placeholder = "[Here] Press Enter To Send",
     Numeric = false,
     Finished = true,
     Callback = function(Value)
@@ -530,10 +530,10 @@ Options.Feedback = Tabs.About:AddInput("Feedback", {
         end
 
         local payload = {
-            username = "Wanz Hub Feedback",
+            username = "W-Hub Feedback",
             embeds = {
                 {
-                    title = "New Feedback",
+                    title = "[📢] New Feedback Detected!",
                     description = Value,
                     color = 3447003,
                     footer = {
@@ -555,7 +555,7 @@ Options.Feedback = Tabs.About:AddInput("Feedback", {
         })
 
         if response then
-            -- Many executors return a table with .StatusCode or .Success
+            -- Successfully
             local success = response.Success or (response.StatusCode and response.StatusCode >= 200 and response.StatusCode < 300)
             if success then
                 Fluent:Notify({
