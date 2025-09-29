@@ -525,6 +525,33 @@ task.spawn(function()
     end
 end)
 
+-- Ping Freeze
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local Stats = game:GetService("Stats")
+
+local player = Players.LocalPlayer
+local pingStat = Stats.Network.ServerStatsItem["Data Ping"]
+
+local lastPing = pingStat:GetValue()
+local lastUpdate = tick()
+local freezeThreshold = 20
+
+task.spawn(function()
+    while task.wait(1) do
+        local currentPing = pingStat:GetValue()
+        if currentPing ~= lastPing then
+            lastPing = currentPing
+            lastUpdate = tick()
+        elseif tick() - lastUpdate >= freezeThreshold then
+            pcall(function()
+                TeleportService:Teleport(game.PlaceId, player)
+            end)
+            break
+        end
+    end
+end)
+
 -- Anti-AFK
 task.spawn(function()
     local VirtualUser = game:GetService("VirtualUser")
@@ -536,5 +563,5 @@ task.spawn(function()
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({ Title = "Fluent", Content = "Loaded.", Duration = 8 })
+Fluent:Notify({ Title = "Fluent", Content = "Anti-AFK & Auto Rejoin when ping freeze are automatically activated.", Duration = 20 })
 SaveManager:LoadAutoloadConfig()
