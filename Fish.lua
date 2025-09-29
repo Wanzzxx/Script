@@ -484,11 +484,12 @@ Options.FishRadar = Tabs.Misc:AddToggle("FishRadar", {
 })
 
 -- WebHook Link
+
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- Executor HTTP wrapper
+-- executor HTTP wrapper
 local function httpRequest(opts)
     local req = (syn and syn.request) or (http and http.request) or http_request or request
     if req then
@@ -499,7 +500,7 @@ local function httpRequest(opts)
     end
 end
 
--- Fluent UI Inputs
+-- Fluent Inputs
 Options.WebhookLink = Tabs.Misc:AddInput("WebhookLink", {
     Title = "Webhook Link",
     Default = "",
@@ -521,36 +522,62 @@ Options.SendWebhook = Tabs.Misc:AddToggle("SendWebhook", {
     Default = false,
 })
 
--- Data tracking
-local fishLog = {}
+-- Data logs
+local fishLog, coinLog = {}, {}
 local lastCurrency = 0
-local coinsGained = 0
 
--- Helpers
+-- ===== FISH DEBUG (slot 8) =====
+task.spawn(function()
+    local display = player.PlayerGui:WaitForChild("Backpack"):WaitForChild("Display")
+    while true do
+        local slot8 = display:GetChildren()[8]
+        if slot8 then
+            local itemName = slot8:FindFirstChild("Inner") 
+                and slot8.Inner:FindFirstChild("Tags") 
+                and slot8.Inner.Tags:FindFirstChild("ItemName")
+            if itemName and itemName:IsA("TextLabel") and itemName.Text ~= "" then
+                table.insert(fishLog, "+1 " .. itemName.Text)
+                slot8.AncestryChanged:Wait() -- wait until sold/removed
+            else
+                task.wait(0.1)
+            end
+        else
+            task.wait(0.1)
+        end
+    end
+end)
+
+-- ===== COINS DEBUG (Sold messages) =====
+player.PlayerGui.DescendantAdded:Connect(function(obj)
+    if obj:IsA("TextLabel") and obj.Text:match("Sold") then
+        table.insert(coinLog, obj.Text)
+    end
+end)
+
+-- ===== WEBHOOK SENDER =====
 local function sendWebhook()
     local webhookURL = Options.WebhookLink.Value
     if webhookURL == "" then return end
 
-    -- Currency info
-    local currencyLabel = player.PlayerGui["Rod Shop"].Main.Content.Top.CurrencyCounterFrame.CurrencyFrame.Counter
-    local currentCurrency = tonumber(currencyLabel.Text:gsub("%D", "")) or 0
-    local gained = coinsGained
-    coinsGained = 0
-    lastCurrency = currentCurrency
+    -- Current currency
+    local counter = player.PlayerGui["Rod Shop"].Main.Content.Top.CurrencyCounterFrame.CurrencyFrame.Counter
+    local currentCurrency = counter and counter.Text or "Unknown"
 
-    -- Fish info
-    local fishText = table.concat(fishLog, "\n")
-    if fishText == "" then
-        fishText = "No fish logged this interval."
-    end
+    -- Fish block
+    local fishText = #fishLog > 0 and table.concat(fishLog, "\n") or "No fish logged."
     fishLog = {}
+
+    -- Coins block
+    local coinsText = #coinLog > 0 and table.concat(coinLog, "\n") or "No coins logged."
+    coinLog = {}
 
     local payload = {
         username = "Wanz Hub Tracker",
         embeds = {{
             title = "Fishing Log",
-            description = "**Fish You Got:**\n" .. fishText .. "\n\n**Currency You Got:**\n+" .. tostring(gained) ..
-                          "\n**Your Current Currency:** " .. tostring(currentCurrency),
+            description = "**Fish You Got:**\n" .. fishText ..
+                          "\n\n**Coins Gained:**\n" .. coinsText ..
+                          "\n\n**Your Current Currency:** " .. currentCurrency,
             color = 3447003,
             footer = { text = "Player: " .. player.Name }
         }}
@@ -564,44 +591,10 @@ local function sendWebhook()
     })
 end
 
--- Monitor fish catches (slot 8)
+-- ===== LOOP =====
 task.spawn(function()
-    local display = player:WaitForChild("PlayerGui"):WaitForChild("Backpack"):WaitForChild("Display")
-    local slot = display:WaitForChild("8", 5) or display:GetChildren()[8]
-
     while true do
-        if slot then
-            slot.ChildAdded:Connect(function(child)
-                if child:IsA("TextLabel") and child.Text ~= "" then
-                    table.insert(fishLog, child.Text)
-                end
-            end)
-            slot.ChildRemoved:Connect(function(child)
-                if child:IsA("TextLabel") and child.Text ~= "" then
-                    table.insert(fishLog, child.Text)
-                end
-            end)
-        end
-        task.wait(5)
-    end
-end)
-
--- Monitor currency change
-task.spawn(function()
-    local counter = player.PlayerGui["Rod Shop"].Main.Content.Top.CurrencyCounterFrame.CurrencyFrame.Counter
-    lastCurrency = tonumber(counter.Text:gsub("%D", "")) or 0
-    counter:GetPropertyChangedSignal("Text"):Connect(function()
-        local newVal = tonumber(counter.Text:gsub("%D", "")) or 0
-        if newVal > lastCurrency then
-            coinsGained = coinsGained + (newVal - lastCurrency)
-        end
-        lastCurrency = newVal
-    end)
-end)
-
--- Send loop
-task.spawn(function()
-    while task.wait(1) do
+        task.wait(1)
         if Options.SendWebhook.Value then
             local delay = tonumber(Options.WebhookDelay.Value) or 30
             task.wait(delay)
