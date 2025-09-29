@@ -57,9 +57,9 @@ local Tabs = {
     Event = Window:AddTab({ Title = "Fish Events", Icon = "map" }),
     Teleport = Window:AddTab({ Title = "Teleport", Icon = "globe" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
-    Webhook = Window:AddTab({ Title = "Webhook", Icon = "globe" }),
+    Webhook = Window:AddTab({ Title = "Webhook", Icon = "bot" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" }),
-    About = Window:AddTab({ Title = "About Script", Icon = "settings" })
+    About = Window:AddTab({ Title = "About Script", Icon = "bug" })
 }
 local Options = Fluent.Options
 
