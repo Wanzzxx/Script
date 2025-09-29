@@ -562,6 +562,27 @@ task.spawn(function()
     end)
 end)
 
+-- Auto Rejoin After Disconnected
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local retryDelay = 5 -- Retry (s)
+
+game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(obj)
+    if obj.Name == "ErrorPrompt" then
+        task.spawn(function()
+            while true do
+                task.wait(retryDelay)
+                pcall(function()
+                    TeleportService:Teleport(game.PlaceId, player)
+                end)
+            end
+        end)
+    end
+end)
+
+
 Window:SelectTab(1)
-Fluent:Notify({ Title = "Fluent", Content = "Anti-AFK & Auto Rejoin when ping freeze are automatically activated.", Duration = 20 })
+Fluent:Notify({ Title = "Anti-Disconnect Systems", Content = "Anti-AFK / Auto Rejoin when ping freeze / Auto Rejoin When Kicked or Disconnected are automatically activated.", Duration = 20 })
 SaveManager:LoadAutoloadConfig()
