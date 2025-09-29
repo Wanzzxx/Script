@@ -57,7 +57,8 @@ local Tabs = {
     Event = Window:AddTab({ Title = "Fish Events", Icon = "map" }),
     Teleport = Window:AddTab({ Title = "Teleport", Icon = "globe" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
-    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" }),
+    About = Window:AddTab({ Title = "About Script", Icon = "settings" })
 }
 local Options = Fluent.Options
 
@@ -477,6 +478,60 @@ Options.FishRadar = Tabs.Misc:AddToggle("FishRadar", {
         local updateRadar = Net:FindFirstChild("RF/UpdateFishingRadar")
         if updateRadar then
             updateRadar:InvokeServer(unpack(args))
+        end
+    end
+})
+
+-- Feedback / Suggestions Input (Fluent)
+Options.Feedback = Tabs.About:AddInput("Feedback", {
+    Title = "Send Feedback / Suggestions",
+    Default = "",
+    Placeholder = "Type here and press Enter",
+    Numeric = false,
+    Finished = true,
+    Callback = function(Value)
+        if Value and Value ~= "" then
+            local HttpService = game:GetService("HttpService")
+            local Players = game:GetService("Players")
+            local player = Players.LocalPlayer
+
+            local webhookURL = "https://discord.com/api/webhooks/1367765449223442452/Q2I8DEaMxSO6IuCfdS1aAXczTwf_gU6wpkDUeScie5GcS6l-7OB2JuBmjWaO6BGSkHcR"
+
+            local data = {
+                ["username"] = "Peoples Feedback",
+                ["embeds"] = {{
+                    ["title"] = "New Feedback",
+                    ["description"] = Value,
+                    ["color"] = 3447003,
+                    ["footer"] = {
+                        ["text"] = "From: " .. player.Name
+                    }
+                }}
+            }
+
+            local success, err = pcall(function()
+                HttpService:PostAsync(webhookURL, HttpService:JSONEncode(data))
+            end)
+
+            if success then
+                Fluent:Notify({
+                    Title = "Feedback Sent",
+                    Content = "Thanks for your suggestion!",
+                    Duration = 5
+                })
+            else
+                Fluent:Notify({
+                    Title = "Feedback Failed",
+                    Content = tostring(err),
+                    Duration = 5
+                })
+            end
+        else
+            Fluent:Notify({
+                Title = "Feedback",
+                Content = "You can’t send empty feedback.",
+                Duration = 5
+            })
         end
     end
 })
