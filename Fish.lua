@@ -516,7 +516,7 @@ end
 Options.Feedback = Tabs.About:AddInput("Feedback", {
     Title = "Send Suggestions",
     Default = "",
-    Placeholder = "[Here] Press Enter To Send",
+    Placeholder = "Press [Enter] To Send",
     Numeric = false,
     Finished = true,
     Callback = function(Value)
@@ -561,6 +561,81 @@ Options.Feedback = Tabs.About:AddInput("Feedback", {
                 Fluent:Notify({
                     Title = "Feedback Sent",
                     Content = "Thank you! Your suggestion has been sent.",
+                    Duration = 5
+                })
+            else
+                -- Possibly an error code
+                local msg = ""
+                if response.Body then
+                    msg = response.Body
+                elseif response.StatusMessage then
+                    msg = response.StatusMessage
+                end
+                Fluent:Notify({
+                    Title = "Feedback Failed",
+                    Content = "Error: " .. tostring(msg),
+                    Duration = 5
+                })
+                warn("Feedback HTTP error:", response)
+            end
+        else
+            Fluent:Notify({
+                Title = "Feedback Failed",
+                Content = "HTTP request unavailable on this executor.",
+                Duration = 5
+            })
+        end
+    end
+})
+
+Options.Feedback = Tabs.About:AddInput("Feedback", {
+    Title = "Send Bug Reports",
+    Default = "",
+    Placeholder = "Press [Enter] To Send",
+    Numeric = false,
+    Finished = true,
+    Callback = function(Value)
+        if not (Value and Value:match("%S")) then
+            Fluent:Notify({
+                Title = "Feedback",
+                Content = "Cannot send empty feedback.",
+                Duration = 5
+            })
+            return
+        end
+
+        local payload = {
+            username = "W-Hub Feedback",
+            embeds = {
+                {
+                    title = "[📢] New Bugs Reported",
+                    description = Value,
+                    color = 3447003,
+                    footer = {
+                        text = "From: " .. player.Name
+                    }
+                }
+            }
+        }
+
+        local body = HttpService:JSONEncode(payload)
+
+        local response = httpRequest({
+            Url = webhookURL,
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = body
+        })
+
+        if response then
+            -- Successfully
+            local success = response.Success or (response.StatusCode and response.StatusCode >= 200 and response.StatusCode < 300)
+            if success then
+                Fluent:Notify({
+                    Title = "Feedback Sent",
+                    Content = "Thank you! Your reports has been sent.",
                     Duration = 5
                 })
             else
