@@ -993,39 +993,44 @@ Tabs.About:AddButton({
                         local c1 = showChoices({"Yes", "Nope"})
                         c1.Changed:Wait()
                         if c1.Value == "Yes" then
-                            typeWrite("* Then go away, don't make me force you.")
-                            task.wait(0.5)
-                            typeWrite("* . . .")
-                            local c2 = showChoices({"Walk Away", "Stay Still"})
-                            c2.Changed:Wait()
-                            if c2.Value == "Walk Away" then
-                                screenGui:Destroy()
-                                return
-                            else
-                                typeWrite("* What are you even doing? THIS IS FISHING GAME!")
-                                task.wait(0.5)
-                                typeWrite("* Human, You're A n n o y e d m e.")
-                                local c3 = showChoices({"What?", "Silent"})
-                                c3.Changed:Wait()
-                                typeWrite("* You're not supposed to see this dialogue forever.")
-                                task.wait(0.5)
-                                typeWrite("* This is Roblox. Not Undertale.")
-                                local charge = Instance.new("Sound", screenGui)
-                                charge.SoundId = "rbxassetid://102197761560416"
-                                charge.Volume = 3
-                                charge:Play()
-                                task.wait(2)
-                                local fire = Instance.new("Sound", screenGui)
-                                fire.SoundId = "rbxassetid://127656671700080"
-                                fire.Volume = 3
-                                fire:Play()
-                                task.wait(2)
-                                player:Kick("This is NOT Undertale, Stupid human.")
-                            end
-                        else
-                            typeWrite("* Then go away, don't make me force you.")
-                        end
-                    end
+    -- original full dialogue
+else
+    typeWrite("* Then go away, don't make me force you.")
+    task.wait(0.5)
+    typeWrite("* . . .")
+    local c2 = showChoices({"Walk Away", "Stay Still"})
+    c2.Changed:Wait()
+
+    if c2.Value == "Walk Away" then
+        screenGui:Destroy()
+        return
+    else
+        typeWrite("* What are you even doing? THIS IS FISHING GAME!")
+        task.wait(0.5)
+        typeWrite("* Human, You're A n n o y e d m e.")
+        local c3 = showChoices({"What?", "Silent"})
+        c3.Changed:Wait()
+
+        typeWrite("* You're not supposed to see this dialogue forever.")
+        task.wait(0.5)
+        typeWrite("* This is Roblox. Not Undertale.")
+
+        local charge = Instance.new("Sound", screenGui)
+        charge.SoundId = "rbxassetid://102197761560416"
+        charge.Volume = 3
+        charge:Play()
+        task.wait(2)
+
+        local fire = Instance.new("Sound", screenGui)
+        fire.SoundId = "rbxassetid://127656671700080"
+        fire.Volume = 3
+        fire:Play()
+
+        task.wait(2)
+        player:Kick("This is NOT Undertale, Stupid human.")
+    end
+end
+                                
                 },
                 {
                     Title = "Nevermind",
