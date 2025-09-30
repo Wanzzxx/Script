@@ -986,14 +986,15 @@ Tabs.About:AddButton({
                         end
 
                         -- === Dialogue Flow ===
-                        task.wait(1)
-                        typeWrite("* Oh, What are you doing here?")
-                        task.wait(0.5)
-                        typeWrite("* Aren't you supposed to fish right now?")
-                        local c1 = showChoices({"Yes", "Nope"})
-                        c1.Changed:Wait()
-                        if c1.Value == "Yes" then
-    -- original full dialogue
+task.wait(1)
+typeWrite("* Oh, What are you doing here?")
+task.wait(0.5)
+typeWrite("* Aren't you supposed to fish right now?")
+
+local c1 = showChoices({"Yes", "Nope"})
+c1.Changed:Wait()
+
+if c1.Value == "Yes" then
     typeWrite("* Then go away, don't make me force you.")
     task.wait(0.5)
     typeWrite("* . . .")
@@ -1028,7 +1029,13 @@ Tabs.About:AddButton({
         task.wait(2)
         player:Kick("This is NOT Undertale, Stupid human.")
     end
-end
+elseif c1.Value == "Nope" then
+    -- ✅ If Nope is chosen, end here.
+    typeWrite("* Good. Then keep fishing, human.")
+    task.wait(2)
+    screenGui:Destroy()
+    return
+                                end
                                 
                 },
                 {
