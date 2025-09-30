@@ -994,7 +994,6 @@ Tabs.About:AddButton({
                         c1.Changed:Wait()
                         if c1.Value == "Yes" then
     -- original full dialogue
-else
     typeWrite("* Then go away, don't make me force you.")
     task.wait(0.5)
     typeWrite("* . . .")
