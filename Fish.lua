@@ -555,7 +555,7 @@ local function cleanText(str)
 end
 
 -- Fluent Inputs
-Options.WebhookLink = Tabs.Misc:AddInput("WebhookLink", {
+Options.WebhookLink = Tabs.Webhook:AddInput("WebhookLink", {
     Title = "Webhook Link",
     Default = "",
     Placeholder = "Enter your Discord webhook link",
@@ -563,7 +563,7 @@ Options.WebhookLink = Tabs.Misc:AddInput("WebhookLink", {
     Finished = true,
 })
 
-Options.WebhookDelay = Tabs.Misc:AddInput("WebhookDelay", {
+Options.WebhookDelay = Tabs.Webhook:AddInput("WebhookDelay", {
     Title = "Webhook Delay (s)",
     Default = "30",
     Placeholder = "Enter seconds",
@@ -571,7 +571,7 @@ Options.WebhookDelay = Tabs.Misc:AddInput("WebhookDelay", {
     Finished = true,
 })
 
-Options.SendWebhook = Tabs.Misc:AddToggle("SendWebhook", {
+Options.SendWebhook = Tabs.Webhook:AddToggle("SendWebhook", {
     Title = "Send Webhook",
     Default = false,
 })
@@ -625,7 +625,7 @@ local function sendWebhook()
     coinLog = {}
 
     local payload = {
-        username = "[Wanz Hub] 📢 Fish Tracker",
+        username = "[Wanz Hub] 📢 Fish Logger",
         embeds = {{
             title = "Fishing Log",
             description = "**Fish You Got:**\n" .. fishText ..
