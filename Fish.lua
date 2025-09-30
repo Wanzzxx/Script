@@ -859,16 +859,16 @@ Options.Feedback = Tabs.About:AddInput("Feedback", {
     end
 })
 
-Tabs.Main:AddButton({
+Tabs.About:AddButton({
     Title = "???",
-    Description = "Secret Dialogue",
+    Description = "This is nothing.",
     Callback = function()
         Window:Dialog({
             Title = "???",
-            Content = "Do you want to start the dialogue?",
+            Content = "If i were you, i won't do it",
             Buttons = {
                 {
-                    Title = "Confirm",
+                    Title = "Don't press. I dare you.",
                     Callback = function()
                         -- === Undertale Dialogue Script ===
                         local Players = game:GetService("Players")
@@ -1028,11 +1028,11 @@ Tabs.Main:AddButton({
                     end
                 },
                 {
-                    Title = "Cancel",
+                    Title = "Nevermind",
                     Callback = function()
                         Fluent:Notify({
-                            Title = "???",
-                            Content = "Dialogue cancelled.",
+                            Title = "S The Skeleton",
+                            Content = "Good Choice, Human.",
                             Duration = 4
                         })
                     end
