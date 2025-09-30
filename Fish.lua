@@ -859,27 +859,27 @@ Options.Feedback = Tabs.About:AddInput("Feedback", {
     end
 })
 
-Tabs.About:AddButton({
+Tabs.Main:AddButton({
     Title = "???",
     Description = "Secret Dialogue",
     Callback = function()
         Window:Dialog({
             Title = "???",
-            Content = "You wouldn't annoy (him) right?",
+            Content = "Do you want to start the dialogue?",
             Buttons = {
                 {
-                    Title = "Don't Press",
+                    Title = "Confirm",
                     Callback = function()
                         -- === Undertale Dialogue Script ===
                         local Players = game:GetService("Players")
                         local player = Players.LocalPlayer
-                        local playerGui = player:WaitForChild("PlayerGui")
                         local uis = game:GetService("UserInputService")
 
+                        -- put into CoreGui so Fluent won't block it
                         local screenGui = Instance.new("ScreenGui")
                         screenGui.Name = "UndertaleDialogue"
                         screenGui.ResetOnSpawn = false
-                        screenGui.Parent = playerGui
+                        screenGui.Parent = game:GetService("CoreGui")
 
                         local frame = Instance.new("Frame")
                         frame.Size = UDim2.new(0.8, 0, 0.25, 0)
@@ -985,7 +985,7 @@ Tabs.About:AddButton({
                             return chosen
                         end
 
-                        -- Dialogue Flow
+                        -- === Dialogue Flow ===
                         task.wait(1)
                         typeWrite("* Oh, What are you doing here?")
                         task.wait(0.5)
@@ -1028,11 +1028,11 @@ Tabs.About:AddButton({
                     end
                 },
                 {
-                    Title = "Nevermind",
+                    Title = "Cancel",
                     Callback = function()
                         Fluent:Notify({
-                            Title = "S The Skeleton",
-                            Content = "Good Choice,Human.",
+                            Title = "???",
+                            Content = "Dialogue cancelled.",
                             Duration = 4
                         })
                     end
