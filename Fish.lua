@@ -549,13 +549,13 @@ end
 -- strip Roblox rich text + trailing " 2"
 local function cleanText(str)
     str = tostring(str or "")
-    str = str:gsub("<[^>]->", "") -- remove <font ...> etc
-    str = str:gsub("%s%d+$", "")  -- remove trailing numbers like " 2"
+    str = str:gsub("<[^>]->", "") -- remove <font ...>
+    str = str:gsub("%s%d+$", "")  -- remove trailing number like " 2"
     return str
 end
 
 -- Fluent Inputs
-Options.WebhookLink = Tabs.Webhook:AddInput("WebhookLink", {
+Options.WebhookLink = Tabs.Misc:AddInput("WebhookLink", {
     Title = "Webhook Link",
     Default = "",
     Placeholder = "Enter your Discord webhook link",
@@ -563,15 +563,15 @@ Options.WebhookLink = Tabs.Webhook:AddInput("WebhookLink", {
     Finished = true,
 })
 
-Options.WebhookDelay = Tabs.Webhook:AddInput("WebhookDelay", {
-    Title = "Webhook Delay",
-    Default = "10",
+Options.WebhookDelay = Tabs.Misc:AddInput("WebhookDelay", {
+    Title = "Webhook Delay (s)",
+    Default = "30",
     Placeholder = "Enter seconds",
     Numeric = true,
     Finished = true,
 })
 
-Options.SendWebhook = Tabs.Webhook:AddToggle("SendWebhook", {
+Options.SendWebhook = Tabs.Misc:AddToggle("SendWebhook", {
     Title = "Send Webhook",
     Default = false,
 })
@@ -579,25 +579,23 @@ Options.SendWebhook = Tabs.Webhook:AddToggle("SendWebhook", {
 -- Data logs
 local fishLog, coinLog = {}, {}
 
--- ===== FISH LOGGER (slot 8) =====
+-- ===== FISH LOGGER (Small Notification path) =====
 task.spawn(function()
-    local display = player.PlayerGui:WaitForChild("Backpack"):WaitForChild("Display")
-    while true do
-        local slot8 = display:GetChildren()[8]
-        if slot8 then
-            local itemName = slot8:FindFirstChild("Inner") 
-                and slot8.Inner:FindFirstChild("Tags") 
-                and slot8.Inner.Tags:FindFirstChild("ItemName")
-            if itemName and itemName:IsA("TextLabel") and itemName.Text ~= "" then
-                table.insert(fishLog, "+1 " .. cleanText(itemName.Text))
-                slot8.AncestryChanged:Wait()
-            else
-                task.wait(0.1)
-            end
-        else
-            task.wait(0.1)
+    local notif = player.PlayerGui:WaitForChild("Small Notification").Display.Container
+    local rarityLabel = notif:WaitForChild("Rarity")
+    local itemLabel = notif:WaitForChild("ItemName")
+
+    local function logCatch()
+        local rarity = cleanText(rarityLabel.Text)
+        local item = cleanText(itemLabel.Text)
+        if rarity ~= "" and item ~= "" then
+            local msg = "You got: " .. item .. " [" .. rarity .. "] Chance"
+            table.insert(fishLog, msg)
         end
     end
+
+    rarityLabel:GetPropertyChangedSignal("Text"):Connect(logCatch)
+    itemLabel:GetPropertyChangedSignal("Text"):Connect(logCatch)
 end)
 
 -- ===== COINS LOGGER (Sold messages in Text Notifications) =====
@@ -627,7 +625,7 @@ local function sendWebhook()
     coinLog = {}
 
     local payload = {
-        username = "Wanz Hub Tracker",
+        username = "[Wanz Hub] 📢 Fish Tracker",
         embeds = {{
             title = "Fishing Log",
             description = "**Fish You Got:**\n" .. fishText ..
@@ -660,6 +658,7 @@ task.spawn(function()
     end
 end)
 
+-- Other Webhook
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
