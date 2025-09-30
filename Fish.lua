@@ -218,19 +218,45 @@ end
 Tabs.Main:AddButton({
     Title = "Set Fishing Location",
     Callback = function()
-        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            savedFishingPos = hrp.Position
-            savedFishingLook = hrp.CFrame.LookVector
-            if writefile then
-                writefile(saveFile, string.format("%f,%f,%f,%f,%f,%f",
-                    savedFishingPos.X, savedFishingPos.Y, savedFishingPos.Z,
-                    savedFishingLook.X, savedFishingLook.Y, savedFishingLook.Z))
-            end
-            Fluent:Notify({ Title = "Successfully", Content = "Saved your fishing location", Duration = 4 })
-        end
+        Window:Dialog({
+            Title = "Confirm Location",
+            Content = "Do you want to save your current fishing location?",
+            Buttons = {
+                {
+                    Title = "Confirm",
+                    Callback = function()
+                        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                        if hrp then
+                            savedFishingPos = hrp.Position
+                            savedFishingLook = hrp.CFrame.LookVector
+                            if writefile then
+                                writefile(saveFile, string.format("%f,%f,%f,%f,%f,%f",
+                                    savedFishingPos.X, savedFishingPos.Y, savedFishingPos.Z,
+                                    savedFishingLook.X, savedFishingLook.Y, savedFishingLook.Z))
+                            end
+                            Fluent:Notify({
+                                Title = "Successfully",
+                                Content = "Saved your fishing location",
+                                Duration = 4
+                            })
+                        end
+                    end
+                },
+                {
+                    Title = "Cancel",
+                    Callback = function()
+                        Fluent:Notify({
+                            Title = "Cancelled",
+                            Content = "Fishing location not saved",
+                            Duration = 3
+                        })
+                    end
+                }
+            }
+        })
     end
 })
+
 Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
     Title = "Teleport To Saved Location",
     Default = false,
