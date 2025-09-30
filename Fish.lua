@@ -859,6 +859,189 @@ Options.Feedback = Tabs.About:AddInput("Feedback", {
     end
 })
 
+Tabs.About:AddButton({
+    Title = "???",
+    Description = "Secret Dialogue",
+    Callback = function()
+        Window:Dialog({
+            Title = "???",
+            Content = "You wouldn't annoy (him) right?",
+            Buttons = {
+                {
+                    Title = "Don't Press",
+                    Callback = function()
+                        -- === Undertale Dialogue Script ===
+                        local Players = game:GetService("Players")
+                        local player = Players.LocalPlayer
+                        local playerGui = player:WaitForChild("PlayerGui")
+                        local uis = game:GetService("UserInputService")
+
+                        local screenGui = Instance.new("ScreenGui")
+                        screenGui.Name = "UndertaleDialogue"
+                        screenGui.ResetOnSpawn = false
+                        screenGui.Parent = playerGui
+
+                        local frame = Instance.new("Frame")
+                        frame.Size = UDim2.new(0.8, 0, 0.25, 0)
+                        frame.Position = UDim2.new(0.1, 0, 0.65, 0)
+                        frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                        frame.BorderSizePixel = 4
+                        frame.BorderColor3 = Color3.fromRGB(255, 255, 255)
+                        frame.Parent = screenGui
+
+                        local textLabel = Instance.new("TextLabel")
+                        textLabel.Size = UDim2.new(1, -30, 0.6, -20)
+                        textLabel.Position = UDim2.new(0, 15, 0, 10)
+                        textLabel.BackgroundTransparency = 1
+                        textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        textLabel.TextXAlignment = Enum.TextXAlignment.Left
+                        textLabel.TextYAlignment = Enum.TextYAlignment.Top
+                        textLabel.Font = Enum.Font.Arcade
+                        textLabel.TextSize = 28
+                        textLabel.TextWrapped = true
+                        textLabel.Text = ""
+                        textLabel.Parent = frame
+
+                        local choiceFrame = Instance.new("Frame")
+                        choiceFrame.Size = UDim2.new(1, -30, 0.4, -10)
+                        choiceFrame.Position = UDim2.new(0, 15, 0.6, 0)
+                        choiceFrame.BackgroundTransparency = 1
+                        choiceFrame.Parent = frame
+
+                        local cursor = Instance.new("TextLabel")
+                        cursor.Size = UDim2.new(0, 20, 0, 20)
+                        cursor.BackgroundTransparency = 1
+                        cursor.Text = "♥"
+                        cursor.TextColor3 = Color3.fromRGB(255, 0, 0)
+                        cursor.Font = Enum.Font.Arcade
+                        cursor.TextSize = 24
+                        cursor.Visible = false
+                        cursor.Parent = choiceFrame
+
+                        local function typeWrite(text, speed)
+                            textLabel.Text = ""
+                            for i = 1, #text do
+                                textLabel.Text = string.sub(text, 1, i)
+                                local s = Instance.new("Sound")
+                                s.SoundId = "rbxassetid://5416485881"
+                                s.Volume = 1
+                                s.Parent = screenGui
+                                s:Play()
+                                game:GetService("Debris"):AddItem(s, 0.3)
+                                task.wait(speed or 0.05)
+                            end
+                        end
+
+                        local function showChoices(options)
+                            choiceFrame:ClearAllChildren()
+                            cursor.Visible = false
+                            local labels = {}
+                            for i, opt in ipairs(options) do
+                                local btn = Instance.new("TextButton")
+                                btn.Size = UDim2.new(0.4, 0, 1, 0)
+                                btn.Position = UDim2.new((i-1) * 0.45, 0, 0, 0)
+                                btn.BackgroundTransparency = 1
+                                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                                btn.Text = opt
+                                btn.Font = Enum.Font.Arcade
+                                btn.TextSize = 28
+                                btn.AutoButtonColor = false
+                                btn.Parent = choiceFrame
+                                labels[i] = btn
+                            end
+                            local index = 1
+                            local function updateCursor()
+                                cursor.Position = UDim2.new(labels[index].Position.X.Scale - 0.1, 0, 0, 0)
+                                cursor.Visible = true
+                            end
+                            updateCursor()
+                            local chosen = Instance.new("StringValue")
+                            chosen.Value = ""
+                            local conn
+                            conn = uis.InputBegan:Connect(function(input, gpe)
+                                if gpe then return end
+                                if input.KeyCode == Enum.KeyCode.Left then
+                                    index = math.max(1, index - 1)
+                                    updateCursor()
+                                elseif input.KeyCode == Enum.KeyCode.Right then
+                                    index = math.min(#labels, index + 1)
+                                    updateCursor()
+                                elseif input.KeyCode == Enum.KeyCode.Return or input.KeyCode == Enum.KeyCode.Z then
+                                    chosen.Value = options[index]
+                                    cursor.Visible = false
+                                    conn:Disconnect()
+                                end
+                            end)
+                            for i, btn in ipairs(labels) do
+                                btn.MouseButton1Click:Connect(function()
+                                    index = i
+                                    updateCursor()
+                                    task.wait(0.2)
+                                    chosen.Value = options[index]
+                                    cursor.Visible = false
+                                    if conn then conn:Disconnect() end
+                                end)
+                            end
+                            return chosen
+                        end
+
+                        -- Dialogue Flow
+                        task.wait(1)
+                        typeWrite("* Oh, What are you doing here?")
+                        task.wait(0.5)
+                        typeWrite("* Aren't you supposed to fish right now?")
+                        local c1 = showChoices({"Yes", "Nope"})
+                        c1.Changed:Wait()
+                        if c1.Value == "Yes" then
+                            typeWrite("* Then go away, don't make me force you.")
+                            task.wait(0.5)
+                            typeWrite("* . . .")
+                            local c2 = showChoices({"Walk Away", "Stay Still"})
+                            c2.Changed:Wait()
+                            if c2.Value == "Walk Away" then
+                                screenGui:Destroy()
+                                return
+                            else
+                                typeWrite("* What are you even doing? THIS IS FISHING GAME!")
+                                task.wait(0.5)
+                                typeWrite("* Human, You're A n n o y e d m e.")
+                                local c3 = showChoices({"What?", "Silent"})
+                                c3.Changed:Wait()
+                                typeWrite("* You're not supposed to see this dialogue forever.")
+                                task.wait(0.5)
+                                typeWrite("* This is Roblox. Not Undertale.")
+                                local charge = Instance.new("Sound", screenGui)
+                                charge.SoundId = "rbxassetid://102197761560416"
+                                charge.Volume = 3
+                                charge:Play()
+                                task.wait(2)
+                                local fire = Instance.new("Sound", screenGui)
+                                fire.SoundId = "rbxassetid://127656671700080"
+                                fire.Volume = 3
+                                fire:Play()
+                                task.wait(2)
+                                player:Kick("This is NOT Undertale, Stupid human.")
+                            end
+                        else
+                            typeWrite("* Then go away, don't make me force you.")
+                        end
+                    end
+                },
+                {
+                    Title = "Nevermind",
+                    Callback = function()
+                        Fluent:Notify({
+                            Title = "S The Skeleton",
+                            Content = "Good Choice,Human.",
+                            Duration = 4
+                        })
+                    end
+                }
+            }
+        })
+    end
+})
+
 -- Settings
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
