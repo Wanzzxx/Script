@@ -216,11 +216,11 @@ if isfile and isfile(saveFile) then
     end
 end
 Tabs.Main:AddButton({
-    Title = "Set Fishing Location",
+    Title = "Set Position",
     Callback = function()
         Window:Dialog({
-            Title = "Confirm Location",
-            Content = "Do you want to save your current fishing location?",
+            Title = "Confirm Position",
+            Content = "Do you want to save your current position?",
             Buttons = {
                 {
                     Title = "Confirm",
@@ -236,7 +236,7 @@ Tabs.Main:AddButton({
                             end
                             Fluent:Notify({
                                 Title = "Successfully",
-                                Content = "Saved your fishing location",
+                                Content = "Saved your position",
                                 Duration = 4
                             })
                         end
@@ -247,7 +247,7 @@ Tabs.Main:AddButton({
                     Callback = function()
                         Fluent:Notify({
                             Title = "Cancelled",
-                            Content = "Fishing location not saved",
+                            Content = "Fishing position not saved",
                             Duration = 3
                         })
                     end
@@ -258,7 +258,7 @@ Tabs.Main:AddButton({
 })
 
 Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
-    Title = "Teleport To Saved Location",
+    Title = "Teleport To Saved Position",
     Default = false,
     Callback = function(state)
         if state and savedFishingPos and savedFishingLook then
@@ -266,9 +266,9 @@ Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
             local targetPos = savedFishingPos + Vector3.new(0, 5, 0)
             local lookTarget = targetPos + savedFishingLook
             hrp.CFrame = CFrame.new(targetPos, lookTarget)
-            Fluent:Notify({ Title = "Teleporting", Content = "Teleported to saved location", Duration = 4 })
+            Fluent:Notify({ Title = "Teleporting", Content = "Teleported to saved position", Duration = 4 })
         elseif state then
-            Fluent:Notify({ Title = "Set Your Fishing Location First!", Content = "No saved location found", Duration = 4 })
+            Fluent:Notify({ Title = "Set Your Position First!", Content = "No saved position found", Duration = 4 })
             Options.TeleportSaved:SetValue(false)
         end
     end
