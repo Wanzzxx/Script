@@ -550,11 +550,11 @@ end
 local function cleanText(str)
     str = tostring(str or "")
     str = str:gsub("<[^>]->", "") -- remove <font ...>
-    str = str:gsub("%s%d+$", "")  -- remove trailing number like " 2"
+    str = str:gsub("%s%d+$", "")  -- remove trailing numbers like " 2"
     return str
 end
 
--- Fluent Inputs
+-- ===== WEBHOOK TAB SETTINGS =====
 Options.WebhookLink = Tabs.Webhook:AddInput("WebhookLink", {
     Title = "Webhook Link",
     Default = "",
@@ -576,26 +576,45 @@ Options.SendWebhook = Tabs.Webhook:AddToggle("SendWebhook", {
     Default = false,
 })
 
--- Data logs
+-- ===== DATA LOGS =====
 local fishLog, coinLog = {}, {}
 
--- ===== FISH LOGGER (Small Notification path) =====
-task.spawn(function()
-    local notif = player.PlayerGui:WaitForChild("Small Notification").Display.Container
+-- ===== FISH LOGGER (Small Notification) =====
+local function hookFishLogger(gui)
+    local notif = gui:WaitForChild("Display"):WaitForChild("Container")
     local rarityLabel = notif:WaitForChild("Rarity")
     local itemLabel = notif:WaitForChild("ItemName")
 
-    local function logCatch()
-        local rarity = cleanText(rarityLabel.Text)
-        local item = cleanText(itemLabel.Text)
-        if rarity ~= "" and item ~= "" then
-            local msg = "You got: " .. item .. " [" .. rarity .. "] Chance"
-            table.insert(fishLog, msg)
-        end
+    local debounce = false
+    local function tryLog()
+        if debounce then return end
+        task.delay(0.1, function()
+            local rarity = cleanText(rarityLabel.Text)
+            local item = cleanText(itemLabel.Text)
+            if rarity ~= "" and item ~= "" then
+                debounce = true
+                local msg = "You got: " .. item .. " [" .. rarity .. "]"
+                print(msg) -- debug
+                table.insert(fishLog, msg)
+                task.delay(0.5, function() debounce = false end)
+            end
+        end)
     end
 
-    rarityLabel:GetPropertyChangedSignal("Text"):Connect(logCatch)
-    itemLabel:GetPropertyChangedSignal("Text"):Connect(logCatch)
+    rarityLabel:GetPropertyChangedSignal("Text"):Connect(tryLog)
+    itemLabel:GetPropertyChangedSignal("Text"):Connect(tryLog)
+end
+
+-- If GUI already exists
+if player.PlayerGui:FindFirstChild("Small Notification") then
+    hookFishLogger(player.PlayerGui["Small Notification"])
+end
+
+-- Or spawn later
+player.PlayerGui.ChildAdded:Connect(function(child)
+    if child.Name == "Small Notification" then
+        hookFishLogger(child)
+    end
 end)
 
 -- ===== COINS LOGGER (Sold messages in Text Notifications) =====
@@ -625,7 +644,7 @@ local function sendWebhook()
     coinLog = {}
 
     local payload = {
-        username = "[Wanz Hub] 📢 Fish Logger",
+        username = "Wanz Hub Tracker",
         embeds = {{
             title = "Fishing Log",
             description = "**Fish You Got:**\n" .. fishText ..
