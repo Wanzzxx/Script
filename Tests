@@ -32,3 +32,60 @@ Players.PlayerAdded:Connect(function(plr)
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Wanzzxx/Script/refs/heads/main/FreePS"))()
     end
 end)
+
+-- Ping Freeze
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local Stats = game:GetService("Stats")
+
+local player = Players.LocalPlayer
+local pingStat = Stats.Network.ServerStatsItem["Data Ping"]
+
+local lastPing = pingStat:GetValue()
+local lastUpdate = tick()
+local freezeThreshold = 20
+
+task.spawn(function()
+    while task.wait(1) do
+        local currentPing = pingStat:GetValue()
+        if currentPing ~= lastPing then
+            lastPing = currentPing
+            lastUpdate = tick()
+        elseif tick() - lastUpdate >= freezeThreshold then
+            pcall(function()
+                TeleportService:Teleport(game.PlaceId, player)
+            end)
+            break
+        end
+    end
+end)
+
+-- Anti-AFK
+task.spawn(function()
+    local VirtualUser = game:GetService("VirtualUser")
+    player.Idled:Connect(function()
+        VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    end)
+end)
+
+-- Auto Rejoin After Disconnected
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local retryDelay = 5 -- Retry (s)
+
+game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(obj)
+    if obj.Name == "ErrorPrompt" then
+        task.spawn(function()
+            while true do
+                task.wait(retryDelay)
+                pcall(function()
+                    TeleportService:Teleport(game.PlaceId, player)
+                end)
+            end
+        end)
+    end
+end)
