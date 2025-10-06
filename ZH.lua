@@ -20,61 +20,61 @@ local Tabs = {
 }
 local Options = Fluent.Options
 
-------------------------------------------------------------
--- AUTO KILL ZOMBIES
-------------------------------------------------------------
 local player = game.Players.LocalPlayer
 local VIM = game:GetService("VirtualInputManager")
 
+-- Click attack (if your game uses left click)
 local function autoClick()
-    local cam = workspace.CurrentCamera
-    local c = cam.ViewportSize / 2
-    VIM:SendMouseButtonEvent(c.X, c.Y, 0, true, game, 1)
-    task.wait(0.05)
-    VIM:SendMouseButtonEvent(c.X, c.Y, 0, false, game, 1)
+	local cam = workspace.CurrentCamera
+	local c = cam.ViewportSize / 2
+	VIM:SendMouseButtonEvent(c.X, c.Y, 0, true, game, 1)
+	task.wait(0.05)
+	VIM:SendMouseButtonEvent(c.X, c.Y, 0, false, game, 1)
 end
 
+-- Teleport helper
 local function teleportTo(model)
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp and model then
-        local root = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChildWhichIsA("BasePart")
-        if root then
-            hrp.CFrame = root.CFrame + Vector3.new(0, 0, 3)
-        end
-    end
+	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+
+	-- Find a basepart inside the zombie model
+	local root = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChildWhichIsA("BasePart", true)
+	if root then
+		hrp.CFrame = root.CFrame + Vector3.new(0, 0, 3)
+	end
 end
 
+-- Main auto kill loop
 Options.AutoKill = Tabs.Main:AddToggle("AutoKill", {
-    Title = "Auto Kill Zombies",
-    Default = false,
-    Callback = function(state)
-        if state then
-            Fluent:Notify({ Title = "Auto Kill", Content = "Activated", Duration = 3 })
-            task.spawn(function()
-                while Options.AutoKill.Value do
-                    local zombiesFolder = workspace:FindFirstChild("Entities") and workspace.Entities:FindFirstChild("Zombie")
-                    if zombiesFolder then
-                        for _, z in ipairs(zombiesFolder:GetChildren()) do
-                            if tonumber(z.Name) then
-                                local hum = z:FindFirstChildOfClass("Humanoid")
-                                if hum and hum.Health > 0 then
-                                    teleportTo(z)
-                                    repeat
-                                        autoClick()
-                                        task.wait(0.1)
-                                    until hum.Health <= 0 or not Options.AutoKill.Value
-                                end
-                            end
-                            if not Options.AutoKill.Value then break end
-                        end
-                    end
-                    task.wait(0.5)
-                end
-            end)
-        else
-            Fluent:Notify({ Title = "Auto Kill", Content = "Stopped", Duration = 3 })
-        end
-    end
+	Title = "Auto Kill Zombies",
+	Default = false,
+	Callback = function(state)
+		if state then
+			task.spawn(function()
+				while Options.AutoKill.Value do
+					local zombiesFolder = workspace:FindFirstChild("Entities") and workspace.Entities:FindFirstChild("Zombie")
+					if zombiesFolder then
+						for _, zombie in ipairs(zombiesFolder:GetChildren()) do
+							if tonumber(zombie.Name) then
+								local hum = zombie:FindFirstChildOfClass("Humanoid")
+								if hum and hum.Health > 0 then
+									teleportTo(zombie)
+									repeat
+										VIM:SendKeyEvent(true, Enum.KeyCode.One, false, game)
+                                        task.wait(0.05)
+                                        VIM:SendKeyEvent(false, Enum.KeyCode.One, false, game)
+										task.wait(0.1)
+									until hum.Health <= 0 or not Options.AutoKill.Value
+								end
+							end
+							if not Options.AutoKill.Value then break end
+						end
+					end
+					task.wait(0.3)
+				end
+			end)
+		end
+	end
 })
 
 -- SM
