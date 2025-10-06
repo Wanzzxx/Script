@@ -15,7 +15,8 @@ local Window = Fluent:CreateWindow({
 })
 
 local Tabs = {
-    Main = Window:AddTab({ Title = "Main", Icon = "skull" })
+    Main = Window:AddTab({ Title = "Main", Icon = "skull" }),
+    Settings = Window:AddTab({ Title = "Main", Icon = "settings" })
 }
 local Options = Fluent.Options
 
@@ -76,16 +77,16 @@ Options.AutoKill = Tabs.Main:AddToggle("AutoKill", {
     end
 })
 
-------------------------------------------------------------
--- SAVE 
-------------------------------------------------------------
+-- SM
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
 SaveManager:IgnoreThemeSettings()
 SaveManager:SetIgnoreIndexes({})
 InterfaceManager:SetFolder("W-Hub")
 SaveManager:SetFolder("W-Hub/ZombieSlayer")
-InterfaceManager:BuildInterfaceSection(Tabs.Main)
-SaveManager:BuildConfigSection(Tabs.Main)
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+-- Auto Load
 SaveManager:LoadAutoloadConfig()
 Window:SelectTab(1)
