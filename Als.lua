@@ -15,6 +15,45 @@ local Window = MacLib:Window({
 	AcrylicBlur = true,
 })
 
+local globalSettings = {
+	UIBlurToggle = Window:GlobalSetting({
+		Name = "UI Blur",
+		Default = Window:GetAcrylicBlurState(),
+		Callback = function(bool)
+			Window:SetAcrylicBlurState(bool)
+			Window:Notify({
+				Title = Window.Settings.Title,
+				Description = (bool and "Enabled" or "Disabled") .. " UI Blur",
+				Lifetime = 5
+			})
+		end,
+	}),
+	NotificationToggler = Window:GlobalSetting({
+		Name = "Notifications",
+		Default = Window:GetNotificationsState(),
+		Callback = function(bool)
+			Window:SetNotificationsState(bool)
+			Window:Notify({
+				Title = Window.Settings.Title,
+				Description = (bool and "Enabled" or "Disabled") .. " Notifications",
+				Lifetime = 5
+			})
+		end,
+	}),
+	ShowUserInfo = Window:GlobalSetting({
+		Name = "Show User Info",
+		Default = Window:GetUserInfoState(),
+		Callback = function(bool)
+			Window:SetUserInfoState(bool)
+			Window:Notify({
+				Title = Window.Settings.Title,
+				Description = (bool and "Showing" or "Redacted") .. " User Info",
+				Lifetime = 5
+			})
+		end,
+	})
+}
+
 ------------------------------------------------------------
 -- Tabs + Sections
 ------------------------------------------------------------
