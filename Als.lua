@@ -1,12 +1,13 @@
---// Macro Recorder [W-Hub] - MacLib Edition (Compact UI + Async Hook)
+-- if not table.find({12886143095, 18583778121}, game.PlaceId) then return end
+
 
 -- Load MacLib
 local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/releases/latest/download/maclib.txt"))()
 
 -- Create Compact Window
 local Window = MacLib:Window({
-	Title = "Macro Recorder [W-Hub]",
-	Subtitle = "Tower Defense Macro",
+	Title = "DynaX HUB",
+	Subtitle = "Anime Last Stand",
 	Size = UDim2.fromOffset(620, 420), -- smaller and centered
 	DragStyle = 1,
 	ShowUserInfo = false,
