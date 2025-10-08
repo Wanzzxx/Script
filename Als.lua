@@ -136,33 +136,18 @@ do
 					local now = tick()
 					local argHash = hashArgs(args)
 
-					local function extractPosition(args)
-	for _, v in ipairs(args) do
-		if typeof(v) == "Vector3" then
-			return v
-		elseif typeof(v) == "table" then
-			local pos = extractPosition(v)
-			if pos then return pos end
-		end
-	end
-end
+					if not (n == lastRecord.name and argHash == lastRecord.argHash and (now - lastRecord.time) < 0.25) then
+						lastRecord = { time = now, name = n, argHash = argHash }
 
-local currentPos = extractPosition(args)
-local lastPos = lastRecord.pos
-local posDiff = (currentPos and lastPos) and (currentPos - lastPos).Magnitude or math.huge
-
-if not (n == lastRecord.name and posDiff < 0.01) then
-	lastRecord = { time = now, name = n, pos = currentPos }
-
-	table.insert(macroData, {
-		Type = "Remote",
-		RemoteName = n,
-		Args = args,
-		Time = now,
-		IsInvoke = (method == "InvokeServer"),
-		Path = (self.GetFullName and self:GetFullName()) or "unknown"
-	})
-						end
+						table.insert(macroData, {
+							Type = "Remote",
+							RemoteName = n,
+							Args = args,
+							Time = now,
+							IsInvoke = (method == "InvokeServer"),
+							Path = (self.GetFullName and self:GetFullName()) or "unknown"
+						})
+					end
 				end)
 			end
 		end
@@ -198,11 +183,8 @@ sections.MacroLeft:Toggle({
 		recording = state
 		if state then
 			macroData = {}
-			recordingStartTime = tick()
-			startTimer("Recording") -- ✅ added
 			Window:Notify({ Title = "Macro Recorder", Description = "Recording started...", Lifetime = 3 })
 		else
-			stopTimer() -- ✅ added
 			Window:Notify({ Title = "Macro Recorder", Description = "Recording stopped. " .. #macroData .. " actions saved.", Lifetime = 4 })
 		end
 	end
@@ -218,11 +200,8 @@ sections.MacroLeft:Toggle({
 				return
 			end
 			playing = true
-			playStartTime = tick()
-			totalPlayTime = macroData[#macroData].Time - macroData[1].Time
-			startTimer("Playing")
-
 			Window:Notify({ Title = "Macro Recorder", Description = "Playing macro...", Lifetime = 3 })
+
 			local startTime = macroData[1].Time
 			for _, action in ipairs(macroData) do
 				local delayTime = math.max(0, action.Time - startTime)
@@ -243,63 +222,14 @@ sections.MacroLeft:Toggle({
 
 			task.delay((macroData[#macroData].Time - startTime) + 0.5, function()
 				playing = false
-				stopTimer()
 				Window:Notify({ Title = "Macro Recorder", Description = "Play Finished", Lifetime = 3 })
 			end)
 		else
 			playing = false
-			stopTimer()
 			Window:Notify({ Title = "Macro Recorder", Description = "Play Stopped", Lifetime = 2 })
 		end
 	end
 }, "PlayMacro")
-
-------------------------------------------------------------
--- Timer Display (below Record & Play toggles)
-------------------------------------------------------------
-local recordingStartTime = 0
-local playStartTime = 0
-local totalPlayTime = 0
-local timerConnection = nil
-
-local timerLabel = sections.MacroLeft:Label({
-	Text = "Idle - 00:00",
-})
-
-local function formatTime(seconds)
-	local minutes = math.floor(seconds / 60)
-	local secs = math.floor(seconds % 60)
-	return string.format("%02d:%02d", minutes, secs)
-end
-
-local function startTimer(mode)
-	if timerConnection then timerConnection:Disconnect() end
-	local startTime = tick()
-	timerConnection = game:GetService("RunService").RenderStepped:Connect(function()
-		local now = tick()
-		local elapsed = now - startTime
-
-		if mode == "Recording" then
-			timerLabel:SetText("Recording - " .. formatTime(elapsed) .. " - Timer Tick Pass")
-		elseif mode == "Playing" then
-			local remaining = math.max(totalPlayTime - (now - playStartTime), 0)
-			timerLabel:SetText("Playing - " .. formatTime(remaining) .. " - Timer Tick Left")
-			if remaining <= 0 then
-				timerConnection:Disconnect()
-				timerConnection = nil
-				timerLabel:SetText("Idle - 00:00")
-			end
-		end
-	end)
-end
-
-local function stopTimer()
-	if timerConnection then
-		timerConnection:Disconnect()
-		timerConnection = nil
-	end
-	timerLabel:SetText("Idle - 00:00")
-end
 
 sections.MacroRight:Button({
 	Name = "Clear Macro",
