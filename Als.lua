@@ -198,8 +198,11 @@ sections.MacroLeft:Toggle({
 		recording = state
 		if state then
 			macroData = {}
+			recordingStartTime = tick()
+			startTimer("Recording") -- ✅ added
 			Window:Notify({ Title = "Macro Recorder", Description = "Recording started...", Lifetime = 3 })
 		else
+			stopTimer() -- ✅ added
 			Window:Notify({ Title = "Macro Recorder", Description = "Recording stopped. " .. #macroData .. " actions saved.", Lifetime = 4 })
 		end
 	end
@@ -215,8 +218,11 @@ sections.MacroLeft:Toggle({
 				return
 			end
 			playing = true
-			Window:Notify({ Title = "Macro Recorder", Description = "Playing macro...", Lifetime = 3 })
+			playStartTime = tick()
+			totalPlayTime = macroData[#macroData].Time - macroData[1].Time
+			startTimer("Playing")
 
+			Window:Notify({ Title = "Macro Recorder", Description = "Playing macro...", Lifetime = 3 })
 			local startTime = macroData[1].Time
 			for _, action in ipairs(macroData) do
 				local delayTime = math.max(0, action.Time - startTime)
@@ -237,10 +243,12 @@ sections.MacroLeft:Toggle({
 
 			task.delay((macroData[#macroData].Time - startTime) + 0.5, function()
 				playing = false
+				stopTimer()
 				Window:Notify({ Title = "Macro Recorder", Description = "Play Finished", Lifetime = 3 })
 			end)
 		else
 			playing = false
+			stopTimer()
 			Window:Notify({ Title = "Macro Recorder", Description = "Play Stopped", Lifetime = 2 })
 		end
 	end
