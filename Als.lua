@@ -10,7 +10,7 @@ local Window = MacLib:Window({
 	Subtitle = "Anime Last Stand",
 	Size = UDim2.fromOffset(620, 420), -- smaller and centered
 	DragStyle = 1,
-	ShowUserInfo = false,
+	ShowUserInfo = true,
 	Keybind = Enum.KeyCode.RightControl,
 	AcrylicBlur = true,
 })
@@ -23,13 +23,19 @@ local tabGroups = {
 }
 
 local tabs = {
-	Main = tabGroups.MainGroup:Tab({ Name = "Macro", Image = "rbxassetid://18821914323" }),
-	Settings = tabGroups.MainGroup:Tab({ Name = "Settings", Image = "rbxassetid://10734950309" }),
+	Main = tabGroups.MainGroup:Tab({ Name = "Main", Image = "rbxassetid://18821914323" }),
+	Joiner = tabGroups.MainGroup:Tab({ Name = "Joiner", Image = "rbxassetid://18821914323" }),
+	Macro = tabGroups.MainGroup:Tab({ Name = "Macro", Image = "rbxassetid://18821914323" }),
+	Settings = tabGroups.MainGroup:Tab({ Name = "Settings", Image = "rbxassetid://10734950309" })
 }
 
 local sections = {
 	MainLeft = tabs.Main:Section({ Side = "Left" }),
 	MainRight = tabs.Main:Section({ Side = "Right" }),
+	JoinerLeft = tabs.Joiner:Section({ Side = "Left" }),
+	JoinerRight = Tabs.Joiner:Section({ Side = "Right" }),
+	MacroLeft = tabs.Macro:Section({ Side = "Left" }),
+	MacroRight = tabs.Macro:Section({ Side = "Right" }),
 }
 
 ------------------------------------------------------------
