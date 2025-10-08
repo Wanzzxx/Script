@@ -1,0 +1,264 @@
+--// Macro Recorder [W-Hub] - MacLib Edition (Compact UI + Async Hook)
+
+-- Load MacLib
+local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/releases/latest/download/maclib.txt"))()
+
+-- Create Compact Window
+local Window = MacLib:Window({
+	Title = "Macro Recorder [W-Hub]",
+	Subtitle = "Tower Defense Macro",
+	Size = UDim2.fromOffset(620, 420), -- smaller and centered
+	DragStyle = 1,
+	ShowUserInfo = false,
+	Keybind = Enum.KeyCode.RightControl,
+	AcrylicBlur = true,
+})
+
+------------------------------------------------------------
+-- Tabs + Sections
+------------------------------------------------------------
+local tabGroups = {
+	MainGroup = Window:TabGroup()
+}
+
+local tabs = {
+	Main = tabGroups.MainGroup:Tab({ Name = "Macro", Image = "rbxassetid://18821914323" }),
+	Settings = tabGroups.MainGroup:Tab({ Name = "Settings", Image = "rbxassetid://10734950309" }),
+}
+
+local sections = {
+	MainLeft = tabs.Main:Section({ Side = "Left" }),
+	MainRight = tabs.Main:Section({ Side = "Right" }),
+}
+
+------------------------------------------------------------
+-- Services
+------------------------------------------------------------
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
+
+------------------------------------------------------------
+-- Macro State
+------------------------------------------------------------
+local recording = false
+local playing = false
+local macroData = {}
+
+------------------------------------------------------------
+-- Safe Async Hook
+------------------------------------------------------------
+local hookSuccess = false
+do
+	local mt = getrawmetatable(game)
+	local old = mt.__namecall
+	setreadonly(mt, false)
+
+	local lastRecord = { time = 0, name = "", argHash = "" }
+
+	local function hashArgs(args)
+		local str = ""
+		for i, v in ipairs(args) do
+			str ..= tostring(v)
+		end
+		return string.sub(str, 1, 100)
+	end
+
+	mt.__namecall = function(self, ...)
+		local method = getnamecallmethod()
+		local args = { ... }
+
+		-- Run original first
+		local result = old(self, ...)
+
+		-- Async record
+		if recording and (method == "FireServer" or method == "InvokeServer") then
+			local n = tostring(self.Name or "")
+			local lower = n:lower()
+			local valid = false
+
+			for _, k in ipairs({ "place", "tower", "deploy", "spawn", "build", "unit" }) do
+				if string.find(lower, k, 1, true) then
+					valid = true
+					break
+				end
+			end
+
+			if valid then
+				task.spawn(function()
+					local now = tick()
+					local argHash = hashArgs(args)
+
+					if not (n == lastRecord.name and argHash == lastRecord.argHash and (now - lastRecord.time) < 0.25) then
+						lastRecord = { time = now, name = n, argHash = argHash }
+
+						table.insert(macroData, {
+							Type = "Remote",
+							RemoteName = n,
+							Args = args,
+							Time = now,
+							IsInvoke = (method == "InvokeServer"),
+							Path = (self.GetFullName and self:GetFullName()) or "unknown"
+						})
+					end
+				end)
+			end
+		end
+
+		return result
+	end
+
+	setreadonly(mt, true)
+	hookSuccess = true
+end
+
+------------------------------------------------------------
+-- Helper: Find Remote
+------------------------------------------------------------
+local function findRemoteByName(name)
+	if not name then return nil end
+	name = name:lower()
+	for _, v in ipairs(ReplicatedStorage:GetDescendants()) do
+		if (v:IsA("RemoteEvent") or v:IsA("RemoteFunction")) and v.Name:lower() == name then
+			return v
+		end
+	end
+	return nil
+end
+
+------------------------------------------------------------
+-- UI Controls
+------------------------------------------------------------
+sections.MainLeft:Toggle({
+	Name = "Record Macro",
+	Default = false,
+	Callback = function(state)
+		recording = state
+		if state then
+			macroData = {}
+			Window:Notify({ Title = "Macro Recorder", Description = "Recording started...", Lifetime = 3 })
+		else
+			Window:Notify({ Title = "Macro Recorder", Description = "Recording stopped. " .. #macroData .. " actions saved.", Lifetime = 4 })
+		end
+	end
+}, "RecordMacro")
+
+sections.MainLeft:Toggle({
+	Name = "Play Macro",
+	Default = false,
+	Callback = function(state)
+		if state then
+			if #macroData == 0 then
+				Window:Notify({ Title = "Macro Recorder", Description = "No recorded actions!", Lifetime = 3 })
+				return
+			end
+			playing = true
+			Window:Notify({ Title = "Macro Recorder", Description = "Playing macro...", Lifetime = 3 })
+
+			local startTime = macroData[1].Time
+			for _, action in ipairs(macroData) do
+				local delayTime = math.max(0, action.Time - startTime)
+				task.delay(delayTime, function()
+					if not playing then return end
+					local remote = findRemoteByName(action.RemoteName)
+					if remote then
+						pcall(function()
+							if action.IsInvoke and remote:IsA("RemoteFunction") then
+								remote:InvokeServer(unpack(action.Args))
+							else
+								remote:FireServer(unpack(action.Args))
+							end
+						end)
+					end
+				end)
+			end
+
+			task.delay((macroData[#macroData].Time - startTime) + 0.5, function()
+				playing = false
+				Window:Notify({ Title = "Macro Recorder", Description = "Play Finished", Lifetime = 3 })
+			end)
+		else
+			playing = false
+			Window:Notify({ Title = "Macro Recorder", Description = "Play Stopped", Lifetime = 2 })
+		end
+	end
+}, "PlayMacro")
+
+sections.MainRight:Button({
+	Name = "Clear Macro",
+	Callback = function()
+		macroData = {}
+		Window:Notify({ Title = "Macro Recorder", Description = "Macro cleared.", Lifetime = 2 })
+	end
+})
+
+sections.MainRight:Button({
+	Name = "Save Macro",
+	Callback = function()
+		if not writefile then
+			Window:Notify({ Title = "Macro Recorder", Description = "writefile not supported.", Lifetime = 3 })
+			return
+		end
+		local data = HttpService:JSONEncode(macroData)
+		writefile("macro_recording.json", data)
+		Window:Notify({ Title = "Macro Recorder", Description = "Saved to macro_recording.json", Lifetime = 3 })
+	end
+})
+
+sections.MainRight:Button({
+	Name = "Load Macro",
+	Callback = function()
+		if not readfile then
+			Window:Notify({ Title = "Macro Recorder", Description = "readfile not supported.", Lifetime = 3 })
+			return
+		end
+		local ok, raw = pcall(readfile, "macro_recording.json")
+		if ok and raw then
+			macroData = HttpService:JSONDecode(raw)
+			Window:Notify({ Title = "Macro Recorder", Description = "Loaded " .. #macroData .. " actions.", Lifetime = 3 })
+		else
+			Window:Notify({ Title = "Macro Recorder", Description = "Failed to read file.", Lifetime = 3 })
+		end
+	end
+})
+
+sections.MainRight:Button({
+	Name = "Copy Macro to Clipboard",
+	Callback = function()
+		if setclipboard then
+			setclipboard(HttpService:JSONEncode(macroData))
+			Window:Notify({ Title = "Macro Recorder", Description = "Copied macro to clipboard.", Lifetime = 3 })
+		else
+			Window:Notify({ Title = "Macro Recorder", Description = "setclipboard not supported.", Lifetime = 3 })
+		end
+	end
+})
+
+sections.MainRight:Button({
+	Name = "Import from Clipboard",
+	Callback = function()
+		if getclipboard then
+			local raw = getclipboard()
+			macroData = HttpService:JSONDecode(raw)
+			Window:Notify({ Title = "Macro Recorder", Description = "Imported " .. #macroData .. " actions.", Lifetime = 3 })
+		else
+			Window:Notify({ Title = "Macro Recorder", Description = "getclipboard not supported.", Lifetime = 3 })
+		end
+	end
+})
+
+------------------------------------------------------------
+-- Load & Finish
+------------------------------------------------------------
+MacLib:SetFolder("W-Hub/MacroRecorder")
+tabs.Settings:InsertConfigSection("Left")
+
+Window:Notify({
+	Title = "Macro Recorder",
+	Description = hookSuccess and "Loaded successfully." or "Hook failed; recording may not work.",
+	Lifetime = 5
+})
+
+tabs.Main:Select()
+MacLib:LoadAutoLoadConfig()
