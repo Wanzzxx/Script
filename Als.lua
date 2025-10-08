@@ -1,4 +1,4 @@
-if not table.find({12886143095, 18583778121}, game.PlaceId) then return end
+-- if not table.find({12886143095, 18583778121}, game.PlaceId) then return end
 
 -- Load MacLib
 local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/releases/latest/download/maclib.txt"))()
