@@ -1,5 +1,4 @@
--- if not table.find({12886143095, 18583778121}, game.PlaceId) then return end
-
+if not table.find({12886143095, 18583778121}, game.PlaceId) then return end
 
 -- Load MacLib
 local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/releases/latest/download/maclib.txt"))()
@@ -8,7 +7,7 @@ local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/re
 local Window = MacLib:Window({
 	Title = "DynaX HUB",
 	Subtitle = "Anime Last Stand",
-	Size = UDim2.fromOffset(620, 420), -- smaller and centered
+	Size = UDim2.fromOffset(620, 420),
 	DragStyle = 1,
 	ShowUserInfo = true,
 	Keybind = Enum.KeyCode.RightControl,
@@ -93,7 +92,7 @@ local playing = false
 local macroData = {}
 
 ------------------------------------------------------------
--- Safe Async Hook
+-- Hook (with position-based anti-duplicate)
 ------------------------------------------------------------
 local hookSuccess = false
 do
@@ -106,19 +105,26 @@ do
 	local function hashArgs(args)
 		local str = ""
 		for i, v in ipairs(args) do
-			str ..= tostring(v)
+			if typeof(v) == "Vector3" then
+				str ..= string.format("V3(%.2f,%.2f,%.2f)", v.X, v.Y, v.Z)
+			elseif typeof(v) == "CFrame" then
+				local p = v.Position
+				str ..= string.format("CF(%.2f,%.2f,%.2f)", p.X, p.Y, p.Z)
+			elseif typeof(v) == "table" then
+				str ..= hashArgs(v)
+			else
+				str ..= tostring(v)
+			end
 		end
-		return string.sub(str, 1, 100)
+		return string.sub(str, 1, 150)
 	end
 
 	mt.__namecall = function(self, ...)
 		local method = getnamecallmethod()
 		local args = { ... }
 
-		-- Run original first
 		local result = old(self, ...)
 
-		-- Async record
 		if recording and (method == "FireServer" or method == "InvokeServer") then
 			local n = tostring(self.Name or "")
 			local lower = n:lower()
@@ -176,7 +182,7 @@ end
 ------------------------------------------------------------
 -- UI Controls
 ------------------------------------------------------------
-sections.MacroLeft:Toggle({
+sections.MainLeft:Toggle({
 	Name = "Record Macro",
 	Default = false,
 	Callback = function(state)
@@ -190,7 +196,7 @@ sections.MacroLeft:Toggle({
 	end
 }, "RecordMacro")
 
-sections.MacroLeft:Toggle({
+sections.MainLeft:Toggle({
 	Name = "Play Macro",
 	Default = false,
 	Callback = function(state)
@@ -222,16 +228,16 @@ sections.MacroLeft:Toggle({
 
 			task.delay((macroData[#macroData].Time - startTime) + 0.5, function()
 				playing = false
-				Window:Notify({ Title = "Macro Recorder", Description = "Play Finished", Lifetime = 3 })
+				Window:Notify({ Title = "Macro Recorder", Description = "Playback finished.", Lifetime = 3 })
 			end)
 		else
 			playing = false
-			Window:Notify({ Title = "Macro Recorder", Description = "Play Stopped", Lifetime = 2 })
+			Window:Notify({ Title = "Macro Recorder", Description = "Playback stopped.", Lifetime = 2 })
 		end
 	end
 }, "PlayMacro")
 
-sections.MacroRight:Button({
+sections.MainRight:Button({
 	Name = "Clear Macro",
 	Callback = function()
 		macroData = {}
@@ -239,7 +245,7 @@ sections.MacroRight:Button({
 	end
 })
 
-sections.MacroRight:Button({
+sections.MainRight:Button({
 	Name = "Save Macro",
 	Callback = function()
 		if not writefile then
@@ -252,7 +258,7 @@ sections.MacroRight:Button({
 	end
 })
 
-sections.MacroRight:Button({
+sections.MainRight:Button({
 	Name = "Load Macro",
 	Callback = function()
 		if not readfile then
@@ -269,7 +275,7 @@ sections.MacroRight:Button({
 	end
 })
 
-sections.MacroRight:Button({
+sections.MainRight:Button({
 	Name = "Copy Macro to Clipboard",
 	Callback = function()
 		if setclipboard then
@@ -281,7 +287,7 @@ sections.MacroRight:Button({
 	end
 })
 
-sections.MacroRight:Button({
+sections.MainRight:Button({
 	Name = "Import from Clipboard",
 	Callback = function()
 		if getclipboard then
@@ -302,7 +308,7 @@ tabs.Settings:InsertConfigSection("Left")
 
 Window:Notify({
 	Title = "Macro Recorder",
-	Description = hookSuccess and "Loaded successfully." or "Hook failed; recording may not work.",
+	Description = hookSuccess and "Loaded successfully with position anti-duplicate." or "Hook failed; recording may not work.",
 	Lifetime = 5
 })
 
