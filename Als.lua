@@ -137,7 +137,7 @@ end
 ------------------------------------------------------------
 -- UI Controls
 ------------------------------------------------------------
-sections.MainLeft:Toggle({
+sections.MacroLeft:Toggle({
 	Name = "Record Macro",
 	Default = false,
 	Callback = function(state)
@@ -151,7 +151,7 @@ sections.MainLeft:Toggle({
 	end
 }, "RecordMacro")
 
-sections.MainLeft:Toggle({
+sections.MacroLeft:Toggle({
 	Name = "Play Macro",
 	Default = false,
 	Callback = function(state)
@@ -192,7 +192,7 @@ sections.MainLeft:Toggle({
 	end
 }, "PlayMacro")
 
-sections.MainRight:Button({
+sections.MacroRight:Button({
 	Name = "Clear Macro",
 	Callback = function()
 		macroData = {}
@@ -200,7 +200,7 @@ sections.MainRight:Button({
 	end
 })
 
-sections.MainRight:Button({
+sections.MacroRight:Button({
 	Name = "Save Macro",
 	Callback = function()
 		if not writefile then
@@ -213,7 +213,7 @@ sections.MainRight:Button({
 	end
 })
 
-sections.MainRight:Button({
+sections.MacroRight:Button({
 	Name = "Load Macro",
 	Callback = function()
 		if not readfile then
@@ -230,7 +230,7 @@ sections.MainRight:Button({
 	end
 })
 
-sections.MainRight:Button({
+sections.MacroRight:Button({
 	Name = "Copy Macro to Clipboard",
 	Callback = function()
 		if setclipboard then
@@ -242,7 +242,7 @@ sections.MainRight:Button({
 	end
 })
 
-sections.MainRight:Button({
+sections.MacroRight:Button({
 	Name = "Import from Clipboard",
 	Callback = function()
 		if getclipboard then
