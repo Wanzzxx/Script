@@ -33,7 +33,7 @@ local sections = {
 	MainLeft = tabs.Main:Section({ Side = "Left" }),
 	MainRight = tabs.Main:Section({ Side = "Right" }),
 	JoinerLeft = tabs.Joiner:Section({ Side = "Left" }),
-	JoinerRight = Tabs.Joiner:Section({ Side = "Right" }),
+	JoinerRight = tabs.Joiner:Section({ Side = "Right" }),
 	MacroLeft = tabs.Macro:Section({ Side = "Left" }),
 	MacroRight = tabs.Macro:Section({ Side = "Right" }),
 }
