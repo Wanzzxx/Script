@@ -246,6 +246,53 @@ sections.MacroLeft:Toggle({
 	end
 }, "PlayMacro")
 
+------------------------------------------------------------
+-- Timer Display (below Record & Play toggles)
+------------------------------------------------------------
+local recordingStartTime = 0
+local playStartTime = 0
+local totalPlayTime = 0
+local timerConnection = nil
+
+local timerLabel = sections.MacroLeft:Label({
+	Text = "Idle - 00:00",
+})
+
+local function formatTime(seconds)
+	local minutes = math.floor(seconds / 60)
+	local secs = math.floor(seconds % 60)
+	return string.format("%02d:%02d", minutes, secs)
+end
+
+local function startTimer(mode)
+	if timerConnection then timerConnection:Disconnect() end
+	local startTime = tick()
+	timerConnection = game:GetService("RunService").RenderStepped:Connect(function()
+		local now = tick()
+		local elapsed = now - startTime
+
+		if mode == "Recording" then
+			timerLabel:SetText("Recording - " .. formatTime(elapsed) .. " - Timer Tick Pass")
+		elseif mode == "Playing" then
+			local remaining = math.max(totalPlayTime - (now - playStartTime), 0)
+			timerLabel:SetText("Playing - " .. formatTime(remaining) .. " - Timer Tick Left")
+			if remaining <= 0 then
+				timerConnection:Disconnect()
+				timerConnection = nil
+				timerLabel:SetText("Idle - 00:00")
+			end
+		end
+	end)
+end
+
+local function stopTimer()
+	if timerConnection then
+		timerConnection:Disconnect()
+		timerConnection = nil
+	end
+	timerLabel:SetText("Idle - 00:00")
+end
+
 sections.MacroRight:Button({
 	Name = "Clear Macro",
 	Callback = function()
