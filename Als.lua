@@ -136,18 +136,33 @@ do
 					local now = tick()
 					local argHash = hashArgs(args)
 
-					if not (n == lastRecord.name and argHash == lastRecord.argHash and (now - lastRecord.time) < 0.25) then
-						lastRecord = { time = now, name = n, argHash = argHash }
+					local function extractPosition(args)
+	for _, v in ipairs(args) do
+		if typeof(v) == "Vector3" then
+			return v
+		elseif typeof(v) == "table" then
+			local pos = extractPosition(v)
+			if pos then return pos end
+		end
+	end
+end
 
-						table.insert(macroData, {
-							Type = "Remote",
-							RemoteName = n,
-							Args = args,
-							Time = now,
-							IsInvoke = (method == "InvokeServer"),
-							Path = (self.GetFullName and self:GetFullName()) or "unknown"
-						})
-					end
+local currentPos = extractPosition(args)
+local lastPos = lastRecord.pos
+local posDiff = (currentPos and lastPos) and (currentPos - lastPos).Magnitude or math.huge
+
+if not (n == lastRecord.name and posDiff < 0.01) then
+	lastRecord = { time = now, name = n, pos = currentPos }
+
+	table.insert(macroData, {
+		Type = "Remote",
+		RemoteName = n,
+		Args = args,
+		Time = now,
+		IsInvoke = (method == "InvokeServer"),
+		Path = (self.GetFullName and self:GetFullName()) or "unknown"
+	})
+						end
 				end)
 			end
 		end
