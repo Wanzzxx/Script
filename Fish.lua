@@ -100,81 +100,7 @@ local RequestFishingMinigameStarted = Net:WaitForChild("RF/RequestFishingMinigam
 local FishingCompleted = Net:WaitForChild("RE/FishingCompleted")
 local SellAllItems = Net:WaitForChild("RF/SellAllItems")
 
--- Fishing Delay input
-Options.FishingDelay = Tabs.Main:AddInput("FishingDelay", {
-    Title = "Set Catch Delay (s)",
-    Default = "4",
-    Placeholder = "Enter seconds",
-    Numeric = true,
-    Finished = true,
-    Callback = function(Value)
-        local num = tonumber(Value)
-        if num then
-            Fluent:Notify({ Title = "Fishing Delay", Content = "Set delay to " .. num .. " seconds", Duration = 4 })
-        else
-            Fluent:Notify({ Title = "Fishing Delay", Content = "Invalid number, using default (4) seconds", Duration = 4 })
-        end
-    end
-})
-
--- Auto Reset If Stuck (Main Tab)
-Options.AutoResetStuck = Tabs.Main:AddToggle("AutoResetStuck", {
-    Title = "Auto Reset If Stuck",
-    Default = false,
-    Callback = function(state)
-        if state then
-            Fluent:Notify({
-                Title = "Auto Reset",
-                Content = "Enabled",
-                Duration = 4
-            })
-            task.spawn(function()
-                while Options.AutoResetStuck.Value do
-                    local stuckTime = 0
-
-                    -- Reset timer on character respawn
-                    player.CharacterAdded:Connect(function()
-                        stuckTime = 0
-                    end)
-
-                    while Options.AutoResetStuck.Value and player.Character do
-                        local display = player:FindFirstChild("PlayerGui")
-                            and player.PlayerGui:FindFirstChild("Backpack")
-                            and player.PlayerGui.Backpack:FindFirstChild("Display")
-
-                        local fishSlot = display and display:GetChildren()[8]
-                        if not fishSlot then
-                            stuckTime += 1
-                            if stuckTime >= 20 then
-                                local hum = player.Character and player.Character:FindFirstChild("Humanoid")
-                                if hum then
-                                    hum.Health = 0 -- reset
-                                    Fluent:Notify({
-                                        Title = "Auto Reset",
-                                        Content = "You seemed stuck there? Arise.",
-                                        Duration = 4
-                                    })
-                                end
-                                stuckTime = 0
-                            end
-                        else
-                            stuckTime = 0 -- reset if fish slot found
-                        end
-                        task.wait(1)
-                    end
-                end
-            end)
-        else
-            Fluent:Notify({
-                Title = "Auto Reset",
-                Content = "Disabled",
-                Duration = 4
-            })
-        end
-    end
-})
-
--- Auto Fishing
+-- Auto Fishing (Replaced with fast detection system)
 local firstAutoFishingRun = true
 Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", { Title = "Auto Fishing", Default = false })
 Options.AutoFishing:OnChanged(function()
@@ -182,20 +108,31 @@ Options.AutoFishing:OnChanged(function()
         Fluent:Notify({ Title = "Auto Fishing", Content = "Enabled", Duration = 5 })
         task.spawn(function()
             if firstAutoFishingRun then
-                task.wait(3)
                 firstAutoFishingRun = false
+                local args = { [1] = 1 }
+                game:GetService("ReplicatedStorage").Packages._Index
+                    :FindFirstChild("sleitnick_net@0.2.0").net
+                    :FindFirstChild("RE/EquipToolFromHotbar")
+                    :FireServer(unpack(args))
+                task.wait(3)
             end
+
+            local itemLabel = player.PlayerGui:WaitForChild("Small Notification")
+                :WaitForChild("Display")
+                :WaitForChild("Container")
+                :WaitForChild("ItemName")
+
+            local lastName = itemLabel.Text
+
             while Options.AutoFishing.Value do
-                EquipToolFromHotbar:FireServer(1)
-                task.wait(0.1)
-                ChargeFishingRod:InvokeServer(1758804029.427071)
-                task.wait(0.1)
-                RequestFishingMinigameStarted:InvokeServer(-1.233184814453125, 0.9974901105656968)
-                task.wait(0.1)
-                local delayTime = tonumber(Options.FishingDelay.Value) or 4
-                task.wait(delayTime)
-                FishingCompleted:FireServer()
-                task.wait(0.1)
+                ChargeFishingRod:InvokeServer(1761102828.99703)
+                RequestFishingMinigameStarted:InvokeServer(-1.233184814453125, 0.9834602731840376)
+                repeat
+                    FishingCompleted:FireServer()
+                    task.wait()
+                until itemLabel.Text ~= lastName
+                lastName = itemLabel.Text
+                task.wait(0.05)
             end
         end)
     else
