@@ -100,6 +100,11 @@ local RequestFishingMinigameStarted = Net:WaitForChild("RF/RequestFishingMinigam
 local FishingCompleted = Net:WaitForChild("RE/FishingCompleted")
 local SellAllItems = Net:WaitForChild("RF/SellAllItems")
 
+Tabs.Main:AddParagraph({
+        Title = "Fishing Menu",
+        Content = "Auto Fish & Sell"
+    })
+
 -- Auto Fishing (Replaced with fast detection system)
 local firstAutoFishingRun = true
 Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", { Title = "Auto Fishing", Default = false })
@@ -227,6 +232,11 @@ Options.SellAllFish:OnChanged(function()
     end
 end)
 
+Tabs.Event:AddParagraph({
+        Title = "Event Menu",
+        Content = "Event Teleport"
+    })
+
 -- === EVENT SECTION ===
 local EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
 
@@ -295,6 +305,11 @@ Options.TeleportEvent = Tabs.Event:AddToggle("TeleportEvent", {
         end
     end
 })
+
+Tabs.Main:AddParagraph({
+        Title = "Teleport Menu",
+        Content = "Teleport Somewhere"
+    })
 
 -- Teleport setup
 local TeleportParent = workspace:FindFirstChild("!!!! ISLAND LOCATIONS !!!!")
