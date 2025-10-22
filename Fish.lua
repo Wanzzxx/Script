@@ -102,7 +102,7 @@ local SellAllItems = Net:WaitForChild("RF/SellAllItems")
 
 Tabs.Main:AddParagraph({
         Title = "Fishing Menu",
-        Content = "Auto Fish & Sell"
+        Content = "Auto Fish/nAuto Sell/nAuto Weather"
     })
 
 -- Auto Fishing (Replaced with fast detection system)
@@ -230,6 +230,34 @@ Options.SellAllFish:OnChanged(function()
     else
         Fluent:Notify({ Title = "Auto Sell", Content = "Disabled", Duration = 5 })
     end
+end)
+
+-- Auto Buy Weather Toggle
+Options.AutoBuyWeather = Tabs.Main:AddToggle("AutoBuyWeather", {
+    Title = "Auto Buy Weather",
+    Default = false,
+    Description = "Automatically buys Cloudy -> Storm -> Wind in sequence (1s each)."
+})
+
+Options.AutoBuyWeather:OnChanged(function()
+    task.spawn(function()
+        local NetFolder = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+        local PurchaseWeather = NetFolder:FindFirstChild("RF/PurchaseWeatherEvent")
+        if not PurchaseWeather then return end
+
+        local weathers = {"Cloudy", "Storm", "Wind"}
+
+        while Options.AutoBuyWeather.Value do
+            for _, name in ipairs(weathers) do
+                if not Options.AutoBuyWeather.Value then break end
+                pcall(function()
+                    PurchaseWeather:InvokeServer(name)
+                end)
+                task.wait(1)
+            end
+            task.wait() -- yield to avoid tight loop before repeating
+        end
+    end)
 end)
 
 Tabs.Event:AddParagraph({
