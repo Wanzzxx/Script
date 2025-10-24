@@ -1,0 +1,800 @@
+if game.PlaceId ~= 121864768012064 then return end
+
+repeat task.wait() until game:IsLoaded()
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
+local Stats = game:GetService("Stats")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- Config System
+local CONFIG_FOLDER = "FishItHub"
+local CONFIG_FILE = "config.json"
+
+local function getConfigPath()
+    return CONFIG_FOLDER .. "/" .. CONFIG_FILE
+end
+
+local function loadConfig()
+    if not isfolder(CONFIG_FOLDER) then
+        makefolder(CONFIG_FOLDER)
+    end
+    
+    local configPath = getConfigPath()
+    if isfile(configPath) then
+        local success, result = pcall(function()
+            return HttpService:JSONDecode(readfile(configPath))
+        end)
+        if success then
+            return result
+        end
+    end
+    
+    return {
+        toggles = {},
+        inputs = {},
+        dropdowns = {},
+        savedPosition = {}
+    }
+end
+
+local function saveConfig(config)
+    if not isfolder(CONFIG_FOLDER) then
+        makefolder(CONFIG_FOLDER)
+    end
+    
+    local configPath = getConfigPath()
+    local success = pcall(function()
+        writefile(configPath, HttpService:JSONEncode(config))
+    end)
+    return success
+end
+
+-- Initialize Config
+getgenv().Config = loadConfig()
+
+-- Initialize Global Variables
+getgenv().AutoFishingEnabled = false
+getgenv().TeleportSavedEnabled = false
+getgenv().SellAllFishEnabled = false
+getgenv().AutoBuyWeatherEnabled = false
+getgenv().TeleportEventEnabled = false
+getgenv().FishRadarEnabled = false
+getgenv().DivingGearEnabled = false
+getgenv().SendWebhookEnabled = false
+getgenv().WebhookURL = getgenv().Config.inputs.WebhookURL or ""
+getgenv().WebhookDelay = tonumber(getgenv().Config.inputs.WebhookDelay) or 30
+getgenv().SavedFishingPos = nil
+getgenv().SavedFishingLook = nil
+getgenv().SelectedEvent = nil
+
+-- Load saved fishing position
+if getgenv().Config.savedPosition.pos and getgenv().Config.savedPosition.look then
+    getgenv().SavedFishingPos = Vector3.new(
+        getgenv().Config.savedPosition.pos.X,
+        getgenv().Config.savedPosition.pos.Y,
+        getgenv().Config.savedPosition.pos.Z
+    )
+    getgenv().SavedFishingLook = Vector3.new(
+        getgenv().Config.savedPosition.look.X,
+        getgenv().Config.savedPosition.look.Y,
+        getgenv().Config.savedPosition.look.Z
+    )
+end
+
+-- Create Window
+local Window = Fluent:CreateWindow({
+    Title = "Fish It Hub",
+    SubTitle = "Wanz HUB - Wind UI",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+-- Logo Toggle Button
+local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+ScreenGui.Name = "FishIt_ToggleIcon"
+
+local ImageButton = Instance.new("ImageButton", ScreenGui)
+ImageButton.Size = UDim2.new(0, 50, 0, 50)
+ImageButton.Position = UDim2.new(0, 20, 0, 20)
+ImageButton.AnchorPoint = Vector2.new(0, 0)
+ImageButton.BackgroundTransparency = 1
+ImageButton.Image = "rbxassetid://98905775020119"
+ImageButton.Active = true
+ImageButton.Draggable = true
+
+local isVisible = true
+
+local function toggleUI()
+    isVisible = not isVisible
+    if isVisible then
+        Window:SelectTab(1)
+    else
+        Window:Minimize()
+    end
+end
+
+ImageButton.MouseButton1Click:Connect(toggleUI)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if not processed and input.KeyCode == Enum.KeyCode.LeftControl then
+        toggleUI()
+    end
+end)
+
+-- Create Tabs
+local Tabs = {
+    Main = Window:AddTab({ Title = "Fishing", Icon = "users" }),
+    Event = Window:AddTab({ Title = "Fish Events", Icon = "map" }),
+    Teleport = Window:AddTab({ Title = "Teleport", Icon = "globe" }),
+    Misc = Window:AddTab({ Title = "Misc", Icon = "layers" }),
+    Webhook = Window:AddTab({ Title = "Webhook", Icon = "send" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" }),
+    About = Window:AddTab({ Title = "About", Icon = "info" })
+}
+
+local Options = Fluent.Options
+
+-- Utility Functions
+local function getChildNames(parent)
+    local names = {}
+    if parent then
+        for _, child in ipairs(parent:GetChildren()) do
+            table.insert(names, child.Name)
+        end
+    end
+    return names
+end
+
+local function getModelCFrame(model)
+    if not model then return nil end
+    if model:IsA("Model") then
+        if model.PrimaryPart then return model.PrimaryPart.CFrame end
+        if model:FindFirstChild("HumanoidRootPart") then return model.HumanoidRootPart.CFrame end
+        local firstPart = model:FindFirstChildWhichIsA("BasePart", true)
+        if firstPart then return firstPart.CFrame end
+    elseif model:IsA("BasePart") then
+        return model.CFrame
+    end
+    return nil
+end
+
+local function canTeleport()
+    return not (getgenv().AutoFishingEnabled and getgenv().TeleportSavedEnabled)
+end
+
+-- References
+local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+local EquipToolFromHotbar = Net:WaitForChild("RE/EquipToolFromHotbar")
+local ChargeFishingRod = Net:WaitForChild("RF/ChargeFishingRod")
+local RequestFishingMinigameStarted = Net:WaitForChild("RF/RequestFishingMinigameStarted")
+local FishingCompleted = Net:WaitForChild("RE/FishingCompleted")
+local SellAllItems = Net:WaitForChild("RF/SellAllItems")
+
+-- ===== MAIN TAB =====
+Tabs.Main:AddParagraph({
+    Title = "Fishing Menu",
+    Content = "Auto Fish\nAuto Sell\nAuto Weather"
+})
+
+-- Auto Fishing Toggle
+local firstAutoFishingRun = true
+local AutoFishingToggle = Tabs.Main:AddToggle("AutoFishingToggle", {
+    Title = "Enable Auto Fishing",
+    Description = "Automatically fish for you",
+    Default = getgenv().Config.toggles.AutoFishingToggle or false
+})
+
+AutoFishingToggle:OnChanged(function()
+    getgenv().AutoFishingEnabled = Options.AutoFishingToggle.Value
+    getgenv().Config.toggles.AutoFishingToggle = Options.AutoFishingToggle.Value
+    saveConfig(getgenv().Config)
+    
+    if getgenv().AutoFishingEnabled then
+        Fluent:Notify({
+            Title = "Auto Fishing",
+            Content = "Auto fishing enabled!",
+            Duration = 3
+        })
+    else
+        Fluent:Notify({
+            Title = "Auto Fishing",
+            Content = "Auto fishing disabled!",
+            Duration = 3
+        })
+    end
+end)
+
+-- Set Fishing Position
+Tabs.Main:AddButton({
+    Title = "Set Fishing Position",
+    Description = "Save your current position",
+    Callback = function()
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            getgenv().SavedFishingPos = hrp.Position
+            getgenv().SavedFishingLook = hrp.CFrame.LookVector
+            
+            getgenv().Config.savedPosition = {
+                pos = {
+                    X = getgenv().SavedFishingPos.X,
+                    Y = getgenv().SavedFishingPos.Y,
+                    Z = getgenv().SavedFishingPos.Z
+                },
+                look = {
+                    X = getgenv().SavedFishingLook.X,
+                    Y = getgenv().SavedFishingLook.Y,
+                    Z = getgenv().SavedFishingLook.Z
+                }
+            }
+            saveConfig(getgenv().Config)
+            
+            Fluent:Notify({
+                Title = "Position Saved",
+                Content = "Fishing position saved successfully!",
+                Duration = 3
+            })
+        end
+    end
+})
+
+-- Teleport to Saved Position
+local TeleportSavedToggle = Tabs.Main:AddToggle("TeleportSavedToggle", {
+    Title = "Teleport To Saved Position",
+    Description = "Auto teleport to saved fishing spot",
+    Default = getgenv().Config.toggles.TeleportSavedToggle or false
+})
+
+TeleportSavedToggle:OnChanged(function()
+    getgenv().TeleportSavedEnabled = Options.TeleportSavedToggle.Value
+    getgenv().Config.toggles.TeleportSavedToggle = Options.TeleportSavedToggle.Value
+    saveConfig(getgenv().Config)
+    
+    if getgenv().TeleportSavedEnabled then
+        if getgenv().SavedFishingPos and getgenv().SavedFishingLook then
+            local hrp = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+            local targetPos = getgenv().SavedFishingPos + Vector3.new(0, 5, 0)
+            local lookTarget = targetPos + getgenv().SavedFishingLook
+            hrp.CFrame = CFrame.new(targetPos, lookTarget)
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Teleported to saved position!",
+                Duration = 3
+            })
+        else
+            Fluent:Notify({
+                Title = "No Position Saved",
+                Content = "Please set a position first!",
+                Duration = 3
+            })
+            Options.TeleportSavedToggle:SetValue(false)
+        end
+    end
+end)
+
+-- Auto Sell
+local SellAllFishToggle = Tabs.Main:AddToggle("SellAllFishToggle", {
+    Title = "Enable Auto Sell",
+    Description = "Automatically sell all fish",
+    Default = getgenv().Config.toggles.SellAllFishToggle or false
+})
+
+SellAllFishToggle:OnChanged(function()
+    getgenv().SellAllFishEnabled = Options.SellAllFishToggle.Value
+    getgenv().Config.toggles.SellAllFishToggle = Options.SellAllFishToggle.Value
+    saveConfig(getgenv().Config)
+    
+    if getgenv().SellAllFishEnabled then
+        Fluent:Notify({
+            Title = "Auto Sell",
+            Content = "Auto sell enabled!",
+            Duration = 3
+        })
+    else
+        Fluent:Notify({
+            Title = "Auto Sell",
+            Content = "Auto sell disabled!",
+            Duration = 3
+        })
+    end
+end)
+
+-- Auto Buy Weather
+local AutoBuyWeatherToggle = Tabs.Main:AddToggle("AutoBuyWeatherToggle", {
+    Title = "Enable Auto Buy Weather",
+    Description = "Auto buy Cloudy -> Storm -> Wind",
+    Default = getgenv().Config.toggles.AutoBuyWeatherToggle or false
+})
+
+AutoBuyWeatherToggle:OnChanged(function()
+    getgenv().AutoBuyWeatherEnabled = Options.AutoBuyWeatherToggle.Value
+    getgenv().Config.toggles.AutoBuyWeatherToggle = Options.AutoBuyWeatherToggle.Value
+    saveConfig(getgenv().Config)
+    
+    if getgenv().AutoBuyWeatherEnabled then
+        Fluent:Notify({
+            Title = "Auto Buy Weather",
+            Content = "Auto buy weather enabled!",
+            Duration = 3
+        })
+    else
+        Fluent:Notify({
+            Title = "Auto Buy Weather",
+            Content = "Auto buy weather disabled!",
+            Duration = 3
+        })
+    end
+end)
+
+-- ===== EVENT TAB =====
+Tabs.Event:AddParagraph({
+    Title = "Event Menu",
+    Content = "Teleport to fishing events"
+})
+
+local EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
+
+local AutoFishingEventDropdown = Tabs.Event:AddDropdown("AutoFishingEventDropdown", {
+    Title = "Select Fishing Event",
+    Values = EventFolder and getChildNames(EventFolder) or {},
+    Default = getgenv().Config.dropdowns.AutoFishingEventDropdown or nil
+})
+
+AutoFishingEventDropdown:OnChanged(function(Value)
+    getgenv().SelectedEvent = Value
+    getgenv().Config.dropdowns.AutoFishingEventDropdown = Value
+    saveConfig(getgenv().Config)
+end)
+
+Tabs.Event:AddButton({
+    Title = "Refresh Events",
+    Description = "Reload event list",
+    Callback = function()
+        EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
+        if EventFolder then
+            Options.AutoFishingEventDropdown:SetValues(getChildNames(EventFolder))
+            Fluent:Notify({
+                Title = "Events",
+                Content = "Events refreshed!",
+                Duration = 3
+            })
+        else
+            Options.AutoFishingEventDropdown:SetValues({})
+            Fluent:Notify({
+                Title = "Events",
+                Content = "Props folder not found!",
+                Duration = 3
+            })
+        end
+    end
+})
+
+local TeleportEventToggle = Tabs.Event:AddToggle("TeleportEventToggle", {
+    Title = "Enable Teleport To Event",
+    Description = "Auto teleport to selected event",
+    Default = getgenv().Config.toggles.TeleportEventToggle or false
+})
+
+TeleportEventToggle:OnChanged(function()
+    getgenv().TeleportEventEnabled = Options.TeleportEventToggle.Value
+    getgenv().Config.toggles.TeleportEventToggle = Options.TeleportEventToggle.Value
+    saveConfig(getgenv().Config)
+    
+    if getgenv().TeleportEventEnabled then
+        local selected = getgenv().SelectedEvent
+        if not selected then
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Select an event first!",
+                Duration = 3
+            })
+            Options.TeleportEventToggle:SetValue(false)
+            return
+        end
+        
+        if not canTeleport() then
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Blocked (TeleportSaved active)",
+                Duration = 3
+            })
+            return
+        end
+        
+        EventFolder = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Props")
+        if not EventFolder then
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Props folder not found!",
+                Duration = 3
+            })
+            Options.TeleportEventToggle:SetValue(false)
+            return
+        end
+        
+        local target = EventFolder:FindFirstChild(selected)
+        local cf = target and getModelCFrame(target)
+        if cf then
+            local hrp = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+            hrp.CFrame = cf + Vector3.new(0, 5, 0)
+            hrp.Anchored = false
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Teleported to: " .. selected,
+                Duration = 3
+            })
+        else
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Event not found: " .. selected,
+                Duration = 3
+            })
+            Options.TeleportEventToggle:SetValue(false)
+        end
+    else
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.Anchored = false
+        end
+    end
+end)
+
+-- ===== TELEPORT TAB =====
+Tabs.Teleport:AddParagraph({
+    Title = "Teleport Menu",
+    Content = "Teleport to islands, NPCs, and special locations"
+})
+
+local TeleportParent = workspace:FindFirstChild("!!!! ISLAND LOCATIONS !!!!")
+local NPCFolder = workspace:FindFirstChild("NPC")
+local MiscFolder = workspace:FindFirstChild("!!! MENU RINGS")
+
+if TeleportParent then
+    local TeleportIslandDropdown = Tabs.Teleport:AddDropdown("TeleportIslandDropdown", {
+        Title = "Teleport to Island",
+        Values = getChildNames(TeleportParent),
+        Default = nil
+    })
+    
+    TeleportIslandDropdown:OnChanged(function(selected)
+        if not selected or not canTeleport() then return end
+        local cf = getModelCFrame(TeleportParent:FindFirstChild(selected))
+        if cf then
+            LocalPlayer.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Teleported to Island: " .. selected,
+                Duration = 3
+            })
+        end
+    end)
+end
+
+if NPCFolder then
+    local TeleportNPCDropdown = Tabs.Teleport:AddDropdown("TeleportNPCDropdown", {
+        Title = "Teleport to NPC",
+        Values = getChildNames(NPCFolder),
+        Default = nil
+    })
+    
+    TeleportNPCDropdown:OnChanged(function(selected)
+        if not selected or not canTeleport() then return end
+        local cf = getModelCFrame(NPCFolder:FindFirstChild(selected))
+        if cf then
+            LocalPlayer.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Teleported to NPC: " .. selected,
+                Duration = 3
+            })
+        end
+    end)
+end
+
+if MiscFolder then
+    local TeleportMiscDropdown = Tabs.Teleport:AddDropdown("TeleportMiscDropdown", {
+        Title = "Teleport to Misc",
+        Values = getChildNames(MiscFolder),
+        Default = nil
+    })
+    
+    TeleportMiscDropdown:OnChanged(function(selected)
+        if not selected or not canTeleport() then return end
+        local cf = getModelCFrame(MiscFolder:FindFirstChild(selected))
+        if cf then
+            LocalPlayer.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Teleported to Misc: " .. selected,
+                Duration = 3
+            })
+        end
+    end)
+end
+
+Tabs.Teleport:AddButton({
+    Title = "Enchanting Altar",
+    Description = "Teleport to Enchanting Altar",
+    Callback = function()
+        local altar = workspace:FindFirstChild("! ENCHANTING ALTAR !")
+        if altar and altar:FindFirstChild("EnchantLocation") then
+            local cf = getModelCFrame(altar.EnchantLocation)
+            if cf then
+                LocalPlayer.Character:WaitForChild("HumanoidRootPart").CFrame = cf
+                Fluent:Notify({
+                    Title = "Teleport",
+                    Content = "Teleported to Enchanting Altar",
+                    Duration = 3
+                })
+            end
+        end
+    end
+})
+
+Tabs.Teleport:AddButton({
+    Title = "Ghostfinn Rod Location",
+    Description = "Deep Sea Quest location",
+    Callback = function()
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = CFrame.new(
+                -3745.10962, -136.108429, -1049.05969,
+                0.962240815, 5.12529708e-09, 0.272199631,
+                -1.09520455e-08, 1, 1.98869046e-08,
+                -0.272199631, -2.2117133e-08, 0.962240815
+            )
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Teleported to Ghostfinn Rod",
+                Duration = 3
+            })
+        end
+    end
+})
+
+Tabs.Teleport:AddButton({
+    Title = "Ares Rod Location",
+    Description = "3M Coins required",
+    Callback = function()
+        local menu = workspace:FindFirstChild("!!! MENU RINGS")
+        if menu and menu:FindFirstChild("Ares Rod Stand") then
+            local cf = getModelCFrame(menu["Ares Rod Stand"])
+            if cf then
+                LocalPlayer.Character:WaitForChild("HumanoidRootPart").CFrame = cf
+                Fluent:Notify({
+                    Title = "Teleport",
+                    Content = "Teleported to Ares Rod Stand",
+                    Duration = 3
+                })
+            end
+        end
+    end
+})
+
+Tabs.Teleport:AddButton({
+    Title = "Angler Rod Location",
+    Description = "8M Coins required",
+    Callback = function()
+        local menu = workspace:FindFirstChild("!!! MENU RINGS")
+        if menu and menu:FindFirstChild("Angler Rod Stand") then
+            local cf = getModelCFrame(menu["Angler Rod Stand"])
+            if cf then
+                LocalPlayer.Character:WaitForChild("HumanoidRootPart").CFrame = cf
+                Fluent:Notify({
+                    Title = "Teleport",
+                    Content = "Teleported to Angler Rod Stand",
+                    Duration = 3
+                })
+            end
+        end
+    end
+})
+
+-- ===== MISC TAB =====
+Tabs.Misc:AddParagraph({
+    Title = "Miscellaneous Features",
+    Content = "Additional utility features"
+})
+
+local FishRadarToggle = Tabs.Misc:AddToggle("FishRadarToggle", {
+    Title = "Enable Fish Radar",
+    Description = "Show fish locations",
+    Default = getgenv().Config.toggles.FishRadarToggle or false
+})
+
+FishRadarToggle:OnChanged(function()
+    getgenv().FishRadarEnabled = Options.FishRadarToggle.Value
+    getgenv().Config.toggles.FishRadarToggle = Options.FishRadarToggle.Value
+    saveConfig(getgenv().Config)
+    
+    local args = { [1] = getgenv().FishRadarEnabled }
+    local updateRadar = Net:FindFirstChild("RF/UpdateFishingRadar")
+    if updateRadar then
+        updateRadar:InvokeServer(unpack(args))
+    end
+    
+    if getgenv().FishRadarEnabled then
+        Fluent:Notify({
+            Title = "Fish Radar",
+            Content = "Fish radar enabled!",
+            Duration = 3
+        })
+    else
+        Fluent:Notify({
+            Title = "Fish Radar",
+            Content = "Fish radar disabled!",
+            Duration = 3
+        })
+    end
+end)
+
+local DivingGearToggle = Tabs.Misc:AddToggle("DivingGearToggle", {
+    Title = "Enable Diving Gear",
+    Description = "Equip/Unequip oxygen tank",
+    Default = getgenv().Config.toggles.DivingGearToggle or false
+})
+
+DivingGearToggle:OnChanged(function()
+    getgenv().DivingGearEnabled = Options.DivingGearToggle.Value
+    getgenv().Config.toggles.DivingGearToggle = Options.DivingGearToggle.Value
+    saveConfig(getgenv().Config)
+    
+    if getgenv().DivingGearEnabled then
+        local args = { [1] = 105 }
+        Net:FindFirstChild("RF/EquipOxygenTank"):InvokeServer(unpack(args))
+        Fluent:Notify({
+            Title = "Diving Gear",
+            Content = "Diving gear enabled!",
+            Duration = 3
+        })
+    else
+        Net:FindFirstChild("RF/UnequipOxygenTank"):InvokeServer()
+        Fluent:Notify({
+            Title = "Diving Gear",
+            Content = "Diving gear disabled!",
+            Duration = 3
+        })
+    end
+end)
+
+-- ===== WEBHOOK TAB =====
+Tabs.Webhook:AddParagraph({
+    Title = "Discord Webhook",
+    Content = "Send fishing logs to Discord"
+})
+
+local WebhookInput = Tabs.Webhook:AddInput("WebhookURL", {
+    Title = "Webhook URL",
+    Default = getgenv().Config.inputs.WebhookURL or "",
+    Placeholder = "https://discord.com/api/webhooks/...",
+    Numeric = false,
+    Finished = true,
+    Callback = function(Value)
+        getgenv().WebhookURL = Value
+        getgenv().Config.inputs.WebhookURL = Value
+        saveConfig(getgenv().Config)
+    end
+})
+
+local WebhookDelayInput = Tabs.Webhook:AddInput("WebhookDelay", {
+    Title = "Webhook Delay (seconds)",
+    Default = tostring(getgenv().Config.inputs.WebhookDelay or "30"),
+    Placeholder = "Enter seconds",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then
+            getgenv().WebhookDelay = num
+            getgenv().Config.inputs.WebhookDelay = Value
+            saveConfig(getgenv().Config)
+        end
+    end
+})
+
+local SendWebhookToggle = Tabs.Webhook:AddToggle("SendWebhookToggle", {
+    Title = "Enable Webhook",
+    Description = "Send logs to Discord",
+    Default = getgenv().Config.toggles.SendWebhookToggle or false
+})
+
+SendWebhookToggle:OnChanged(function()
+    getgenv().SendWebhookEnabled = Options.SendWebhookToggle.Value
+    getgenv().Config.toggles.SendWebhookToggle = Options.SendWebhookToggle.Value
+    saveConfig(getgenv().Config)
+    
+    if getgenv().SendWebhookEnabled then
+        if getgenv().WebhookURL == "" then
+            Fluent:Notify({
+                Title = "Webhook Error",
+                Content = "Please enter a valid webhook URL first!",
+                Duration = 5
+            })
+            Options.SendWebhookToggle:SetValue(false)
+            getgenv().Config.toggles.SendWebhookToggle = false
+            saveConfig(getgenv().Config)
+        else
+            Fluent:Notify({
+                Title = "Webhook",
+                Content = "Webhook enabled!",
+                Duration = 3
+            })
+        end
+    else
+        Fluent:Notify({
+            Title = "Webhook",
+            Content = "Webhook disabled!",
+            Duration = 3
+        })
+    end
+end)
+
+-- ===== ABOUT TAB =====
+Tabs.About:AddParagraph({
+    Title = "Fish It Hub",
+    Content = "Version 2.0 - Wind UI\nMade by Wanz HUB"
+})
+
+local FeedbackInput = Tabs.About:AddInput("Feedback", {
+    Title = "Send Feedback",
+    Default = "",
+    Placeholder = "Enter your feedback and press Enter",
+    Numeric = false,
+    Finished = true,
+    Callback = function(Value)
+        if Value and Value:match("%S") then
+            Fluent:Notify({
+                Title = "Feedback",
+                Content = "Thank you for your feedback!",
+                Duration = 3
+            })
+        end
+    end
+})
+
+-- ===== SETTINGS =====
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("FishItHub")
+SaveManager:SetFolder("FishItHub/configs")
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+-- ===== AUTO FISHING LOGIC =====
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        
+        if getgenv().AutoFishingEnabled then
+            if firstAutoFishingRun then
+                firstAutoFishingRun = false
+                local args = { [1] = 1 }
+                EquipToolFromHotbar:FireServer(unpack(args))
+                task.wait(3)
+            end
+            
+            local itemLabel = LocalPlayer.PlayerGui:WaitForChild("Small Notification")
+                :WaitForChild("Display")
+                :WaitForChild("Container")
+                :WaitForChild("ItemName")
+            
+            local lastName = itemLabel.Text
+            
+            while getgenv().AutoFishingEnabled do
+                ChargeFishingRod:InvokeServer(1761102828.99703)
+                RequestFishingMinigameStarted:InvokeServer(-1.233184814453125, 0.9834602731840376)
+                repeat
+                    FishingCompleted:
