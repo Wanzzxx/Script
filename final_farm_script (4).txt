@@ -386,12 +386,12 @@ local function startQuestFarm()
     spawn(function()
         while questFarmEnabled do
             if not Character or not Character.Parent or not HumanoidRootPart or not HumanoidRootPart.Parent then
-                task.wait(1)
+                task.wait(0)
                 continue
             end
             
             if not selectedQuestNPC then 
-                task.wait(1)
+                task.wait(0)
                 continue
             end
             
@@ -416,10 +416,10 @@ local function startQuestFarm()
                 local attempts = 0
                 while not LocalPlayer.PlayerGui.HUD.Bar.List:FindFirstChild("Quest") and attempts < 20 and questFarmEnabled do
                     pressEKey()
-                    task.wait(0.3)
+                    task.wait(0)
                     attempts = attempts + 1
                 end
-                task.wait(1)
+                task.wait(0)
             end
             
             questFrame = LocalPlayer.PlayerGui.HUD.Bar.List:FindFirstChild("Quest")
@@ -442,17 +442,17 @@ local function startQuestFarm()
                     if mob then
                         stickToMob(mob)
                     else
-                        task.wait(0.5)
+                        task.wait(0)
                     end
                     
-                    task.wait(0.1)
+                    task.wait(0)
                 end
             else
                 print("[QUEST] ERROR: Quest frame not found after pressing E")
-                task.wait(2)
+                task.wait(0)
             end
             
-            task.wait(1)
+            task.wait(0)
         end
     end)
 end
