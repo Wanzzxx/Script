@@ -7,7 +7,7 @@ local Window = MacLib:Window({
     DragStyle = 2,
     DisabledWindowControls = {},
     ShowUserInfo = true,
-    Keybind = Enum.KeyCode.RightControl,
+    Keybind = Enum.KeyCode.LeftControl,
     AcrylicBlur = true,
 })
 
