@@ -504,6 +504,7 @@ local tabs = {
 
 local sections = {
     MobFarmSection = tabs.Farm:Section({ Side = "Left" }),
+    ModePosition = tabs.Farm:Section({ Side = "Left" }),
     QuestFarmSection = tabs.Farm:Section({ Side = "Right" }),
     TeleportSection = tabs.Teleport:Section({ Side = "Left" }),
     AutoStatsSection = tabs.AutoStats:Section({ Side = "Left" })
@@ -541,22 +542,6 @@ sections.MobFarmSection:Button({
     end,
 })
 
-sections.MobFarmSection:Dropdown({
-    Name = "Auto Farm Position",
-    Multi = false,
-    Required = false,
-    Options = {"Above", "Below", "Behind"},
-    Default = "Behind",
-    Callback = function(Value)
-        farmPosition = Value
-        Window:Notify({
-            Title = "Position Changed",
-            Description = "Farm position set to: " .. Value,
-            Lifetime = 3
-        })
-    end,
-}, "FarmPositionDropdown")
-
 sections.MobFarmSection:Toggle({
     Name = "Enable Auto Farm",
     Default = false,
@@ -590,6 +575,25 @@ sections.MobFarmSection:Toggle({
         end
     end,
 }, "FarmToggle")
+
+-- Mode Position 
+sections.ModePosition:Header({ Name = "Set Mode" })
+
+sections.ModePosition:Dropdown({
+    Name = "Auto Farm Position",
+    Multi = false,
+    Required = false,
+    Options = {"Above", "Below", "Behind"},
+    Default = "Behind",
+    Callback = function(Value)
+        farmPosition = Value
+        Window:Notify({
+            Title = "Position Changed",
+            Description = "Farm position set to: " .. Value,
+            Lifetime = 3
+        })
+    end,
+}, "FarmPositionDropdown")
 
 -- Quest Farm Section
 sections.QuestFarmSection:Header({ Name = "Quest Farming" })
