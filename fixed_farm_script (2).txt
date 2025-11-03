@@ -1,8 +1,8 @@
 local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/releases/latest/download/maclib.txt"))()
 
 local Window = MacLib:Window({
-    Title = "Auto Farm Script",
-    Subtitle = "Advanced Farming System",
+    Title = "Wnz HUB",
+    Subtitle = "ROGUE PIECE",
     Size = UDim2.fromOffset(650, 480),
     DragStyle = 2,
     DisabledWindowControls = {},
