@@ -1,0 +1,760 @@
+local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/releases/latest/download/maclib.txt"))()
+
+local Window = MacLib:Window({
+    Title = "Wnz Hub",
+    Subtitle = "Rogue Piece",
+    Size = UDim2.fromOffset(650, 480),
+    DragStyle = 2,
+    DisabledWindowControls = {},
+    ShowUserInfo = true,
+    Keybind = Enum.KeyCode.LeftControl,
+    AcrylicBlur = true,
+})
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+
+local logoGui = Instance.new("ScreenGui")
+logoGui.Name = "FluentLogoToggle"
+logoGui.ResetOnSpawn = false
+logoGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+logoGui.Parent = player:WaitForChild("PlayerGui")
+
+local logoButton = Instance.new("ImageButton")
+logoButton.Name = "LogoButton"
+logoButton.Size = UDim2.new(0, 50, 0, 50)
+logoButton.Position = UDim2.new(0, 10, 0, 10)
+logoButton.BackgroundTransparency = 1
+logoButton.Image = "rbxassetid://98905775020119"
+logoButton.Parent = logoGui
+
+local isMinimized = false
+local function toggleFluent()
+    isMinimized = not isMinimized
+    Window:Minimize(isMinimized)
+end
+
+logoButton.Activated:Connect(toggleFluent)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.LeftControl then
+        toggleFluent()
+    end
+end)
+
+-- Services
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+-- Variables
+local farmingEnabled = false
+local questFarmEnabled = false
+local selectedMob = nil
+local selectedQuestNPC = nil
+local autoClickConnection = nil
+local farmConnection = nil
+local questFarmConnection = nil
+local proximityPromptConnection = nil
+local autoStatsEnabled = false
+local selectedStats = {}
+local autoStatsConnection = nil
+local farmPosition = "Behind"
+
+-- Handle character respawn
+local function onCharacterAdded(char)
+    Character = char
+    HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+    
+    setupBlacklist()
+    
+    if farmingEnabled then
+        task.wait(1)
+        autoClick()
+        startAutoFarm()
+    end
+    
+    if questFarmEnabled then
+        task.wait(1)
+        autoClick()
+        startQuestFarm()
+    end
+    
+    if autoStatsEnabled then
+        task.wait(1)
+        allocateStats()
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+local blacklistedNames = {}
+local function setupBlacklist()
+    blacklistedNames = {}
+    blacklistedNames["Dummy"] = true
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        blacklistedNames[player.Name] = true
+    end
+end
+setupBlacklist()
+
+Players.PlayerAdded:Connect(function(player)
+    blacklistedNames[player.Name] = true
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    blacklistedNames[player.Name] = nil
+end)
+
+local function getValidPart(model)
+    if not model then return nil end
+    return model:FindFirstChild("HumanoidRootPart")
+        or model:FindFirstChild("Torso")
+        or model:FindFirstChild("UpperTorso")
+        or model.PrimaryPart
+        or model:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local function isBlacklisted(model)
+    return blacklistedNames[model.Name] == true
+end
+
+local function getAllMobsDeep(folder)
+    local results = {}
+    for _, obj in pairs(folder:GetChildren()) do
+        if obj:IsA("Model") then
+            local humanoid = obj:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.Health > 0 and not isBlacklisted(obj) and obj ~= Character then
+                table.insert(results, obj)
+            end
+        elseif obj:IsA("Folder") then
+            local nested = getAllMobsDeep(obj)
+            for _, found in pairs(nested) do
+                table.insert(results, found)
+            end
+        end
+    end
+    return results
+end
+
+local function getAllMobs()
+    local mobNames = {}
+    local mobsSet = {}
+    local charactersFolder = workspace.Main:FindFirstChild("Characters")
+    if not charactersFolder then return mobNames end
+    
+    local function searchFolder(folder)
+        for _, obj in pairs(folder:GetChildren()) do
+            if obj:IsA("Model") then
+                local humanoid = obj:FindFirstChildOfClass("Humanoid")
+                if humanoid and not isBlacklisted(obj) and not mobsSet[obj.Name] then
+                    mobsSet[obj.Name] = true
+                    table.insert(mobNames, obj.Name)
+                end
+            elseif obj:IsA("Folder") then
+                searchFolder(obj)
+            end
+        end
+    end
+    
+    searchFolder(charactersFolder)
+    return mobNames
+end
+
+local function getAllMaps()
+    local maps = {}
+    local mapsFolder = workspace:FindFirstChild("Maps")
+    if mapsFolder then
+        for _, v in pairs(mapsFolder:GetChildren()) do
+            table.insert(maps, v.Name)
+        end
+    end
+    return maps
+end
+
+local function getAllQuestNPCs()
+    local npcs = {}
+    local questsFolder = workspace.Main.NPCs:FindFirstChild("Quests")
+    if questsFolder then
+        for _, v in pairs(questsFolder:GetChildren()) do
+            table.insert(npcs, v.Name)
+        end
+    end
+    return npcs
+end
+
+local function getCombatSellers()
+    local sellers = {}
+    local combatFolder = workspace.Main.NPCs:FindFirstChild("Combat")
+    if combatFolder then
+        for _, v in pairs(combatFolder:GetChildren()) do
+            if v:IsA("Model") then
+                table.insert(sellers, v.Name)
+            end
+        end
+    end
+    return sellers
+end
+
+local function getSwordSellers()
+    local sellers = {}
+    local swordFolder = workspace.Main.NPCs:FindFirstChild("Sword")
+    if swordFolder then
+        for _, v in pairs(swordFolder:GetChildren()) do
+            if v:IsA("Model") then
+                table.insert(sellers, v.Name)
+            end
+        end
+    end
+    return sellers
+end
+
+local function teleportTo(cframe)
+    if Character and HumanoidRootPart then
+        HumanoidRootPart.CFrame = cframe
+    end
+end
+
+local function findNearestMob(mobName)
+    local charactersFolder = workspace.Main:FindFirstChild("Characters")
+    if not charactersFolder then return nil end
+    
+    local allMobs = getAllMobsDeep(charactersFolder)
+    local nearestMob = nil
+    local shortestDistance = math.huge
+    
+    for _, mob in pairs(allMobs) do
+        if not mobName or mob.Name:lower():find(mobName:lower()) then
+            local mobRoot = getValidPart(mob)
+            
+            if mobRoot and HumanoidRootPart then
+                local distance = (HumanoidRootPart.Position - mobRoot.Position).Magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    nearestMob = mob
+                end
+            end
+        end
+    end
+    
+    return nearestMob
+end
+
+local function autoClick()
+    if autoClickConnection then
+        autoClickConnection:Disconnect()
+    end
+    
+    autoClickConnection = RunService.Heartbeat:Connect(function()
+        if (farmingEnabled or questFarmEnabled) and Character and Character.Parent then
+            local tool = Character:FindFirstChildOfClass("Tool")
+            if tool then
+                tool:Activate()
+            end
+            
+            pcall(function()
+                for _, v in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+                    if v:IsA("RemoteEvent") and (v.Name:lower():find("attack") or v.Name:lower():find("combat") or v.Name:lower():find("punch") or v.Name:lower():find("hit")) then
+                        v:FireServer()
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+-- FIXED: Anchored stick to mob
+local function stickToMob(mob)
+    if not Character or not Character.Parent or not HumanoidRootPart or not HumanoidRootPart.Parent then
+        return
+    end
+    
+    if isBlacklisted(mob) or mob == Character then
+        return
+    end
+    
+    local mobRoot = getValidPart(mob)
+    
+    if mobRoot and HumanoidRootPart then
+        local offset
+        local lookAtPosition
+        
+        if farmPosition == "Above" then
+            offset = CFrame.new(0, 8, 0)
+            lookAtPosition = mobRoot.Position
+        elseif farmPosition == "Below" then
+            offset = CFrame.new(0, -5, 0)
+            lookAtPosition = mobRoot.Position
+        else
+            offset = CFrame.new(0, 3, 5)
+            lookAtPosition = mobRoot.Position
+        end
+        
+        local targetCFrame = mobRoot.CFrame * offset
+        
+        if lookAtPosition then
+            local lookDirection = (lookAtPosition - targetCFrame.Position).Unit
+            targetCFrame = CFrame.new(targetCFrame.Position, targetCFrame.Position + lookDirection)
+        end
+        
+        -- Anchor and stick
+        HumanoidRootPart.Anchored = true
+        HumanoidRootPart.CFrame = targetCFrame
+        
+        local humanoid = Character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = 0
+            humanoid.JumpPower = 0
+            humanoid.AutoRotate = false
+        end
+    end
+end
+
+local function startAutoFarm()
+    if farmConnection then
+        farmConnection:Disconnect()
+    end
+    
+    farmConnection = RunService.Heartbeat:Connect(function()
+        if farmingEnabled and Character and Character.Parent and HumanoidRootPart and HumanoidRootPart.Parent then
+            local mob = nil
+            
+            if selectedMob then
+                mob = findNearestMob(selectedMob)
+            else
+                mob = findNearestMob(nil)
+            end
+            
+            if mob then
+                stickToMob(mob)
+            end
+        end
+    end)
+end
+
+local function pressEKey()
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.1)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end
+
+local function startQuestFarm()
+    if questFarmConnection then
+        questFarmConnection:Disconnect()
+    end
+    
+    spawn(function()
+        while questFarmEnabled do
+            if not Character or not Character.Parent or not HumanoidRootPart or not HumanoidRootPart.Parent then
+                task.wait(1)
+                continue
+            end
+            
+            if not selectedQuestNPC then 
+                task.wait(1)
+                continue
+            end
+            
+            print("[QUEST] Starting quest cycle...")
+            
+            local questsFolder = workspace.Main.NPCs:FindFirstChild("Quests")
+            if questsFolder then
+                local questNPC = questsFolder:FindFirstChild(selectedQuestNPC)
+                if questNPC then
+                    local npcRoot = questNPC:FindFirstChild("HumanoidRootPart") or questNPC:FindFirstChild("Torso")
+                    if npcRoot then
+                        print("[QUEST] Teleporting to NPC:", selectedQuestNPC)
+                        teleportTo(npcRoot.CFrame * CFrame.new(0, 0, 5))
+                        task.wait(1)
+                    end
+                end
+            end
+            
+            local questFrame = LocalPlayer.PlayerGui.HUD.Bar.List:FindFirstChild("Quest")
+            if not questFrame then
+                print("[QUEST] Pressing E to accept quest...")
+                local attempts = 0
+                while not LocalPlayer.PlayerGui.HUD.Bar.List:FindFirstChild("Quest") and attempts < 20 and questFarmEnabled do
+                    pressEKey()
+                    task.wait(0.3)
+                    attempts = attempts + 1
+                end
+                task.wait(1)
+            end
+            
+            questFrame = LocalPlayer.PlayerGui.HUD.Bar.List:FindFirstChild("Quest")
+            if questFrame then
+                print("[QUEST] Quest accepted! Farming all nearby mobs...")
+                
+                while questFarmEnabled do
+                    if not Character or not Character.Parent or not HumanoidRootPart or not HumanoidRootPart.Parent then
+                        print("[QUEST] Character died, breaking to restart cycle...")
+                        break
+                    end
+                    
+                    questFrame = LocalPlayer.PlayerGui.HUD.Bar.List:FindFirstChild("Quest")
+                    if not questFrame then
+                        print("[QUEST] Quest completed! Restarting cycle...")
+                        break
+                    end
+                    
+                    local mob = findNearestMob(nil)
+                    if mob then
+                        stickToMob(mob)
+                    else
+                        task.wait(0.5)
+                    end
+                    
+                    task.wait(0.1)
+                end
+            else
+                print("[QUEST] ERROR: Quest frame not found after pressing E")
+                task.wait(2)
+            end
+            
+            task.wait(1)
+        end
+    end)
+end
+
+local function allocateStats()
+    if autoStatsConnection then
+        autoStatsConnection:Disconnect()
+    end
+    
+    autoStatsConnection = RunService.Heartbeat:Connect(function()
+        if autoStatsEnabled then
+            for stat, enabled in pairs(selectedStats) do
+                if enabled then
+                    pcall(function()
+                        local args = {
+                            [1] = stat,
+                            [2] = 50
+                        }
+                        LocalPlayer.PlayerGui.Button.Stats_Frame:FindFirstChild("{}").Event:FireServer(unpack(args))
+                    end)
+                end
+            end
+            task.wait(0.5)
+        end
+    end)
+end
+
+spawn(function()
+    while true do
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("ProximityPrompt") then
+                v.HoldDuration = 0
+            end
+        end
+        task.wait(5)
+    end
+end)
+
+local tabGroups = {
+    TabGroup1 = Window:TabGroup()
+}
+
+local tabs = {
+    Farm = tabGroups.TabGroup1:Tab({ Name = "Farm", Image = "rbxassetid://18821914323" }),
+    Teleport = tabGroups.TabGroup1:Tab({ Name = "Teleport", Image = "rbxassetid://10734950309" }),
+    AutoStats = tabGroups.TabGroup1:Tab({ Name = "Auto Stats", Image = "rbxassetid://10747372992" }),
+    Settings = tabGroups.TabGroup1:Tab({ Name = "Settings", Image = "rbxassetid://10734950309" })
+}
+
+local sections = {
+    MobFarmSection = tabs.Farm:Section({ Side = "Left" }),
+    ModePosition = tabs.Farm:Section({ Side = "Left" }),
+    QuestFarmSection = tabs.Farm:Section({ Side = "Right" }),
+    TeleportSection = tabs.Teleport:Section({ Side = "Left" }),
+    AutoStatsSection = tabs.AutoStats:Section({ Side = "Left" })
+}
+
+sections.MobFarmSection:Header({ Name = "Mob Farming" })
+
+local mobDropdown = sections.MobFarmSection:Dropdown({
+    Name = "Select Mob",
+    Multi = false,
+    Required = false,
+    Options = getAllMobs(),
+    Callback = function(Value)
+        selectedMob = Value
+        Window:Notify({
+            Title = "Mob Selected",
+            Description = "Selected: " .. Value,
+            Lifetime = 3
+        })
+    end,
+}, "MobDropdown")
+
+sections.MobFarmSection:Button({
+    Name = "Refresh Mobs",
+    Callback = function()
+        setupBlacklist()
+        local mobs = getAllMobs()
+        
+        Window:Notify({
+            Title = "Refreshed",
+            Description = "Found " .. #mobs .. " mobs!",
+            Lifetime = 3
+        })
+    end,
+})
+
+sections.MobFarmSection:Toggle({
+    Name = "Enable Auto Farm",
+    Default = false,
+    Callback = function(value)
+        farmingEnabled = value
+        if value then
+            autoClick()
+            startAutoFarm()
+            Window:Notify({
+                Title = "Auto Farm",
+                Description = "Started farming " .. (selectedMob or "all mobs"),
+                Lifetime = 3
+            })
+        else
+            if autoClickConnection then autoClickConnection:Disconnect() end
+            if farmConnection then farmConnection:Disconnect() end
+            
+            local humanoid = Character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = 16
+                humanoid.JumpPower = 50
+                humanoid.AutoRotate = true
+            end
+            if HumanoidRootPart then
+                HumanoidRootPart.Anchored = false
+            end
+            
+            Window:Notify({
+                Title = "Auto Farm",
+                Description = "Stopped farming",
+                Lifetime = 3
+            })
+        end
+    end,
+}, "FarmToggle")
+
+sections.ModePosition:Header({ Name = "Set Mode" })
+
+sections.ModePosition:Dropdown({
+    Name = "Auto Farm Position",
+    Multi = false,
+    Required = false,
+    Options = {"Above", "Below", "Behind"},
+    Default = "Behind",
+    Callback = function(Value)
+        farmPosition = Value
+        Window:Notify({
+            Title = "Position Changed",
+            Description = "Farm position set to: " .. Value,
+            Lifetime = 3
+        })
+    end,
+}, "FarmPositionDropdown")
+
+sections.QuestFarmSection:Header({ Name = "Quest Farming" })
+
+sections.QuestFarmSection:Dropdown({
+    Name = "Select Quest NPC",
+    Multi = false,
+    Required = false,
+    Options = getAllQuestNPCs(),
+    Callback = function(Value)
+        selectedQuestNPC = Value
+        Window:Notify({
+            Title = "Quest NPC Selected",
+            Description = "Selected: " .. Value,
+            Lifetime = 3
+        })
+    end,
+}, "QuestNPCDropdown")
+
+sections.QuestFarmSection:Toggle({
+    Name = "Enable Quest Farm",
+    Default = false,
+    Callback = function(value)
+        questFarmEnabled = value
+        if value then
+            autoClick()
+            startQuestFarm()
+            Window:Notify({
+                Title = "Quest Farm",
+                Description = "Started quest farming with " .. (selectedQuestNPC or "no NPC"),
+                Lifetime = 3
+            })
+        else
+            if autoClickConnection then autoClickConnection:Disconnect() end
+            if questFarmConnection then questFarmConnection:Disconnect() end
+            
+            local humanoid = Character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = 16
+                humanoid.JumpPower = 50
+                humanoid.AutoRotate = true
+            end
+            if HumanoidRootPart then
+                HumanoidRootPart.Anchored = false
+            end
+            
+            Window:Notify({
+                Title = "Quest Farm",
+                Description = "Stopped quest farming",
+                Lifetime = 3
+            })
+        end
+    end,
+}, "QuestFarmToggle")
+
+sections.TeleportSection:Header({ Name = "Teleportation" })
+
+sections.TeleportSection:Dropdown({
+    Name = "Teleport to Map",
+    Multi = false,
+    Required = false,
+    Options = getAllMaps(),
+    Callback = function(Value)
+        local mapsFolder = workspace:FindFirstChild("Maps")
+        if mapsFolder then
+            local map = mapsFolder:FindFirstChild(Value)
+            if map then
+                local mapSpawn = map:FindFirstChildWhichIsA("SpawnLocation") or map:FindFirstChildWhichIsA("Part")
+                if mapSpawn then
+                    teleportTo(mapSpawn.CFrame * CFrame.new(0, 5, 0))
+                    Window:Notify({
+                        Title = "Teleported",
+                        Description = "Teleported to " .. Value,
+                        Lifetime = 3
+                    })
+                end
+            end
+        end
+    end,
+}, "MapTeleport")
+
+sections.TeleportSection:Dropdown({
+    Name = "Combat Seller",
+    Multi = false,
+    Required = false,
+    Options = getCombatSellers(),
+    Callback = function(Value)
+        local combatFolder = workspace.Main.NPCs:FindFirstChild("Combat")
+        if combatFolder then
+            local npc = combatFolder:FindFirstChild(Value)
+            if npc then
+                local npcRoot = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Torso")
+                if npcRoot then
+                    teleportTo(npcRoot.CFrame * CFrame.new(0, 0, 5))
+                    Window:Notify({
+                        Title = "Teleported",
+                        Description = "Teleported to " .. Value,
+                        Lifetime = 3
+                    })
+                end
+            end
+        end
+    end,
+}, "CombatSellerDropdown")
+
+sections.TeleportSection:Dropdown({
+    Name = "Sword Seller",
+    Multi = false,
+    Required = false,
+    Options = getSwordSellers(),
+    Callback = function(Value)
+        local swordFolder = workspace.Main.NPCs:FindFirstChild("Sword")
+        if swordFolder then
+            local npc = swordFolder:FindFirstChild(Value)
+            if npc then
+                local npcRoot = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Torso")
+                if npcRoot then
+                    teleportTo(npcRoot.CFrame * CFrame.new(0, 0, 5))
+                    Window:Notify({
+                        Title = "Teleported",
+                        Description = "Teleported to " .. Value,
+                        Lifetime = 3
+                    })
+                end
+            end
+        end
+    end,
+}, "SwordSellerDropdown")
+
+sections.AutoStatsSection:Header({ Name = "Auto Stats" })
+
+sections.AutoStatsSection:Dropdown({
+    Name = "Select Stats",
+    Multi = true,
+    Required = false,
+    Options = {"Power", "Sword", "Defense", "Strength"},
+    Callback = function(Value)
+        selectedStats = Value
+        local statsList = {}
+        for stat, enabled in pairs(Value) do
+            if enabled then
+                table.insert(statsList, stat)
+            end
+        end
+        Window:Notify({
+            Title = "Stats Selected",
+            Description = "Selected: " .. (#statsList > 0 and table.concat(statsList, ", ") or "None"),
+            Lifetime = 3
+        })
+    end,
+}, "StatsMultiDropdown")
+
+sections.AutoStatsSection:Toggle({
+    Name = "Auto Stats Toggle",
+    Default = false,
+    Callback = function(value)
+        autoStatsEnabled = value
+        if value then
+            allocateStats()
+            Window:Notify({
+                Title = "Auto Stats",
+                Description = "Started auto stats allocation",
+                Lifetime = 3
+            })
+        else
+            if autoStatsConnection then 
+                autoStatsConnection:Disconnect() 
+            end
+            Window:Notify({
+                Title = "Auto Stats",
+                Description = "Stopped auto stats allocation",
+                Lifetime = 3
+            })
+        end
+    end,
+}, "AutoStatsToggle")
+
+tabs.Settings:InsertConfigSection("Left")
+
+tabs.Farm:Select()
+
+MacLib:SetFolder("AutoFarmScript")
+MacLib:LoadAutoLoadConfig()
+
+Window.onUnloaded(function()
+    if autoClickConnection then autoClickConnection:Disconnect() end
+    if farmConnection then farmConnection:Disconnect() end
+    if questFarmConnection then questFarmConnection:Disconnect() end
+    if autoStatsConnection then autoStatsConnection:Disconnect() end
+    
+    local humanoid = Character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = 16
+        humanoid.JumpPower = 50
+        humanoid.AutoRotate = true
+    end
+    if HumanoidRootPart then
+        HumanoidRootPart.Anchored = false
+    end
+end)
