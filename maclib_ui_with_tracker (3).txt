@@ -1,0 +1,508 @@
+-- Load MacLib UI Library
+local MacLib = loadstring(game:HttpGet("https://github.com/biggaboy212/Maclib/releases/latest/download/maclib.txt"))()
+
+-- Remote Monitor Variables
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local upgradeCount = {}
+local placementTimes = {}
+local startTime = tick()
+
+-- Macro Recording Variables
+local isRecording = false
+local isPlaying = false
+local recordedActions = {}
+local recordStartTime = 0
+local currentMacroName = ""
+
+-- Function to format time display
+local function formatTime(seconds)
+    local minutes = math.floor(seconds / 60)
+    local secs = math.floor(seconds % 60)
+    return string.format("%02d:%02d", minutes, secs)
+end
+
+-- Save Macro to File
+local function saveMacro(macroName)
+    if #recordedActions == 0 then
+        return false, "No actions recorded"
+    end
+    
+    local success, err = pcall(function()
+        local data = game:GetService("HttpService"):JSONEncode(recordedActions)
+        writefile("WnZMacroSave/" .. macroName .. ".json", data)
+    end)
+    
+    return success, err
+end
+
+-- Load Macro from File
+local function loadMacro(macroName)
+    local success, result = pcall(function()
+        local data = readfile("WnZMacroSave/" .. macroName .. ".json")
+        return game:GetService("HttpService"):JSONDecode(data)
+    end)
+    
+    if success then
+        return result
+    else
+        return nil
+    end
+end
+
+-- Get list of saved macros
+local function getSavedMacros()
+    if not isfolder("WnZMacroSave") then
+        makefolder("WnZMacroSave")
+        return {}
+    end
+    
+    local files = listfiles("WnZMacroSave")
+    local macros = {}
+    
+    for _, file in ipairs(files) do
+        local name = file:match("([^/]+)%.json$")
+        if name then
+            table.insert(macros, name)
+        end
+    end
+    
+    return macros
+end
+
+-- Hook all RemoteEvents and RemoteFunctions
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
+    
+    -- Call original function FIRST to not block anything
+    local result = {oldNamecall(self, ...)}
+    
+    -- THEN do our tracking (non-blocking)
+    task.spawn(function()
+        -- Check if it's a FireServer call
+        if method == "FireServer" then
+            local remoteName = self.Name
+            
+            -- Track PlaceTower
+            if remoteName == "PlaceTower" then
+                local unitName = args[1]
+                local cframe = args[2]
+                
+                if unitName and cframe then
+                    local currentTime = tick() - startTime
+                    
+                    -- Extract position from CFrame
+                    local position = cframe.Position
+                    local posStr = string.format("(%.1f, %.1f, %.1f)", position.X, position.Y, position.Z)
+                    
+                    -- Print placement info
+                    print(string.format("[%s] : Time [%s] | Position: %s", 
+                        unitName, 
+                        formatTime(currentTime),
+                        posStr
+                    ))
+                    
+                    -- Initialize upgrade count for this unit
+                    if not upgradeCount[unitName] then
+                        upgradeCount[unitName] = 0
+                    end
+                    
+                    -- Update status if recording or playing
+                    if isRecording or isPlaying then
+                        updateStatusLabels("PlaceTower", unitName, currentTime, nil, isPlaying)
+                    end
+                    
+                    -- Record action if recording
+                    if isRecording then
+                        table.insert(recordedActions, {
+                            action = "PlaceTower",
+                            time = tick() - recordStartTime,
+                            unitName = unitName,
+                            cframe = cframe
+                        })
+                    end
+                end
+            end
+        end
+        
+        -- Check if it's an InvokeServer call
+        if method == "InvokeServer" then
+            local remoteName = self.Name
+            
+            -- Track Upgrade
+            if remoteName == "Upgrade" then
+                local towerInstance = args[1]
+                
+                if towerInstance then
+                    -- Get unit name from instance
+                    local unitName = tostring(towerInstance.Name)
+                    local currentTime = tick() - startTime
+                    
+                    -- Increment upgrade count
+                    if not upgradeCount[unitName] then
+                        upgradeCount[unitName] = 0
+                    end
+                    upgradeCount[unitName] = upgradeCount[unitName] + 1
+                    
+                    -- Print upgrade info
+                    print(string.format("[%s] : Upg Count [%d]", 
+                        unitName, 
+                        upgradeCount[unitName]
+                    ))
+                    
+                    -- Update status if recording or playing
+                    if isRecording or isPlaying then
+                        updateStatusLabels("Upgrade", unitName, currentTime, upgradeCount[unitName], isPlaying)
+                    end
+                    
+                    -- Record action if recording
+                    if isRecording then
+                        table.insert(recordedActions, {
+                            action = "Upgrade",
+                            time = tick() - recordStartTime,
+                            unitName = unitName,
+                            towerPath = towerInstance:GetFullName()
+                        })
+                    end
+                end
+            end
+        end
+    end)
+    
+    -- Return the original result immediately
+    return unpack(result)
+end)
+
+-- Create Window
+local Window = MacLib:Window({
+    Title = "Macro Recorder",
+    Subtitle = "Remote Monitor & Macro System",
+    Size = UDim2.fromOffset(720, 480),
+    DragStyle = 2,
+    DisabledWindowControls = {},
+    ShowUserInfo = true,
+    Keybind = Enum.KeyCode.RightControl,
+    AcrylicBlur = true,
+})
+
+-- Global Settings
+local globalSettings = {
+    UIBlurToggle = Window:GlobalSetting({
+        Name = "UI Blur",
+        Default = Window:GetAcrylicBlurState(),
+        Callback = function(bool)
+            Window:SetAcrylicBlurState(bool)
+            Window:Notify({
+                Title = Window.Settings.Title,
+                Description = (bool and "Enabled" or "Disabled") .. " UI Blur",
+                Lifetime = 5
+            })
+        end,
+    }),
+    NotificationToggler = Window:GlobalSetting({
+        Name = "Notifications",
+        Default = Window:GetNotificationsState(),
+        Callback = function(bool)
+            Window:SetNotificationsState(bool)
+            Window:Notify({
+                Title = Window.Settings.Title,
+                Description = (bool and "Enabled" or "Disabled") .. " Notifications",
+                Lifetime = 5
+            })
+        end,
+    }),
+    ShowUserInfo = Window:GlobalSetting({
+        Name = "Show User Info",
+        Default = Window:GetUserInfoState(),
+        Callback = function(bool)
+            Window:SetUserInfoState(bool)
+            Window:Notify({
+                Title = Window.Settings.Title,
+                Description = (bool and "Showing" or "Redacted") .. " User Info",
+                Lifetime = 5
+            })
+        end,
+    })
+}
+
+-- Create Tab Groups and Tabs
+local tabGroups = {
+    TabGroup1 = Window:TabGroup()
+}
+
+local tabs = {
+    Main = tabGroups.TabGroup1:Tab({ Name = "Macro", Image = "rbxassetid://18821914323" }),
+    Settings = tabGroups.TabGroup1:Tab({ Name = "Settings", Image = "rbxassetid://10734950309" })
+}
+
+-- Create Sections
+local sections = {
+    LeftSection = tabs.Main:Section({ Side = "Left" }),
+    RightSection = tabs.Main:Section({ Side = "Right" })
+}
+
+-- LEFT SECTION: Macro Status
+sections.LeftSection:Header({
+    Name = "Macro Status"
+})
+
+statusLabel = sections.LeftSection:Label({
+    Text = "Status: Idle"
+})
+
+placementStatusLabel = sections.LeftSection:SubLabel({
+    Text = "Placing Unit: None"
+})
+
+upgradeStatusLabel = sections.LeftSection:SubLabel({
+    Text = "Upgrading Unit: None"
+})
+
+-- RIGHT SECTION: Macro Controls
+sections.RightSection:Header({
+    Name = "Macro Controls"
+})
+
+-- Macro Name Input
+sections.RightSection:Input({
+    Name = "Macro Name",
+    Placeholder = "Enter macro name",
+    AcceptedCharacters = "All",
+    Callback = function(input)
+        currentMacroName = input
+    end,
+}, "MacroName")
+
+-- Saved Macros Dropdown
+local savedMacrosDropdown = sections.RightSection:Dropdown({
+    Name = "Load Macro",
+    Multi = false,
+    Required = false,
+    Options = getSavedMacros(),
+    Callback = function(value)
+        local loadedMacro = loadMacro(value)
+        if loadedMacro then
+            recordedActions = loadedMacro
+            currentMacroName = value
+            Window:Notify({
+                Title = "Macro Recorder",
+                Description = "Loaded macro: " .. value .. " (" .. #recordedActions .. " actions)",
+                Lifetime = 3
+            })
+        else
+            Window:Notify({
+                Title = "Macro Recorder",
+                Description = "Failed to load macro: " .. value,
+                Lifetime = 3
+            })
+        end
+    end,
+}, "LoadMacro")
+
+-- Save Macro Button
+sections.RightSection:Button({
+    Name = "Save Macro",
+    Callback = function()
+        if currentMacroName == "" then
+            Window:Notify({
+                Title = "Macro Recorder",
+                Description = "Please enter a macro name",
+                Lifetime = 3
+            })
+            return
+        end
+        
+        local success, err = saveMacro(currentMacroName)
+        if success then
+            Window:Notify({
+                Title = "Macro Recorder",
+                Description = "Saved macro: " .. currentMacroName,
+                Lifetime = 3
+            })
+            -- Refresh dropdown
+            savedMacrosDropdown:UpdateOptions(getSavedMacros())
+        else
+            Window:Notify({
+                Title = "Macro Recorder",
+                Description = "Failed to save: " .. tostring(err),
+                Lifetime = 3
+            })
+        end
+    end,
+})
+
+sections.RightSection:Divider()
+
+-- Record Macro Toggle
+sections.RightSection:Toggle({
+    Name = "Record Macro",
+    Default = false,
+    Callback = function(value)
+        isRecording = value
+        
+        if isRecording then
+            -- Start recording
+            recordedActions = {}
+            recordStartTime = tick()
+            pcall(function() statusLabel:Set("Status: Recording") end)
+            Window:Notify({
+                Title = "Macro Recorder",
+                Description = "Started recording macro",
+                Lifetime = 3
+            })
+            print("===========================================")
+            print("Recording Started")
+            print("===========================================")
+        else
+            -- Stop recording
+            pcall(function() statusLabel:Set("Status: Idle") end)
+            clearStatusLabels()
+            Window:Notify({
+                Title = "Macro Recorder",
+                Description = "Stopped recording. Recorded " .. #recordedActions .. " actions",
+                Lifetime = 3
+            })
+            print("===========================================")
+            print("Recording Stopped - Total Actions: " .. #recordedActions)
+            print("===========================================")
+        end
+    end,
+}, "RecordMacro")
+
+-- Play Macro Toggle
+sections.RightSection:Toggle({
+    Name = "Play Macro",
+    Default = false,
+    Callback = function(value)
+        isPlaying = value
+        
+        if isPlaying then
+            if #recordedActions == 0 then
+                Window:Notify({
+                    Title = "Macro Recorder",
+                    Description = "No macro recorded or loaded!",
+                    Lifetime = 3
+                })
+                return
+            end
+            
+            pcall(function() statusLabel:Set("Status: Playing") end)
+            Window:Notify({
+                Title = "Macro Recorder",
+                Description = "Playing macro (" .. #recordedActions .. " actions)",
+                Lifetime = 3
+            })
+            print("===========================================")
+            print("Playing Macro - " .. #recordedActions .. " actions")
+            print("===========================================")
+            
+            -- Play macro in a separate coroutine
+            task.spawn(function()
+                local playStartTime = tick()
+                
+                for i, action in ipairs(recordedActions) do
+                    if not isPlaying then break end
+                    
+                    -- Wait for the correct timing
+                    local timeDiff = action.time - (tick() - playStartTime)
+                    if timeDiff > 0 then
+                        task.wait(timeDiff)
+                    end
+                    
+                    -- Execute action with retry logic
+                    if action.action == "PlaceTower" then
+                        local success = pcall(function()
+                            local args = {
+                                [1] = action.unitName,
+                                [2] = action.cframe
+                            }
+                            ReplicatedStorage.Remotes.PlaceTower:FireServer(unpack(args))
+                        end)
+                        print(string.format("Played: [%s] at Time [%s] %s", 
+                            action.unitName, 
+                            formatTime(action.time),
+                            success and "" or "[FAILED - RETRYING]"
+                        ))
+                        
+                        -- Retry if failed
+                        if not success then
+                            task.wait(0.1)
+                            pcall(function()
+                                local args = {
+                                    [1] = action.unitName,
+                                    [2] = action.cframe
+                                }
+                                ReplicatedStorage.Remotes.PlaceTower:FireServer(unpack(args))
+                            end)
+                        end
+                    elseif action.action == "Upgrade" then
+                        local success = pcall(function()
+                            local tower = game:GetService("Players").LocalPlayer:FindFirstChild(action.towerPath, true)
+                            if not tower then
+                                tower = workspace.Towers:FindFirstChild(action.unitName)
+                            end
+                            
+                            if tower then
+                                local args = { [1] = tower }
+                                ReplicatedStorage.Remotes.Upgrade:InvokeServer(unpack(args))
+                            end
+                        end)
+                        print(string.format("Played: Upgrade [%s] %s", 
+                            action.unitName,
+                            success and "" or "[FAILED - RETRYING]"
+                        ))
+                        
+                        -- Retry if failed
+                        if not success then
+                            task.wait(0.1)
+                            pcall(function()
+                                local tower = workspace.Towers:FindFirstChild(action.unitName)
+                                if tower then
+                                    local args = { [1] = tower }
+                                    ReplicatedStorage.Remotes.Upgrade:InvokeServer(unpack(args))
+                                end
+                            end)
+                        end
+                    end
+                end
+                
+                pcall(function() statusLabel:Set("Status: Idle") end)
+                clearStatusLabels()
+                Window:Notify({
+                    Title = "Macro Recorder",
+                    Description = "Macro playback completed",
+                    Lifetime = 3
+                })
+                print("===========================================")
+                print("Playback Completed")
+                print("===========================================")
+            end)
+        else
+            pcall(function() statusLabel:Set("Status: Idle") end)
+            clearStatusLabels()
+            Window:Notify({
+                Title = "Macro Recorder",
+                Description = "Stopped macro playback",
+                Lifetime = 3
+            })
+            print("Playback Stopped")
+        end
+    end,
+}, "PlayMacro")
+
+-- Config and Settings
+MacLib:SetFolder("Maclib")
+tabs.Settings:InsertConfigSection("Left")
+
+Window.onUnloaded(function()
+    print("Unloaded!")
+end)
+
+tabs.Main:Select()
+MacLib:LoadAutoLoadConfig()
+
+print("===========================================")
+print("Remote Monitor: Active")
+print("Tracking: PlaceTower & Upgrade")
+print("===========================================")
