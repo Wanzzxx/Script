@@ -20,7 +20,7 @@ local Window = Fluent:CreateWindow({
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "" }),
-    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+    Settings = Window:AddTab({ Title = "Configuration", Icon = "settings" })
 }
 local Options = Fluent.Options
 
@@ -101,8 +101,8 @@ local function safeFindFolder(name)
 	return Events:FindFirstChild(baseName)
 end
 
-Options.Part1Joiner = Tabs.Main:AddToggle("Part1Joiner", { Title = (detectedEventName and (detectedEventName .. " Part 1 Joiner") or "Part 1 Joiner"), Default = false })
-Options.Part2Joiner = Tabs.Main:AddToggle("Part2Joiner", { Title = (detectedEventName and (detectedEventName .. " Part 2 Joiner") or "Part 2 Joiner"), Default = false })
+Options.Part1Joiner = Tabs.Main:AddToggle("Part1Joiner", { Title = (detectedEventName and (detectedEventName .. " [Part 1 Joiner]") or "Part 1 Joiner"), Default = false })
+Options.Part2Joiner = Tabs.Main:AddToggle("Part2Joiner", { Title = (detectedEventName and (detectedEventName .. " [Part 2 Joiner]") or "Part 2 Joiner"), Default = false })
 
 Options.Part1Joiner:OnChanged(function()
 	if not Options.Part1Joiner.Value then return end
