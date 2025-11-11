@@ -1,0 +1,181 @@
+-- Fluent UI
+if not table.find({12886143095, 18583778121}, game.PlaceId) then
+    warn("Are You Sure This Is ALS?")
+    return
+end
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Anime Last Stand " .. Fluent.Version,
+    SubTitle = "Event Joiner",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Darker",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
+local Options = Fluent.Options
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Events = ReplicatedStorage:WaitForChild("Events")
+
+local currentYear = tostring(os.date("*t").year)
+local eventBases = {
+	"Christmas","Easter","Valentine","Hallowen",
+	"Aniversary","SaintPatricks","Summer","SummerPrep"
+}
+
+local detectedEventName, detectedBase, detectedFolder, detectedData
+local now = os.time()
+
+for _, base in ipairs(eventBases) do
+	for _, f in ipairs(Events:GetChildren()) do
+		if f:IsA("Folder") and string.find(f.Name, base .. currentYear) then
+			local constants = f:FindFirstChild("Constants")
+			if constants and constants:IsA("ModuleScript") then
+				local ok, data = pcall(require, constants)
+				if ok and typeof(data) == "table" then
+					if data.EndTime and now < data.EndTime then
+						detectedEventName = base .. currentYear
+						detectedBase = base
+						detectedFolder = f
+						detectedData = data
+						break
+					end
+				end
+			else
+				detectedEventName = base .. currentYear
+				detectedBase = base
+				detectedFolder = f
+				detectedData = nil
+				break
+			end
+		end
+	end
+	if detectedEventName then break end
+end
+
+if not detectedEventName then
+	for _, f in ipairs(Events:GetChildren()) do
+		if f:IsA("Folder") and string.find(f.Name, currentYear) then
+			detectedEventName = f.Name
+			detectedFolder = f
+			break
+		end
+	end
+end
+
+if detectedEventName then
+	print("────────────────────────────")
+	print("Current Event:", detectedEventName)
+	print("Part 1:", tostring(detectedData and detectedData.EventBuffs ~= nil or false))
+	print("Part 2:", tostring(detectedData and detectedData.EventBuffsP2 ~= nil or false))
+	print("────────────────────────────")
+	Fluent:Notify({ Title = "Detected Event", Content = detectedEventName, Duration = 4 })
+else
+	print("────────────────────────────")
+	print("No active seasonal event detected.")
+	print("────────────────────────────")
+	Fluent:Notify({ Title = "Event Not Found", Content = "No active event detected.", Duration = 6 })
+end
+
+Tabs.Main:AddParagraph({
+	Title = "Current Event",
+	Content = (detectedEventName or "No Active Event") .. "\nPart 1: " .. tostring(detectedData and detectedData.EventBuffs ~= nil or false) .. "\nPart 2: " .. tostring(detectedData and detectedData.EventBuffsP2 ~= nil or false)
+})
+
+-- Joiner
+local function safeFindFolder(name)
+	if Events:FindFirstChild(name) then
+		return Events[name]
+	end
+	local baseName = name:gsub("_P2$", "")
+	return Events:FindFirstChild(baseName)
+end
+
+Options.Part1Joiner = Tabs.Main:AddToggle("Part1Joiner", { Title = (detectedEventName and (detectedEventName .. " Part 1 Joiner") or "Part 1 Joiner"), Default = false })
+Options.Part2Joiner = Tabs.Main:AddToggle("Part2Joiner", { Title = (detectedEventName and (detectedEventName .. " Part 2 Joiner") or "Part 2 Joiner"), Default = false })
+
+Options.Part1Joiner:OnChanged(function()
+	if not Options.Part1Joiner.Value then return end
+	if not detectedEventName then
+		Fluent:Notify({ Title = "Error", Content = "Event not detected.", Duration = 4 })
+		Options.Part1Joiner:SetValue(false)
+		return
+	end
+
+	local args = { detectedEventName }
+	local folder = safeFindFolder(detectedEventName)
+	if not folder then
+		Fluent:Notify({ Title = "Error", Content = "Folder not found: " .. detectedEventName, Duration = 4 })
+		Options.Part1Joiner:SetValue(false)
+		return
+	end
+
+	if folder:FindFirstChild("Enter") then
+		folder.Enter:FireServer(unpack(args))
+		task.wait(1)
+		if folder:FindFirstChild("Start") then
+			folder.Start:FireServer()
+			Fluent:Notify({ Title = "Joined", Content = "Joined " .. detectedEventName .. " Part 1", Duration = 4 })
+		else
+			Fluent:Notify({ Title = "Error", Content = "Start remote missing in folder.", Duration = 4 })
+		end
+	else
+		Fluent:Notify({ Title = "Error", Content = "Enter remote missing in folder.", Duration = 4 })
+	end
+
+	Options.Part1Joiner:SetValue(false)
+end)
+
+Options.Part2Joiner:OnChanged(function()
+	if not Options.Part2Joiner.Value then return end
+	if not detectedEventName then
+		Fluent:Notify({ Title = "Error", Content = "Event not detected.", Duration = 4 })
+		Options.Part2Joiner:SetValue(false)
+		return
+	end
+
+	local args = { detectedEventName .. "_P2" }
+	local folder = safeFindFolder(detectedEventName)
+	if not folder then
+		Fluent:Notify({ Title = "Error", Content = "Folder not found: " .. detectedEventName, Duration = 4 })
+		Options.Part2Joiner:SetValue(false)
+		return
+	end
+
+	if folder:FindFirstChild("Enter") then
+		folder.Enter:FireServer(unpack(args))
+		task.wait(1)
+		if folder:FindFirstChild("Start") then
+			folder.Start:FireServer()
+			Fluent:Notify({ Title = "Joined", Content = "Joined " .. detectedEventName .. " Part 2", Duration = 4 })
+		else
+			Fluent:Notify({ Title = "Error", Content = "Start remote missing in folder.", Duration = 4 })
+		end
+	else
+		Fluent:Notify({ Title = "Error", Content = "Enter remote missing in folder.", Duration = 4 })
+	end
+
+	Options.Part2Joiner:SetValue(false)
+end)
+
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("WnZJoinerConfig")
+SaveManager:SetFolder("WnZJoinerConfig/ALS")
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+Window:SelectTab(1)
+Fluent:Notify({ Title = "Fluent", Content = "Joiner loaded successfully", Duration = 5 })
+SaveManager:LoadAutoloadConfig()
