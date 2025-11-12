@@ -1203,6 +1203,71 @@ task.spawn(function()
     end
 end)
 
+Options.PingOnUnitDrop = Tabs.Webhook:AddToggle("PingOnUnitDrop", {
+    Title = "Ping On Unit Drop",
+    Default = false
+})
+
+local unitDropConnection
+
+Options.PingOnUnitDrop:OnChanged(function(enabled)
+    if enabled then
+        local url = Options.WebhookURL.Value
+        if url == "" then
+            Fluent:Notify({
+                Title = "Unit Drop Monitor",
+                Content = "Please enter a webhook URL first!",
+                Duration = 4
+            })
+            Options.PingOnUnitDrop:SetValue(false)
+            return
+        end
+        
+        local playerData = ReplicatedStorage:WaitForChild("Player_Data")
+        local playerCollection = playerData:WaitForChild(LocalPlayer.Name):WaitForChild("Collection")
+        
+        -- Monitor for new units
+        unitDropConnection = playerCollection.ChildAdded:Connect(function(newUnit)
+            -- Send webhook notification
+            local data = {
+                content = "@everyone You got unit **" .. newUnit.Name .. "**"
+            }
+            
+            pcall(function()
+                request({
+                    Url = url,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = HttpService:JSONEncode(data)
+                })
+            end)
+            
+            -- Also show in-game notification
+            Fluent:Notify({
+                Title = "New Unit!",
+                Content = "You got: " .. newUnit.Name,
+                Duration = 5
+            })
+        end)
+        
+        Fluent:Notify({
+            Title = "Unit Drop Monitor",
+            Content = "Now monitoring for new units!",
+            Duration = 4
+        })
+    else
+        if unitDropConnection then
+            unitDropConnection:Disconnect()
+            unitDropConnection = nil
+        end
+        
+        Fluent:Notify({
+            Title = "Unit Drop Monitor",
+            Content = "Stopped monitoring units.",
+            Duration = 3
+        })
+    end
+end)
 
 -- Misc Section
 Options.AntiLag = Tabs.Misc:AddToggle("AntiLag", {
