@@ -313,6 +313,33 @@ Options.AutoStart:OnChanged(function(state)
     end)
 end)
 
+Options.RapidRestart = Tabs.Main:AddToggle("RapidRestart", {
+    Title = "Rapid Restart Method",
+    Default = false
+})
+
+Options.RapidRestart:OnChanged(function(enabled)
+    if not enabled then return end
+
+    local rs = game:GetService("ReplicatedStorage")
+    local pg = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+
+    task.spawn(function()
+        while Options.RapidRestart.Value and not Fluent.Unloaded do
+            pcall(function()
+                rs.Remote.Server.OnGame.RestartMatch:FireServer()
+            end)
+
+            if pg:FindFirstChild("GameEndedAnimationUI") then
+                pcall(function()
+                    rs.Remote.Server.OnGame.Voting.VoteRetry:FireServer()
+                end)
+            end
+
+            task.wait(1.5)
+        end
+    end)
+end)
 
 -- Other Section
 Options.AutoClaimQuest = Tabs.Other:AddToggle("AutoClaimQuest", {
