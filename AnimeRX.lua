@@ -617,7 +617,10 @@ Options.AutoJoinKurumiBoss:OnChanged(function(enabled)
                     Duration = 4
                 })
 
-                break -- run once
+                break -- run once per activation
+            else
+                -- Not in lobby, do nothing
+                break
             end
             task.wait(2)
         end
