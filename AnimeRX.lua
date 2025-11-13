@@ -165,6 +165,7 @@ loadSettings()
 -- Main Section
 Options.SetMaxSpeed = Tabs.Main:AddToggle("SetMaxSpeed", {
     Title = "Set Max GameSpeed",
+    Description = "Automatically Set Your GameSpeed",
     Default = false,
     Callback = function(state)
         local args = {
@@ -187,6 +188,7 @@ Tabs.Main:AddParagraph({
 
 Options.VoteNext = Tabs.Main:AddToggle("VoteNext", {
     Title = "Vote Next",
+    Description = "Automatically Vote Next",
     Default = false
 })
 
@@ -206,6 +208,7 @@ end)
 
 Options.VoteRetry = Tabs.Main:AddToggle("VoteRetry", {
     Title = "Vote Retry",
+    Description = "Automatically Vote Retry",
     Default = false
 })
 
@@ -267,6 +270,7 @@ end)
 
 Options.AutoStart = Tabs.Main:AddToggle("AutoStart", {
     Title = "Auto Start",
+    Description = "Automatically Start The Game",
     Default = false
 })
 
@@ -315,6 +319,7 @@ end)
 
 Options.RapidRestart = Tabs.Main:AddToggle("RapidRestart", {
     Title = "Rapid Restart Method",
+    Description = "Fast Win (Only Works On Kurumi Boss Event",
     Default = false
 })
 
@@ -1077,6 +1082,7 @@ end)
 -- Webhook Section
 Options.WebhookURL = Tabs.Webhook:AddInput("WebhookInput", {
     Title = "Paste Your Webhook",
+    Description = "Sending Webhooks Into Your Discord",
     Default = Options.WebhookURL_Value or "",
     Placeholder = "https://discord.com/api/webhooks/...",
     Finished = true,
@@ -1205,6 +1211,7 @@ end)
 
 Options.PingOnUnitDrop = Tabs.Webhook:AddToggle("PingOnUnitDrop", {
     Title = "Ping On Unit Drop",
+    Description = "Will Ping @everyone If You Got New Units",
     Default = false
 })
 
