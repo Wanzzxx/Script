@@ -1001,6 +1001,7 @@ local function sendWebhook(results)
         username = "WanzHook",
         embeds = {{
             title = "**Wanz Hub - " .. placeName .. "**",
+            color = 0xFFFFFF,
             fields = {
                 { name = "Stage", value = stageName, inline = false },
                 { name = "Username", value = "||" .. LocalPlayer.Name .. "||", inline = true },
