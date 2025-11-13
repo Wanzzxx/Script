@@ -1014,11 +1014,7 @@ local function sendWebhook(results)
     end
 end
 
-local lastNotify = 0
 local function showGameResults()
-    if os.time() - lastNotify < 4 then return end
-    lastNotify = os.time()
-
     task.spawn(function()
         local timeout = 5
         local rw
