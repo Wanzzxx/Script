@@ -985,16 +985,27 @@ local function sendWebhook(results)
     local url = Options.WebhookURL.Value
     if url == "" then return end
 
+    -- Get place name
     local placeName = MarketplaceService:GetProductInfo(game.PlaceId).Name
+    
+    -- Get stage name
+    local stageName = "Unknown Stage"
+    pcall(function()
+        local stageLabel = LocalPlayer.PlayerGui.HUD.InGame.Main.GameInfo.Stage.Label
+        if stageLabel then
+            stageName = stageLabel.Text
+        end
+    end)
+
     local data = {
         username = "WanzHook",
         embeds = {{
-            title = "Results:",
+            title = "**Wanz Hub - " .. placeName .. "**",
             fields = {
-                { name = "Place", value = placeName, inline = false },
+                { name = "Stage", value = stageName, inline = false },
                 { name = "Username", value = "||" .. LocalPlayer.Name .. "||", inline = true },
-                { name = "Rewards", value = results, inline = false },
-                { name = "Time", value = os.date("%Y-%m-%d %H:%M:%S"), inline = false }
+                { name = "Time", value = os.date("%Y-%m-%d %H:%M:%S"), inline = false },
+                { name = "Rewards", value = results, inline = false }
             }
         }}
     }
