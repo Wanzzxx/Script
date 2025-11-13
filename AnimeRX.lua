@@ -1105,7 +1105,7 @@ local function showGameResults()
             local rewardName = item.Name
             local amount = item:IsA("NumberValue") and item.Value or ((item:FindFirstChild("Amount") and item.Amount.Value) or 1)
             local nowAmount = getPlayerItemAmount(rewardName)
-            table.insert(lines, ("[ %dx ] %s  [Now: %dx]"):format(amount, rewardName, nowAmount))
+            table.insert(lines, ("[ %d+ ] %s  [Now: %dx]"):format(amount, rewardName, nowAmount))
         end
 
         local resultText = table.concat(lines, "\n")
