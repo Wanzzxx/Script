@@ -1079,6 +1079,7 @@ Options.PingOnUnitDrop = Tabs.Webhook:AddToggle("PingOnUnitDrop", {
 })
 
 local unitDropConnection
+local trackedUnits = {}
 
 Options.PingOnUnitDrop:OnChanged(function(enabled)
     if enabled then
@@ -1097,16 +1098,31 @@ Options.PingOnUnitDrop:OnChanged(function(enabled)
         local collectionGui = playerGui:WaitForChild("Collection")
         local unitSpace = collectionGui.Main.Base.Space.Unit
         
+        -- Track existing units (don't notify for these)
+        trackedUnits = {}
+        for _, existingUnit in ipairs(unitSpace:GetChildren()) do
+            if existingUnit:IsA("TextButton") then
+                trackedUnits[existingUnit.Name] = true
+            end
+        end
+        
+        -- Monitor for NEW units only
         unitDropConnection = unitSpace.ChildAdded:Connect(function(newUnit)
-            local unitName = newUnit.Name
+            if not newUnit:IsA("TextButton") then return end
+            if trackedUnits[newUnit.Name] then return end -- Skip if already tracked
             
+            trackedUnits[newUnit.Name] = true -- Mark as tracked
+            
+            local unitName = newUnit.Name
             local rarity = "Unknown"
+            
+            task.wait(0.1) -- Small delay to ensure Frame is loaded
+            
             pcall(function()
                 local frame = newUnit:FindFirstChild("Frame")
                 if frame then
                     local unitFrame = frame:FindFirstChild("UnitFrame")
                     if unitFrame then
-                        -- Check direct children for rarity
                         if unitFrame:FindFirstChild("Rare") then
                             rarity = "Rare"
                         elseif unitFrame:FindFirstChild("Epic") then
@@ -1155,6 +1171,7 @@ Options.PingOnUnitDrop:OnChanged(function(enabled)
             unitDropConnection:Disconnect()
             unitDropConnection = nil
         end
+        trackedUnits = {}
         
         Fluent:Notify({
             Title = "Unit Drop Monitor",
