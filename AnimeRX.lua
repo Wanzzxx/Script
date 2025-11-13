@@ -1244,111 +1244,54 @@ Options.AntiLag:OnChanged(function(enabled)
     end
 end)
 
-Options.AutoRejoinFreeze = Tabs.Misc:AddToggle("AutoRejoinFreeze", {
-    Title = "Auto Rejoin When Game Freeze",
-    Default = false,
-    Callback = function(state)
-        if state then
-            local Players = game:GetService("Players")
-            local TeleportService = game:GetService("TeleportService")
-            local RunService = game:GetService("RunService")
-
-            local player = Players.LocalPlayer
-            local placeId = game.PlaceId
-            local jobId = game.JobId
-
-            local agentFolder = workspace:WaitForChild("Agent"):WaitForChild("Agent")
-            local enemyFolder = workspace:WaitForChild("Agent"):WaitForChild("EnemyT")
-
-            local emptyStart = nil
-
-            Options._RejoinConn = RunService.Heartbeat:Connect(function()
-                if workspace:FindFirstChild("Lobby") then
-                    emptyStart = nil
-                    return
-                end
-
-                local hasChildren = (#agentFolder:GetChildren() > 0) or (#enemyFolder:GetChildren() > 0)
-
-                if hasChildren then
-                    emptyStart = nil
-                else
-                    if not emptyStart then
-                        emptyStart = tick()
-                    elseif tick() - emptyStart >= 300 then -- 5 minutes
-                        TeleportService:TeleportToPlaceInstance(placeId, jobId, player)
-                    end
-                end
-            end)
-        else
-            if Options._RejoinConn then
-                Options._RejoinConn:Disconnect()
-                Options._RejoinConn = nil
-            end
-        end
-    end
-})
-
-Options.PingFreezeRejoin = Tabs.Misc:AddToggle("PingFreezeRejoin", {
-    Title = "Auto Rejoin When Ping Freeze/Stuck",
+Options.AutoRejoinDisconnect = Tabs.Misc:AddToggle("AutoRejoinDisconnect", {
+    Title = "Auto Rejoin If Disconnected",
+    Description = "Automatically Rejoin Even If You Disconnected",
     Default = false
 })
 
-do
-    local heartbeatConnection = nil
+Options.AutoRejoinDisconnect:OnChanged(function(enabled)
+    if enabled then
+        Fluent:Notify({
+            Title = "Auto Rejoin",
+            Content = "Will auto-rejoin if disconnected",
+            Duration = 4
+        })
 
-    Options.PingFreezeRejoin:OnChanged(function(enabled)
-        if enabled then
-            Fluent:Notify({
-                Title = "Auto Rejoin",
-                Content = "Enabled: Rejoining if ping freezes for 20 seconds",
-                Duration = 4
-            })
+        local TeleportService = game:GetService("TeleportService")
+        local Players = game:GetService("Players")
+        local player = Players.LocalPlayer
+        local retryDelay = 3 -- Retry (s)
 
-            local Players = game:GetService("Players")
-            local TeleportService = game:GetService("TeleportService")
-            local RunService = game:GetService("RunService")
-            local LocalPlayer = Players.LocalPlayer
-            local lastPing = 0
-            local lastChangeTime = tick()
-            local PING_FREEZE_LIMIT = 20
-
-            heartbeatConnection = RunService.Heartbeat:Connect(function()
-                local success, currentPing = pcall(function()
-                    return stats().Network.ServerStatsItem["Data Ping"]:GetValue()
+        Options._DisconnectConn = game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(obj)
+            if obj.Name == "ErrorPrompt" and Options.AutoRejoinDisconnect.Value then
+                task.spawn(function()
+                    while Options.AutoRejoinDisconnect.Value do
+                        task.wait(retryDelay)
+                        pcall(function()
+                            TeleportService:Teleport(game.PlaceId, player)
+                        end)
+                    end
                 end)
-
-                if not success then return end
-
-                if currentPing ~= lastPing then
-                    lastPing = currentPing
-                    lastChangeTime = tick()
-                elseif tick() - lastChangeTime >= PING_FREEZE_LIMIT then
-                    Fluent:Notify({
-                        Title = "Auto Rejoin",
-                        Content = "Ping frozen! Rejoining...",
-                        Duration = 4
-                    })
-                    TeleportService:Teleport(game.PlaceId, LocalPlayer)
-                end
-            end)
-        else
-            Fluent:Notify({
-                Title = "Auto Rejoin",
-                Content = "Disabled",
-                Duration = 3
-            })
-
-            if heartbeatConnection then
-                heartbeatConnection:Disconnect()
-                heartbeatConnection = nil
             end
+        end)
+    else
+        if Options._DisconnectConn then
+            Options._DisconnectConn:Disconnect()
+            Options._DisconnectConn = nil
         end
-    end)
-end
+
+        Fluent:Notify({
+            Title = "Auto Rejoin",
+            Content = "Disabled",
+            Duration = 3
+        })
+    end
+end)
 
 Options.AutoRejoin2H = Tabs.Misc:AddToggle("AutoRejoin2H", {
     Title = "Auto Rejoin After 2 Hours",
+    Description = "To Prevent Lag During A Long Playtime",
     Default = false,
     Callback = function(Value)
         if Value then
@@ -1372,6 +1315,7 @@ Options.AutoRejoin2H = Tabs.Misc:AddToggle("AutoRejoin2H", {
 
 Options.DisableYenNotify = Tabs.Misc:AddToggle("DisableYenNotify", {
     Title = "Disable Yen Notify",
+    Description = "Removed Yen Notification",
     Default = false,
     Callback = function(state)
         local args = {
