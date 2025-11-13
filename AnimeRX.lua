@@ -1024,7 +1024,7 @@ local function showGameResults()
         local rw
         repeat
             rw = LocalPlayer:FindFirstChild("RewardsShow")
-            task.wait(0.25)
+            task.wait(0)
             timeout -= 0.25
         until rw or timeout <= 0
 
@@ -1033,7 +1033,7 @@ local function showGameResults()
             return
         end
 
-        task.wait(1)
+        task.wait(0)
 
         local children = rw:GetChildren()
         if #children == 0 then
@@ -1056,7 +1056,7 @@ local function showGameResults()
 end
 
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(0) do
         local pg = LocalPlayer:FindFirstChild("PlayerGui")
         if pg and pg:FindFirstChild("GameEndedAnimationUI") then
             showGameResults()
