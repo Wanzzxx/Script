@@ -607,6 +607,58 @@ Options.AutoJoinKurumiBoss:OnChanged(function(enabled)
     end)
 end)
 
+Options.AutoJoinFrightFest = Tabs.Joiner:AddToggle("AutoJoinFrightFest", {
+    Title = "Auto Join Fright Fest Event",
+    Description = "Limited Time Event",
+    Default = false
+})
+
+Options.AutoJoinFrightFest:OnChanged(function(enabled)
+    if not enabled then return end
+
+    task.spawn(function()
+        while Options.AutoJoinFrightFest.Value and not Fluent.Unloaded do
+            if workspace:FindFirstChild("Lobby") then
+                local args1 = {
+                    [1] = "FrightFest"
+                }
+
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Remote")
+                    :WaitForChild("Server")
+                    :WaitForChild("PlayRoom")
+                    :WaitForChild("Event")
+                    :FireServer(unpack(args1))
+
+                task.wait(2)
+
+                local args2 = {
+                    [1] = "Start"
+                }
+
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Remote")
+                    :WaitForChild("Server")
+                    :WaitForChild("PlayRoom")
+                    :WaitForChild("Event")
+                    :FireServer(unpack(args2))
+
+                Fluent:Notify({
+                    Title = "Auto Join Fright Fest",
+                    Content = "Joined Fright Fest Event",
+                    Duration = 4
+                })
+
+                break -- run once per activation
+            else
+                -- Not in lobby, do nothing
+                break
+            end
+            task.wait(2)
+        end
+    end)
+end)
+
 Tabs.Joiner:AddParagraph({
     Title = "- Others -",
     Content = ""
