@@ -115,12 +115,12 @@ end)
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Menu", Icon = "home" }),
-    Other = Window:AddTab({ Title = "Other Menu", Icon = "layers" }),
+    Other = Window:AddTab({ Title = "Exploit", Icon = "layers" }),
     Joiner = Window:AddTab({ Title = "Auto Join", Icon = "users" }),
     Shop = Window:AddTab({ Title = "Shop", Icon = "shopping-cart" }),
     Webhook = Window:AddTab({ Title = "Webhook", Icon = "globe" }),
     Misc = Window:AddTab({ Title = "Other Settings", Icon = "settings" }),
-    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+    Settings = Window:AddTab({ Title = "Configuration", Icon = "settings" })
 }
 
 local Options = Fluent.Options
@@ -317,9 +317,10 @@ Options.AutoStart:OnChanged(function(state)
     end)
 end)
 
-Options.RapidRestart = Tabs.Main:AddToggle("RapidRestart", {
+-- Other Section
+Options.RapidRestart = Tabs.Other:AddToggle("RapidRestart", {
     Title = "Rapid Restart Method",
-    Description = "Fast Win (Only Works On Kurumi Boss Event)",
+    Description = "Instant Win (Only Works On Kurumi Boss Event)",
     Default = false
 })
 
@@ -345,27 +346,6 @@ Options.RapidRestart:OnChanged(function(enabled)
         end
     end)
 end)
-
--- Other Section
-Options.AutoClaimQuest = Tabs.Other:AddToggle("AutoClaimQuest", {
-    Title   = "Auto Claim All Quest",
-    Default = false
-})
-
-Options.AutoClaimQuest:OnChanged(function(state)
-    if not state then return end
-
-    task.spawn(function()
-        local RS = game:GetService("ReplicatedStorage")
-        local questRemote = RS.Remote.Server.Gameplay.QuestEvent
-
-        while Options.AutoClaimQuest.Value and not Fluent.Unloaded do
-            questRemote:FireServer({ [1] = "ClaimAll" })
-            task.wait(20)                                   -- loop delay
-        end
-    end)
-end)
-
 
 Options.UnlockAutoTrait = Tabs.Other:AddToggle("UnlockAutoTrait", {
     Title = "Unlock Auto Trait Reroll Gamepass",
@@ -1153,9 +1133,30 @@ Options.PingOnUnitDrop:OnChanged(function(enabled)
 end)
 
 -- Misc Section
+Options.AutoClaimQuest = Tabs.Misc:AddToggle("AutoClaimQuest", {
+    Title   = "Auto Claim All Quest",
+    Description = "Claiming All Your Quest",
+    Default = false
+})
+
+Options.AutoClaimQuest:OnChanged(function(state)
+    if not state then return end
+
+    task.spawn(function()
+        local RS = game:GetService("ReplicatedStorage")
+        local questRemote = RS.Remote.Server.Gameplay.QuestEvent
+
+        while Options.AutoClaimQuest.Value and not Fluent.Unloaded do
+            questRemote:FireServer({ [1] = "ClaimAll" })
+            task.wait(20)                                   -- loop delay
+        end
+    end)
+end)
+
 Options.AntiLag = Tabs.Misc:AddToggle("AntiLag", {
     Title = "Anti-Lag (Low Quality Mode)",
-    Default = false,
+    Description = "Remove All Textures And Models",
+    Default = false
 })
 
 local function cleanObject(obj)
@@ -1374,16 +1375,6 @@ Options.BlackoutScreen:OnChanged(function(state)
         })
     end
 end)
-
--- Auto-save functionality (always active)
-for _, option in pairs(Fluent.Options) do
-    if option.Changed then
-        option.Changed:Connect(function()
-            task.wait(0.5) -- Small delay to batch multiple changes
-            SaveManager:Save(SaveManager.CurrentConfig or "default")
-        end)
-    end
-end
 
 -- Settings Section
 SaveManager:SetLibrary(Fluent)
