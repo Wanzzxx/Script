@@ -991,11 +991,10 @@ local function sendWebhook(results)
         embeds = {{
             title = "Results:",
             fields = {
-                { name = "Username", value = LocalPlayer.Name, inline = true },
-                { name = "UserID", value = tostring(LocalPlayer.UserId), inline = true },
                 { name = "Place", value = placeName, inline = false },
-                { name = "Time", value = os.date("%Y-%m-%d %H:%M:%S"), inline = false },
-                { name = "Rewards", value = results, inline = false }
+                { name = "Username", value = "||" .. LocalPlayer.Name .. "||", inline = true },
+                { name = "Rewards", value = results, inline = false },
+                { name = "Time", value = os.date("%Y-%m-%d %H:%M:%S"), inline = false }
             }
         }}
     }
