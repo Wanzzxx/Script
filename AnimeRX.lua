@@ -1102,15 +1102,21 @@ Options.PingOnUnitDrop:OnChanged(function(enabled)
             
             local rarity = "Unknown"
             pcall(function()
-                local unitFrame = newUnit:FindFirstChild("Frame")
-                if unitFrame then
-                    local unitFrameInner = unitFrame:FindFirstChild("UnitFrame")
-                    if unitFrameInner then
-                        for _, child in ipairs(unitFrameInner:GetChildren()) do
-                            if child.Name == "Rare" or child.Name == "Epic" or child.Name == "Legendary" or child.Name == "Secret" or child.Name == "Ranger" then
-                                rarity = child.Name
-                                break
-                            end
+                local frame = newUnit:FindFirstChild("Frame")
+                if frame then
+                    local unitFrame = frame:FindFirstChild("UnitFrame")
+                    if unitFrame then
+                        -- Check direct children for rarity
+                        if unitFrame:FindFirstChild("Rare") then
+                            rarity = "Rare"
+                        elseif unitFrame:FindFirstChild("Epic") then
+                            rarity = "Epic"
+                        elseif unitFrame:FindFirstChild("Legendary") then
+                            rarity = "Legendary"
+                        elseif unitFrame:FindFirstChild("Secret") then
+                            rarity = "Secret"
+                        elseif unitFrame:FindFirstChild("Ranger") then
+                            rarity = "Ranger"
                         end
                     end
                 end
