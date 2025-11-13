@@ -1375,6 +1375,15 @@ Options.BlackoutScreen:OnChanged(function(state)
     end
 end)
 
+-- Auto-save functionality (always active)
+for _, option in pairs(Fluent.Options) do
+    if option.Changed then
+        option.Changed:Connect(function()
+            task.wait(0.5) -- Small delay to batch multiple changes
+            SaveManager:Save(SaveManager.CurrentConfig or "default")
+        end)
+    end
+end
 
 -- Settings Section
 SaveManager:SetLibrary(Fluent)
