@@ -1093,14 +1093,34 @@ Options.PingOnUnitDrop:OnChanged(function(enabled)
             return
         end
         
-        local playerData = ReplicatedStorage:WaitForChild("Player_Data")
-        local playerCollection = playerData:WaitForChild(LocalPlayer.Name):WaitForChild("Collection")
+        local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+        local collectionGui = playerGui:WaitForChild("Collection")
+        local unitSpace = collectionGui.Main.Base.Space.Unit
         
-        -- Monitor for new units
-        unitDropConnection = playerCollection.ChildAdded:Connect(function(newUnit)
-            -- Send webhook notification
+        unitDropConnection = unitSpace.ChildAdded:Connect(function(newUnit)
+            local unitName = newUnit.Name
+            
+            local rarity = "Unknown"
+            pcall(function()
+                local unitFrame = newUnit:FindFirstChild("Frame")
+                if unitFrame then
+                    local unitFrameInner = unitFrame:FindFirstChild("UnitFrame")
+                    if unitFrameInner then
+                        for _, child in ipairs(unitFrameInner:GetChildren()) do
+                            if child.Name == "Rare" or child.Name == "Epic" or child.Name == "Legendary" or child.Name == "Secret" or child.Name == "Ranger" then
+                                rarity = child.Name
+                                break
+                            end
+                        end
+                    end
+                end
+            end)
+            
             local data = {
-                content = "@everyone You got unit **" .. newUnit.Name .. "**"
+                content = "@everyone You Got *" .. unitName .. "* - **[" .. rarity .. "]**",
+                allowed_mentions = {
+                    parse = {"everyone"}
+                }
             }
             
             pcall(function()
@@ -1112,10 +1132,9 @@ Options.PingOnUnitDrop:OnChanged(function(enabled)
                 })
             end)
             
-            -- Also show in-game notification
             Fluent:Notify({
                 Title = "New Unit!",
-                Content = "You got: " .. newUnit.Name,
+                Content = "You got: " .. unitName .. " (" .. rarity .. ")",
                 Duration = 5
             })
         end)
