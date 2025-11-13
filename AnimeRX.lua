@@ -1079,7 +1079,6 @@ Options.PingOnUnitDrop = Tabs.Webhook:AddToggle("PingOnUnitDrop", {
 })
 
 local unitDropConnection
-local trackedUnits = {}
 
 Options.PingOnUnitDrop:OnChanged(function(enabled)
     if enabled then
@@ -1094,55 +1093,14 @@ Options.PingOnUnitDrop:OnChanged(function(enabled)
             return
         end
         
-        local playerGui = LocalPlayer:WaitForChild("PlayerGui")
-        local collectionGui = playerGui:WaitForChild("Collection")
-        local unitSpace = collectionGui.Main.Base.Space.Unit
+        local playerData = ReplicatedStorage:WaitForChild("Player_Data")
+        local playerCollection = playerData:WaitForChild(LocalPlayer.Name):WaitForChild("Collection")
         
-        -- Track existing units (don't notify for these)
-        trackedUnits = {}
-        for _, existingUnit in ipairs(unitSpace:GetChildren()) do
-            if existingUnit:IsA("TextButton") then
-                trackedUnits[existingUnit.Name] = true
-            end
-        end
-        
-        -- Monitor for NEW units only
-        unitDropConnection = unitSpace.ChildAdded:Connect(function(newUnit)
-            if not newUnit:IsA("TextButton") then return end
-            if trackedUnits[newUnit.Name] then return end -- Skip if already tracked
-            
-            trackedUnits[newUnit.Name] = true -- Mark as tracked
-            
-            local unitName = newUnit.Name
-            local rarity = "Unknown"
-            
-            task.wait(0.1) -- Small delay to ensure Frame is loaded
-            
-            pcall(function()
-                local frame = newUnit:FindFirstChild("Frame")
-                if frame then
-                    local unitFrame = frame:FindFirstChild("UnitFrame")
-                    if unitFrame then
-                        if unitFrame:FindFirstChild("Rare") then
-                            rarity = "Rare"
-                        elseif unitFrame:FindFirstChild("Epic") then
-                            rarity = "Epic"
-                        elseif unitFrame:FindFirstChild("Legendary") then
-                            rarity = "Legendary"
-                        elseif unitFrame:FindFirstChild("Secret") then
-                            rarity = "Secret"
-                        elseif unitFrame:FindFirstChild("Ranger") then
-                            rarity = "Ranger"
-                        end
-                    end
-                end
-            end)
-            
+        -- Monitor for new units
+        unitDropConnection = playerCollection.ChildAdded:Connect(function(newUnit)
+            -- Send webhook notification
             local data = {
-                content = "@everyone You Got *" .. unitName .. "* - **[" .. rarity .. "]**",
-                allowed_mentions = {
-                    parse = {"everyone"}
-                }
+                content = "@everyone You got unit **" .. newUnit.Name .. "**"
             }
             
             pcall(function()
@@ -1154,9 +1112,10 @@ Options.PingOnUnitDrop:OnChanged(function(enabled)
                 })
             end)
             
+            -- Also show in-game notification
             Fluent:Notify({
                 Title = "New Unit!",
-                Content = "You got: " .. unitName .. " (" .. rarity .. ")",
+                Content = "You got: " .. newUnit.Name,
                 Duration = 5
             })
         end)
@@ -1171,7 +1130,6 @@ Options.PingOnUnitDrop:OnChanged(function(enabled)
             unitDropConnection:Disconnect()
             unitDropConnection = nil
         end
-        trackedUnits = {}
         
         Fluent:Notify({
             Title = "Unit Drop Monitor",
