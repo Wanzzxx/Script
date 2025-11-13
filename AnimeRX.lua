@@ -319,7 +319,7 @@ end)
 
 Options.RapidRestart = Tabs.Main:AddToggle("RapidRestart", {
     Title = "Rapid Restart Method",
-    Description = "Fast Win (Only Works On Kurumi Boss Event",
+    Description = "Fast Win (Only Works On Kurumi Boss Event)",
     Default = false
 })
 
@@ -585,150 +585,23 @@ Tabs.Joiner:AddParagraph({
     Content = ""
 })
 
-Tabs.Joiner:AddButton({
-    Title = "Check boros pity",
-    Description = "Check your Boros Capsule Pity value",
-    Callback = function()
-        local player = game:GetService("Players").LocalPlayer
-        local playerName = player.Name
-        local playerData = game:GetService("ReplicatedStorage"):WaitForChild("Player_Data")
-
-        local profile = playerData:FindFirstChild(playerName)
-        if profile and profile:FindFirstChild("Profile") and profile.Profile:FindFirstChild("BorusCapsulePity") then
-            local pityValue = profile.Profile.BorusCapsulePity.Value
-            local maxPity = 25000
-            local needed = math.max(0, maxPity - pityValue)
-
-            Fluent:Notify({
-                Title = "Boros Pity",
-                Content = "Your Boros Capsule Pity is: " .. tostring(pityValue) ..
-                          "\nYou need: " .. tostring(needed) .. " capsule(s) to reach pity.",
-                Duration = 10
-            })
-        else
-            Fluent:Notify({
-                Title = "Boros Pity",
-                Content = "Could not find Boros Capsule Pity for " .. playerName,
-                Duration = 10
-            })
-        end
-    end
-})
-
-Options.AutoBuyCapsules = Tabs.Joiner:AddToggle("AutoBuyCapsules", {
-    Title = "Auto Buy 1000 Borus Capsules",
+Options.AutoJoinKurumiBoss = Tabs.Joiner:AddToggle("AutoJoinKurumiBoss", {
+    Title = "Auto Join Kurumi Boss Event",
+    Description = "Limited Time Event",
     Default = false
 })
 
--- Function to format numbers with commas
-local function formatNumber(num)
-    local formatted = tostring(num)
-    while true do
-        formatted, k = formatted:gsub("^(-?%d+)(%d%d%d)", '%1,%2')
-        if k == 0 then break end
-    end
-    return formatted
-end
-
-task.spawn(function()
-    local lastNotified = false
-    local lastCapsuleCheck = 0
-    while task.wait(2) do
-        if Options.AutoBuyCapsules.Value then
-            local player = game:GetService("Players").LocalPlayer
-            local playerName = player.Name
-            local playerData = game:GetService("ReplicatedStorage"):WaitForChild("Player_Data")
-            local profile = playerData:FindFirstChild(playerName)
-
-            if profile then
-                -- Auto Buy check
-                if profile:FindFirstChild("Data") then
-                    local fallCurrency = profile.Data:FindFirstChild("Fall Currency")
-                    if fallCurrency then
-                        local pricePerCapsule = 150
-                        local totalCost = 1000 * pricePerCapsule
-
-                        if fallCurrency.Value >= totalCost then
-                            local args = {
-                                [1] = "Borus Capsule",
-                                [2] = 1000
-                            }
-                            game:GetService("ReplicatedStorage")
-                                :WaitForChild("Remote")
-                                :WaitForChild("Server")
-                                :WaitForChild("Gameplay")
-                                :WaitForChild("FallShopExchange")
-                                :FireServer(unpack(args))
-
-                            Fluent:Notify({
-                                Title = "Auto Buy",
-                                Content = "Bought 1000 Borus Capsules!",
-                                Duration = 5
-                            })
-
-                            lastNotified = false -- reset
-                        else
-                            if not lastNotified then
-                                local needed = totalCost - fallCurrency.Value
-                                Fluent:Notify({
-                                    Title = "Auto Buy",
-                                    Content = "Not Enough Currency, Needs: " .. formatNumber(needed) .. " More",
-                                    Duration = 5
-                                })
-                                lastNotified = true
-                            end
-                        end
-                    end
-                end
-
-                -- Capsule amount notify every 30s
-                if tick() - lastCapsuleCheck >= 30 then
-                    local capsuleItem = profile:FindFirstChild("Items") and profile.Items:FindFirstChild("Borus Capsule")
-                    if capsuleItem and capsuleItem:FindFirstChild("Amount") then
-                        Fluent:Notify({
-                            Title = "Inventory",
-                            Content = "Borus Capsule You Have: " .. formatNumber(capsuleItem.Amount.Value),
-                            Duration = 30
-                        })
-                    end
-                    lastCapsuleCheck = tick()
-                end
-            end
-        else
-            lastNotified = false
-            lastCapsuleCheck = 0
-        end
-    end
-end)
-
-Options.AutoSkipBoros = Tabs.Joiner:AddToggle("AutoSkipBoros", {Title = "Auto Skip Boros", Default = false})
-
-local function StartAutoSkipBoros()
-    local CurrentWave = game:GetService("ReplicatedStorage").Values.Waves.CurrentWave
-    CurrentWave:GetPropertyChangedSignal("Value"):Connect(function()
-        if Options.AutoSkipBoros.Value then
-            if CurrentWave.Value == 2 then
-                game:GetService("ReplicatedStorage").Remote.Server.OnGame.RestartMatch:FireServer()
-            end
-        end
-    end)
-end
-
-StartAutoSkipBoros()
-
-Options.AutoJoinFallEvent = Tabs.Joiner:AddToggle("AutoJoinFallEvent", {
-    Title = "Auto Join Fall Event",
-    Default = false
-})
-
-Options.AutoJoinFallEvent:OnChanged(function(enabled)
+Options.AutoJoinKurumiBoss:OnChanged(function(enabled)
     if not enabled then return end
 
     task.spawn(function()
-        while Options.AutoJoinFallEvent.Value and not Fluent.Unloaded do
+        while Options.AutoJoinKurumiBoss.Value and not Fluent.Unloaded do
             if workspace:FindFirstChild("Lobby") then
                 local args = {
-                    [1] = "Swarm Event"
+                    [1] = "Boss-Event",
+                    [2] = {
+                        ["Difficulty"] = "Nightmare"
+                    }
                 }
 
                 game:GetService("ReplicatedStorage")
@@ -739,12 +612,12 @@ Options.AutoJoinFallEvent:OnChanged(function(enabled)
                     :FireServer(unpack(args))
 
                 Fluent:Notify({
-                    Title = "Auto Join Fall Event",
-                    Content = "Attempted to join Fall Event",
-                    Duration = 3
+                    Title = "Auto Join Kurumi Boss",
+                    Content = "Joined Kurumi Boss Event (Nightmare)",
+                    Duration = 4
                 })
 
-                break -- only trigger once per activation
+                break -- run once
             end
             task.wait(2)
         end
