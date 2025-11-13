@@ -14,8 +14,7 @@ local Window = Fluent:CreateWindow({
     SubTitle = "Private Versions",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 350),
-    Acrylic = true,
-    Transparency = false,
+    Acrylic = false,
     Theme = "Darker",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
