@@ -767,10 +767,11 @@ Options.AutoJoinChallenge:OnChanged(function(enabled)
 end)
 
 -- Rolling Tab
--- Roll Section
+
+-- Rolling Tab
 Tabs.Roll:AddParagraph({
     Title = "How To Use Auto Reroll:",
-    Content = "1. Go to Trait Reroll Npcs\n2. Select Your Unit\n3. Choose Desired Main & Sub Trait\n4. Enable Roll Trait (Normal Mode Or Match Mode)"
+    Content = "1. Go to Trait Reroll Npcs\n2. Select Your Unit\n3. Choose Desired Main & Sub Trait\n4. Enable Roll Trait"
 })
 
 -- Get all trait names from ReplicatedStorage
@@ -786,20 +787,20 @@ end
 
 local traitList = getTraitNames()
 
--- Main Trait Dropdown
+-- Main Trait Dropdown (Multi-select)
 Options.LockMainTrait = Tabs.Roll:AddDropdown("LockMainTrait", {
     Title = "Select Lock-Main Traits",
     Values = traitList,
-    Multi = false,
-    Default = traitList[1] or "None"
+    Multi = true,
+    Default = {}
 })
 
--- Sub Trait Dropdown
+-- Sub Trait Dropdown (Multi-select)
 Options.LockSubTrait = Tabs.Roll:AddDropdown("LockSubTrait", {
     Title = "Select Lock-Sub Traits",
     Values = traitList,
-    Multi = false,
-    Default = traitList[1] or "None"
+    Multi = true,
+    Default = {}
 })
 
 -- Auto Roll Trait Toggle
@@ -811,7 +812,7 @@ Options.AutoRollTrait = Tabs.Roll:AddToggle("AutoRollTrait", {
 
 -- Match Both Mode Toggle
 Options.MatchBothTraits = Tabs.Roll:AddToggle("MatchBothTraits", {
-    Title = "Match Main & Sub Trait Mode [Enable With Roll Trait Toggle]",
+    Title = "Main & Sub Trait Mode [Enable With Roll Trait Toggle]",
     Description = "Keep rolling until BOTH traits match",
     Default = false
 })
@@ -887,29 +888,46 @@ Options.AutoRollTrait:OnChanged(function(enabled)
                 break
             end
 
-            -- Get current traits BEFORE rolling
-            local targetMainTrait = Options.LockMainTrait.Value
-            local targetSubTrait = Options.LockSubTrait.Value
-            local matchBothMode = Options.MatchBothTraits.Value
-            
+            -- Get current traits
             local currentMainTrait = mainTraitLabel.Text
             local currentSubTrait = subTraitLabel.Text
 
-            -- Check if we already have the desired traits
-            local mainMatches = (currentMainTrait == targetMainTrait)
-            local subMatches = (currentSubTrait == targetSubTrait)
+            -- Get selected traits (multi-select returns table with trait names as keys)
+            local targetMainTraits = Options.LockMainTrait.Value
+            local targetSubTraits = Options.LockSubTrait.Value
+            local matchBothMode = Options.MatchBothTraits.Value
+
+            -- Check if current traits match any selected traits
+            local mainMatches = false
+            local subMatches = false
+
+            for traitName, isSelected in pairs(targetMainTraits) do
+                if isSelected and currentMainTrait == traitName then
+                    mainMatches = true
+                    break
+                end
+            end
+
+            for traitName, isSelected in pairs(targetSubTraits) do
+                if isSelected and currentSubTrait == traitName then
+                    subMatches = true
+                    break
+                end
+            end
 
             if matchBothMode then
+                -- Match one of BOTH main AND sub traits
                 if mainMatches and subMatches then
                     Fluent:Notify({
                         Title = "Auto Trait Reroll",
-                        Content = "Got both traits on " .. unitName .. "!\nMain: " .. currentMainTrait .. "\nSub: " .. currentSubTrait,
+                        Content = "Got matching traits on " .. unitName .. "!\nMain: " .. currentMainTrait .. "\nSub: " .. currentSubTrait,
                         Duration = 5
                     })
                     Options.AutoRollTrait:SetValue(false)
                     break
                 end
             else
+                -- Match EITHER one of main OR one of sub traits
                 if mainMatches or subMatches then
                     Fluent:Notify({
                         Title = "Auto Trait Reroll",
@@ -938,12 +956,10 @@ Options.AutoRollTrait:OnChanged(function(enabled)
                     :FireServer(unpack(args))
             end)
 
-            -- Small delay to prevent rate limiting
             task.wait(0.1)
         end
     end)
 end)
-
 
 -- Shop Section
 Tabs.Shop:AddParagraph({
