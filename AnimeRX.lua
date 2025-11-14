@@ -368,6 +368,26 @@ Options.UnlockAutoTrait = Tabs.Other:AddToggle("UnlockAutoTrait", {
     end
 })
 
+Options.UnlockAutoCurse = Tabs.Other:AddToggle("UnlockAutoCurse", {
+    Title = "Unlock Auto Curse Gamepass",
+    Default = false,
+    Callback = function(Value)
+        local player = game:GetService("Players").LocalPlayer
+        local replicatedStorage = game:GetService("ReplicatedStorage")
+        local playerData = replicatedStorage:FindFirstChild("Player_Data")
+        
+        if playerData then
+            local myData = playerData:FindFirstChild(player.Name)
+            if myData and myData:FindFirstChild("Gamepass") then
+                local autoCurse = myData.Gamepass:FindFirstChild("Auto Curse Reroll & Config")
+                if autoCurse then
+                    autoCurse.Value = Value
+                end
+            end
+        end
+    end
+})
+
 task.spawn(function()
     local SoundService = game:GetService("SoundService")
     local sound = Instance.new("Sound")
