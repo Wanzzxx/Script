@@ -2226,6 +2226,83 @@ task.spawn(function()
     end)
 end)
 
+-- Auto Rejoin on No Enemy Spawn (Always Active)
+task.spawn(function()
+    local TeleportService = game:GetService("TeleportService")
+    local Players = game:GetService("Players")
+    local Workspace = game:GetService("Workspace")
+    local LocalPlayer = Players.LocalPlayer
+    
+    local noEnemyThreshold = 20 -- seconds
+    local checkInterval = 1 -- check every second
+    
+    while task.wait(checkInterval) do
+        -- Skip if in Lobby
+        if Workspace:FindFirstChild("Lobby") then
+            continue
+        end
+        
+        -- Check if Agent folder exists
+        local agentFolder = Workspace:FindFirstChild("Agent")
+        if not agentFolder then
+            continue
+        end
+        
+        -- Check if EnemyT folder exists
+        local enemyFolder = agentFolder:FindFirstChild("EnemyT")
+        if not enemyFolder then
+            continue
+        end
+        
+        -- Start timer if no enemies
+        local noEnemyTimer = 0
+        
+        while not Workspace:FindFirstChild("Lobby") do
+            enemyFolder = Workspace:FindFirstChild("Agent") and Workspace.Agent:FindFirstChild("EnemyT")
+            
+            if not enemyFolder then
+                break
+            end
+            
+            -- Count active enemies
+            local enemyCount = #enemyFolder:GetChildren()
+            
+            if enemyCount == 0 then
+                noEnemyTimer = noEnemyTimer + checkInterval
+                
+                -- Warn at 15 seconds
+                if noEnemyTimer == 15 then
+                    Fluent:Notify({
+                        Title = "No Enemy Detected",
+                        Content = "No enemies for 15s. Rejoining in 5s...",
+                        Duration = 5
+                    })
+                end
+                
+                -- Rejoin after 20 seconds
+                if noEnemyTimer >= noEnemyThreshold then
+                    Fluent:Notify({
+                        Title = "Auto Rejoin",
+                        Content = "No enemies detected for 20s. Rejoining now...",
+                        Duration = 3
+                    })
+                    
+                    task.wait(1)
+                    pcall(function()
+                        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+                    end)
+                    break
+                end
+            else
+                -- Reset timer if enemies found
+                noEnemyTimer = 0
+            end
+            
+            task.wait(checkInterval)
+        end
+    end
+end)
+
 Window:SelectTab(1)
 Fluent:Notify({ Title = "Fluent", Content = "The script has been loaded.", Duration = 8 })
 SaveManager:LoadAutoloadConfig()
