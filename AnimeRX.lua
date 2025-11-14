@@ -1624,28 +1624,6 @@ Options.AutoRollTrait:OnChanged(function(enabled)
                     break
                 end
             end
-            
-            -- Roll the trait
-            local args = {
-                [1] = targetUnit,
-                [2] = "Reroll",
-                [3] = "Main",
-                [4] = "Shards"
-            }
-
-            pcall(function()
-                game:GetService("ReplicatedStorage")
-                    :WaitForChild("Remote")
-                    :WaitForChild("Server")
-                    :WaitForChild("Gambling")
-                    :WaitForChild("RerollTrait")
-                    :FireServer(unpack(args))
-            end)
-
-            task.wait(0.1)
-        end
-    end)
-end)
 
 -- Misc Section
 Options.AutoClaimQuest = Tabs.Misc:AddToggle("AutoClaimQuest", {
