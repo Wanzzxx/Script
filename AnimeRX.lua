@@ -117,7 +117,7 @@ local Tabs = {
     Main = Window:AddTab({ Title = "Menu", Icon = "home" }),
     Other = Window:AddTab({ Title = "Exploit", Icon = "layers" }),
     Joiner = Window:AddTab({ Title = "Auto Join", Icon = "users" }),
-    Roll = Window:AddTab({ Title = "Rolling", Icon = "" }),
+    Roll = Window:AddTab({ Title = "Rolling", Icon = "refresh-cw" }),
     Shop = Window:AddTab({ Title = "Shop", Icon = "shopping-cart" }),
     Webhook = Window:AddTab({ Title = "Webhook", Icon = "globe" }),
     Misc = Window:AddTab({ Title = "Other Settings", Icon = "settings" }),
@@ -770,7 +770,7 @@ end)
 -- Roll Section
 Tabs.Roll:AddParagraph({
     Title = "How To Use Auto Reroll:",
-    Content = "1. Go to Trait Reroll Npcs\n2. Select Your Unit\n3. Choose Desired Trait\n4. Enable Auto Reroll"
+    Content = "1. Go to Trait Reroll Npcs\n2. Select Your Unit\n3. Choose Desired Main & Sub Trait\n4. Enable Roll Trait (Normal Mode Or Match Mode)"
 })
 
 -- Get all trait names from ReplicatedStorage
