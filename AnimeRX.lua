@@ -1405,6 +1405,248 @@ Options.PingOnUnitDrop:OnChanged(function(enabled)
     end
 end)
 
+-- Ping On Selected Trait Toggle
+Options.PingOnSelectedTrait = Tabs.Roll:AddToggle("PingOnSelectedTrait", {
+    Title = "Ping On Selected Trait",
+    Description = "Will ping @everyone if you got one or both of selected trait",
+    Default = false
+})
+
+local rerollStartAmount = 0
+
+-- Modified Auto Roll Trait Toggle with webhook integration
+Options.AutoRollTrait:OnChanged(function(enabled)
+    if not enabled then return end
+
+    task.spawn(function()
+        local traitGui = LocalPlayer.PlayerGui:FindFirstChild("Traits")
+        
+        -- Check if Traits GUI exists
+        if not traitGui then
+            Fluent:Notify({
+                Title = "Auto Trait Reroll",
+                Content = "Traits GUI not found! Please open a unit's trait menu first.",
+                Duration = 4
+            })
+            Options.AutoRollTrait:SetValue(false)
+            return
+        end
+
+        local unitFolderValue = traitGui.Main.Base.UnitFolder.Value
+        
+        -- Check if a unit is selected
+        if not unitFolderValue then
+            Fluent:Notify({
+                Title = "Auto Trait Reroll",
+                Content = "No unit detected! Please open a unit's trait menu first.",
+                Duration = 4
+            })
+            Options.AutoRollTrait:SetValue(false)
+            return
+        end
+
+        -- Notify unit found
+        local unitName = unitFolderValue.Name
+        Fluent:Notify({
+            Title = "Auto Trait Reroll",
+            Content = "Found Unit: " .. unitName,
+            Duration = 4
+        })
+
+        local playerData = ReplicatedStorage:WaitForChild("Player_Data")
+        local playerCollection = playerData:WaitForChild(LocalPlayer.Name):WaitForChild("Collection")
+        
+        -- Get starting reroll amount
+        local rerollItem = playerData:WaitForChild(LocalPlayer.Name).Items:FindFirstChild("Trait Reroll")
+        if rerollItem and rerollItem:FindFirstChild("Amount") then
+            rerollStartAmount = rerollItem.Amount.Value
+        end
+        
+        local mainTraitLabel = traitGui.Main.Base.Main_Trait.Trait
+        local subTraitLabel = traitGui.Main.Base.Sub_Trait.Trait
+        
+        while Options.AutoRollTrait.Value and not Fluent.Unloaded do
+            -- Re-check unit value in case it changes
+            unitFolderValue = traitGui.Main.Base.UnitFolder.Value
+            
+            if not unitFolderValue then
+                Fluent:Notify({
+                    Title = "Auto Trait Reroll",
+                    Content = "Unit menu was closed! Stopping...",
+                    Duration = 3
+                })
+                Options.AutoRollTrait:SetValue(false)
+                break
+            end
+
+            unitName = unitFolderValue.Name
+            local targetUnit = playerCollection:FindFirstChild(unitName)
+            
+            if not targetUnit then
+                Fluent:Notify({
+                    Title = "Auto Trait Reroll",
+                    Content = "Unit not found in collection!",
+                    Duration = 3
+                })
+                Options.AutoRollTrait:SetValue(false)
+                break
+            end
+
+            -- Get current traits
+            local currentMainTrait = mainTraitLabel.Text
+            local currentSubTrait = subTraitLabel.Text
+
+            -- Get selected traits
+            local targetMainTraits = Options.LockMainTrait.Value
+            local targetSubTraits = Options.LockSubTrait.Value
+            local matchBothMode = Options.MatchBothTraits.Value
+
+            -- Check if current traits match any selected traits
+            local mainMatches = false
+            local subMatches = false
+
+            for traitName, isSelected in pairs(targetMainTraits) do
+                if isSelected and currentMainTrait == traitName then
+                    mainMatches = true
+                    break
+                end
+            end
+
+            for traitName, isSelected in pairs(targetSubTraits) do
+                if isSelected and currentSubTrait == traitName then
+                    subMatches = true
+                    break
+                end
+            end
+
+            if matchBothMode then
+                -- Match one of BOTH main AND sub traits
+                if mainMatches and subMatches then
+                    -- Calculate rerolls spent
+                    local currentRerolls = 0
+                    if rerollItem and rerollItem:FindFirstChild("Amount") then
+                        currentRerolls = rerollItem.Amount.Value
+                    end
+                    local rerollsSpent = rerollStartAmount - currentRerolls
+                    
+                    Fluent:Notify({
+                        Title = "Auto Trait Reroll",
+                        Content = "Got matching traits on " .. unitName .. "!\nMain: " .. currentMainTrait .. "\nSub: " .. currentSubTrait,
+                        Duration = 5
+                    })
+                    
+                    -- Send webhook if enabled
+                    if Options.PingOnSelectedTrait.Value then
+                        local url = Options.WebhookURL.Value
+                        if url ~= "" then
+                            local data = {
+                                content = "@everyone",
+                                embeds = {{
+                                    title = "Congratulations, You Got:",
+                                    color = 0xFFFFFF,
+                                    fields = {
+                                        { name = "Selected Unit", value = "**" .. unitName .. "**", inline = false },
+                                        { name = "Main Trait", value = "**" .. currentMainTrait .. "**", inline = true },
+                                        { name = "Sub Trait", value = "**" .. currentSubTrait .. "**", inline = true },
+                                        { name = "Rerolls Spent", value = "**" .. rerollsSpent .. "**", inline = true },
+                                        { name = "Rerolls Left", value = "**" .. currentRerolls .. "**", inline = true }
+                                    }
+                                }},
+                                allowed_mentions = {
+                                    parse = {"everyone"}
+                                }
+                            }
+                            
+                            pcall(function()
+                                request({
+                                    Url = url,
+                                    Method = "POST",
+                                    Headers = {["Content-Type"] = "application/json"},
+                                    Body = HttpService:JSONEncode(data)
+                                })
+                            end)
+                        end
+                    end
+                    
+                    Options.AutoRollTrait:SetValue(false)
+                    break
+                end
+            else
+                -- Match EITHER one of main OR one of sub traits
+                if mainMatches or subMatches then
+                    -- Calculate rerolls spent
+                    local currentRerolls = 0
+                    if rerollItem and rerollItem:FindFirstChild("Amount") then
+                        currentRerolls = rerollItem.Amount.Value
+                    end
+                    local rerollsSpent = rerollStartAmount - currentRerolls
+                    
+                    Fluent:Notify({
+                        Title = "Auto Trait Reroll",
+                        Content = "Got desired trait on " .. unitName .. "!\nMain: " .. currentMainTrait .. "\nSub: " .. currentSubTrait,
+                        Duration = 5
+                    })
+                    
+                    -- Send webhook if enabled
+                    if Options.PingOnSelectedTrait.Value then
+                        local url = Options.WebhookURL.Value
+                        if url ~= "" then
+                            local data = {
+                                content = "@everyone",
+                                embeds = {{
+                                    title = "Congratulations, You Got:",
+                                    color = 0xFFFFFF,
+                                    fields = {
+                                        { name = "Selected Unit", value = "**" .. unitName .. "**", inline = false },
+                                        { name = "Main Trait", value = "**" .. currentMainTrait .. "**", inline = true },
+                                        { name = "Sub Trait", value = "**" .. currentSubTrait .. "**", inline = true },
+                                        { name = "Rerolls Spent", value = "**" .. rerollsSpent .. "**", inline = true },
+                                        { name = "Rerolls Left", value = "**" .. currentRerolls .. "**", inline = true }
+                                    }
+                                }},
+                                allowed_mentions = {
+                                    parse = {"everyone"}
+                                }
+                            }
+                            
+                            pcall(function()
+                                request({
+                                    Url = url,
+                                    Method = "POST",
+                                    Headers = {["Content-Type"] = "application/json"},
+                                    Body = HttpService:JSONEncode(data)
+                                })
+                            end)
+                        end
+                    end
+                    
+                    Options.AutoRollTrait:SetValue(false)
+                    break
+                end
+            end
+            
+            -- Roll the trait
+            local args = {
+                [1] = targetUnit,
+                [2] = "Reroll",
+                [3] = "Main",
+                [4] = "Shards"
+            }
+
+            pcall(function()
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Remote")
+                    :WaitForChild("Server")
+                    :WaitForChild("Gambling")
+                    :WaitForChild("RerollTrait")
+                    :FireServer(unpack(args))
+            end)
+
+            task.wait(0.1)
+        end
+    end)
+end)
+
 -- Misc Section
 Options.AutoClaimQuest = Tabs.Misc:AddToggle("AutoClaimQuest", {
     Title   = "Auto Claim All Quest",
