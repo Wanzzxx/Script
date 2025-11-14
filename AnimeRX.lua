@@ -115,7 +115,8 @@ end)
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Menu", Icon = "home" }),
-    Ability = Window:AddTab({ Title = "Ability", Icon = "" }),
+    Ability = Window:AddTab({ Title = "Auto Ability", Icon = "" }),
+    Miscellaneous = Window:AddTab({ Title = "Miscellaneous", Icon = "" }),
     Other = Window:AddTab({ Title = "Exploit", Icon = "layers" }),
     Joiner = Window:AddTab({ Title = "Auto Join", Icon = "users" }),
     Roll = Window:AddTab({ Title = "Rolling", Icon = "refresh-cw" }),
@@ -453,9 +454,30 @@ Options.AutoUseAbility:OnChanged(function(enabled)
     end)
 end)
 
--- Other Section
+-- Miscellaneous
+Options.AutoClaimQuest = Tabs.Miscellaneous:AddToggle("AutoClaimQuest", {
+    Title   = "Auto Claim All Quest",
+    Description = "Claiming All Your Quest",
+    Default = false
+})
+
+Options.AutoClaimQuest:OnChanged(function(state)
+    if not state then return end
+
+    task.spawn(function()
+        local RS = game:GetService("ReplicatedStorage")
+        local questRemote = RS.Remote.Server.Gameplay.QuestEvent
+
+        while Options.AutoClaimQuest.Value and not Fluent.Unloaded do
+            questRemote:FireServer({ [1] = "ClaimAll" })
+            task.wait(20)                                   -- loop delay
+        end
+    end)
+end)
+
+-- Exploit
 Options.RapidRestart = Tabs.Other:AddToggle("RapidRestart", {
-    Title = "Rapid Restart Method",
+    Title = "Rapid Restart",
     Description = "Instant Win (Only Works On Kurumi Boss Event)",
     Default = false
 })
@@ -1783,26 +1805,6 @@ Options.AutoRollTrait:OnChanged(function(enabled)
 end)
                 
 -- Misc Section
-Options.AutoClaimQuest = Tabs.Misc:AddToggle("AutoClaimQuest", {
-    Title   = "Auto Claim All Quest",
-    Description = "Claiming All Your Quest",
-    Default = false
-})
-
-Options.AutoClaimQuest:OnChanged(function(state)
-    if not state then return end
-
-    task.spawn(function()
-        local RS = game:GetService("ReplicatedStorage")
-        local questRemote = RS.Remote.Server.Gameplay.QuestEvent
-
-        while Options.AutoClaimQuest.Value and not Fluent.Unloaded do
-            questRemote:FireServer({ [1] = "ClaimAll" })
-            task.wait(20)                                   -- loop delay
-        end
-    end)
-end)
-
 Options.AntiLag = Tabs.Misc:AddToggle("AntiLag", {
     Title = "Anti-Lag (Low Quality Mode)",
     Description = "Remove All Textures And Models",
