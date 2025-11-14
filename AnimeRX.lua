@@ -115,7 +115,7 @@ end)
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Menu", Icon = "home" }),
-    Ability = Window:AddTab({ Title = "Auto Ability", Icon = "" }),
+    Ability = Window:AddTab({ Title = "Auto Ability", Icon = "adjust" }),
     Miscellaneous = Window:AddTab({ Title = "Miscellaneous", Icon = "plus" }),
     Other = Window:AddTab({ Title = "Exploit", Icon = "layers" }),
     Joiner = Window:AddTab({ Title = "Auto Join", Icon = "users" }),
