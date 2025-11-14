@@ -769,8 +769,7 @@ end)
 -- Rolling Tab
 -- Roll Section
 Tabs.Roll:AddParagraph({
-    Title = "How To Use Auto Reroll:\n1. Go to Trait Reroll Npcs\n2. Select Your Unit\n3. Choose Desired Trait\n4. Enable Auto Reroll
-        ",
+    Title = "How To Use Auto Reroll:\n1. Go to Trait Reroll Npcs\n2. Select Your Unit\n3. Choose Desired Trait\n4. Enable Auto Reroll",
     Content = ""
 })
 
