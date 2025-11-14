@@ -680,81 +680,78 @@ Tabs.Joiner:AddParagraph({
 local Levels = game:GetService("ReplicatedStorage").Shared.Info.GameWorld.Levels
 
 local WorldList = {}
-local AllWaves = {}   -- fused chapter dropdown
+local WorldToChapters = {}
 
-for _, module in ipairs(Levels:GetChildren()) do
+for _,module in ipairs(Levels:GetChildren()) do
     if module:IsA("ModuleScript") then
         local data = require(module)
         local worldName = module.Name
+        local chapters = {}
 
-        if data[worldName] then
-            local waves = {}
-
-            for id, info in pairs(data[worldName]) do
-                if type(info) == "table" and info.Wave then
-                    local wave = tostring(info.Wave)
-
-                    if wave:find("_Chapter%d+") or wave:find("RangerStage") then
-                        table.insert(waves, wave)
-                    end
-                end
+        for chapterNumber = 1,10 do
+            local chapterId = worldName .. "_Chapter" .. chapterNumber
+            if data[worldName] and data[worldName][chapterId] then
+                table.insert(chapters, chapterId)
             end
+        end
 
-            if #waves > 0 then
-                table.sort(waves) -- sort for clean UI
-                table.insert(WorldList, worldName)
-                AllWaves[worldName] = waves
-            end
+        if #chapters > 0 then
+            table.insert(WorldList, worldName)
+            WorldToChapters[worldName] = chapters
         end
     end
 end
 
-Options.World = Tabs.Joiner:AddDropdown("World", {
-    Title = "World",
+local SelectedStoryWorld = nil
+local SelectedStoryChapter = nil
+local SelectedDifficulty = "Normal"
+local SelectedInfiniteWorld = nil
+
+Options.StoryWorld = Tabs.Joiner:AddDropdown("StoryWorld", {
+    Title = "Select World (Story)",
     Values = WorldList,
     Callback = function(v)
-        SelectedWorld = v
-        Options.Chapter:SetValues(AllWaves[v] or {})
+        SelectedStoryWorld = v
+        Options.StoryChapter:SetValues(WorldToChapters[v] or {})
     end
 })
 
-Options.Chapter = Tabs.Joiner:AddDropdown("Chapter", {
-    Title = "Chapter / Ranger",
+Options.StoryChapter = Tabs.Joiner:AddDropdown("StoryChapter", {
+    Title = "Select Chapter",
     Values = {},
     Callback = function(v)
-        SelectedChapter = v
+        SelectedStoryChapter = v
     end
 })
 
-Options.AutoJoin = Tabs.Joiner:AddToggle("AutoJoin", {
-    Title = "Auto Join Selected Stage",
+Options.StoryDifficulty = Tabs.Joiner:AddDropdown("StoryDifficulty", {
+    Title = "Difficulty",
+    Values = {"Normal","Hard","Nightmare"},
+    Callback = function(v)
+        SelectedDifficulty = v
+    end
+})
+
+Options.AutoStory = Tabs.Joiner:AddToggle("AutoStory",{
+    Title = "Auto Join Story",
     Default = false,
     Callback = function(v)
         if not v then return end
-
-        local e = game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event
-
-        while Options.AutoJoin.Value do
+        while Options.AutoStory.Value do
             if workspace:FindFirstChild("Lobby") then
-                e:FireServer("Create")
-                task.wait(0.25)
-
-                e:FireServer("Change-World", {
-                    World = SelectedWorld
-                })
-                task.wait(0.25)
-
-                e:FireServer("Change-Chapter", {
-                    Chapter = SelectedChapter
-                })
-                task.wait(0.25)
-
-                e:FireServer("Submit")
-                task.wait(0.25)
-
-                e:FireServer("Start")
+                local pr = game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event
+                pr:FireServer("Create")
+                task.wait(0.5)
+                if SelectedStoryWorld then pr:FireServer("Change-World",{World = SelectedStoryWorld}) end
+                task.wait(0.5)
+                if SelectedStoryChapter then pr:FireServer("Change-Chapter",{Chapter = SelectedStoryChapter}) end
+                task.wait(0.5)
+                pr:FireServer("Change-Difficulty",{Difficulty = SelectedDifficulty})
+                task.wait(0.5)
+                pr:FireServer("Submit")
+                task.wait(0.5)
+                pr:FireServer("Start")
             end
-
             task.wait(1)
         end
     end
@@ -817,7 +814,7 @@ Options.AutoJoinGateRaid = Tabs.Joiner:AddToggle("AutoJoinGateRaid", {
         task.spawn(function()
             while Options.AutoJoinGateRaid.Value and not Fluent.Unloaded do
                 if workspace:FindFirstChild("Lobby") then
-                    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                  l  local ReplicatedStorage = game:GetService("ReplicatedStorage")
                     local Remote = ReplicatedStorage
                         :WaitForChild("Remote")
                         :WaitForChild("Server")
