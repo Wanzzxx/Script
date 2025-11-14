@@ -802,17 +802,17 @@ Options.LockSubTrait = Tabs.Roll:AddDropdown("LockSubTrait", {
     Default = traitList[1] or "None"
 })
 
--- Match Both Mode Toggle
-Options.MatchBothTraits = Tabs.Roll:AddToggle("MatchBothTraits", {
-    Title = "Match Main & Sub Trait Mode",
-    Description = "Keep rolling until BOTH traits match",
-    Default = false
-})
-
 -- Auto Roll Trait Toggle
 Options.AutoRollTrait = Tabs.Roll:AddToggle("AutoRollTrait", {
     Title = "Roll Trait (Normal Mode)",
     Description = "Start auto-rolling traits",
+    Default = false
+})
+
+-- Match Both Mode Toggle
+Options.MatchBothTraits = Tabs.Roll:AddToggle("MatchBothTraits", {
+    Title = "Match Main & Sub Trait Mode [Enable With Roll Trait Toggle]",
+    Description = "Keep rolling until BOTH traits match",
     Default = false
 })
 
@@ -887,46 +887,19 @@ Options.AutoRollTrait:OnChanged(function(enabled)
                 break
             end
 
-            -- Wait for trait update after roll
-            local lastMainTrait = mainTraitLabel.Text
-            local lastSubTrait = subTraitLabel.Text
-            
-            -- Roll the trait first
-            local args = {
-                [1] = targetUnit,
-                [2] = "Reroll",
-                [3] = "Main",
-                [4] = "Shards"
-            }
-
-            game:GetService("ReplicatedStorage")
-                :WaitForChild("Remote")
-                :WaitForChild("Server")
-                :WaitForChild("Gambling")
-                :WaitForChild("RerollTrait")
-                :FireServer(unpack(args))
-
-            -- Wait for traits to update (monitor for change)
-            local timeout = 0
-            repeat
-                task.wait(0.05)
-                timeout = timeout + 0.05
-            until (mainTraitLabel.Text ~= lastMainTrait or subTraitLabel.Text ~= lastSubTrait) or timeout >= 2
-
-            -- Get current traits after update
-            local currentMainTrait = mainTraitLabel.Text
-            local currentSubTrait = subTraitLabel.Text
-
+            -- Get current traits BEFORE rolling
             local targetMainTrait = Options.LockMainTrait.Value
             local targetSubTrait = Options.LockSubTrait.Value
             local matchBothMode = Options.MatchBothTraits.Value
+            
+            local currentMainTrait = mainTraitLabel.Text
+            local currentSubTrait = subTraitLabel.Text
 
-            -- Check if we got the desired traits
+            -- Check if we already have the desired traits
             local mainMatches = (currentMainTrait == targetMainTrait)
             local subMatches = (currentSubTrait == targetSubTrait)
 
             if matchBothMode then
-                -- Match BOTH traits
                 if mainMatches and subMatches then
                     Fluent:Notify({
                         Title = "Auto Trait Reroll",
@@ -937,7 +910,6 @@ Options.AutoRollTrait:OnChanged(function(enabled)
                     break
                 end
             else
-                -- Match EITHER trait
                 if mainMatches or subMatches then
                     Fluent:Notify({
                         Title = "Auto Trait Reroll",
@@ -948,11 +920,30 @@ Options.AutoRollTrait:OnChanged(function(enabled)
                     break
                 end
             end
+            
+            -- Roll the trait
+            local args = {
+                [1] = targetUnit,
+                [2] = "Reroll",
+                [3] = "Main",
+                [4] = "Shards"
+            }
 
-            task.wait(0.05) -- Minimal delay before next roll
+            pcall(function()
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Remote")
+                    :WaitForChild("Server")
+                    :WaitForChild("Gambling")
+                    :WaitForChild("RerollTrait")
+                    :FireServer(unpack(args))
+            end)
+
+            -- Small delay to prevent rate limiting
+            task.wait(0.1)
         end
     end)
 end)
+
 
 -- Shop Section
 Tabs.Shop:AddParagraph({
