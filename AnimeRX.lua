@@ -733,7 +733,7 @@ Options.StoryDifficulty = Tabs.Joiner:AddDropdown("StoryDifficulty", {
 })
 
 Options.AutoStory = Tabs.Joiner:AddToggle("AutoStory",{
-    Title = "Auto Join Story",
+    Title = "Auto Join World",
     Default = false,
     Callback = function(v)
         if not v then return end
