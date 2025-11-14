@@ -719,6 +719,8 @@ local SelectedStoryWorld = nil
 local SelectedStoryChapter = nil
 local SelectedDifficulty = "Normal"
 local SelectedInfiniteWorld = nil
+local SelectedRangerWorld = nil
+local SelectedRangerStage = nil
 
 Options.StoryWorld = Tabs.Joiner:AddDropdown("StoryWorld", {
     Title = "Select World (Story)",
@@ -769,9 +771,6 @@ Options.AutoStory = Tabs.Joiner:AddToggle("AutoStory",{
         end
     end
 })
-
-local SelectedRangerWorld = nil
-local SelectedRangerStage = nil
 
 Options.RangerWorld = Tabs.Joiner:AddDropdown("RangerWorld", {
     Title = "Ranger World",
