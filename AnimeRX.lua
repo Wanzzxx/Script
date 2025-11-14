@@ -720,7 +720,8 @@ for _,module in ipairs(Levels:GetChildren()) do
             end)
             WorldToChapters[worldName] = chapters
         end
-            end
+    end
+        end
 
 local SelectedStoryWorld = nil
 local SelectedStoryChapter = nil
