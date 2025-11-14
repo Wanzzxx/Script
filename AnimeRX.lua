@@ -115,7 +115,7 @@ end)
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Menu", Icon = "home" }),
-    Ability = Window:AddTab({ Title = "Auto Ability", Icon = "adjust" }),
+    Ability = Window:AddTab({ Title = "Auto Ability", Icon = "layers" }),
     Miscellaneous = Window:AddTab({ Title = "Miscellaneous", Icon = "plus" }),
     Other = Window:AddTab({ Title = "Exploit", Icon = "layers" }),
     Joiner = Window:AddTab({ Title = "Auto Join", Icon = "users" }),
@@ -472,6 +472,120 @@ Options.AutoClaimQuest:OnChanged(function(state)
             questRemote:FireServer({ [1] = "ClaimAll" })
             task.wait(20)                                   -- loop delay
         end
+    end)
+end)
+
+-- Miscellaneous Tab Section
+Options.AutoClaimDailyDivine = Tabs.Miscellaneous:AddToggle("AutoClaimDailyDivine", {
+    Title = "Auto Claim Daily Divine",
+    Description = "Automatically claim all 7 days of divine rewards",
+    Default = false
+})
+
+Options.AutoClaimDailyDivine:OnChanged(function(enabled)
+    if not enabled then return end
+
+    task.spawn(function()
+        for day = 1, 7 do
+            local args = {
+                [1] = "Claim",
+                [2] = day
+            }
+            
+            pcall(function()
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Remote")
+                    :WaitForChild("Server")
+                    :WaitForChild("Lobby")
+                    :WaitForChild("DivineRewards")
+                    :FireServer(unpack(args))
+            end)
+            
+            task.wait(0.5)
+        end
+        
+        Fluent:Notify({
+            Title = "Auto Claim Daily Divine",
+            Content = "Claimed all 7 days!",
+            Duration = 4
+        })
+        
+        Options.AutoClaimDailyDivine:SetValue(false)
+    end)
+end)
+
+Options.AutoClaimDailyReward = Tabs.Miscellaneous:AddToggle("AutoClaimDailyReward", {
+    Title = "Auto Claim Daily Reward",
+    Description = "Automatically claim all 7 days of daily rewards",
+    Default = false
+})
+
+Options.AutoClaimDailyReward:OnChanged(function(enabled)
+    if not enabled then return end
+
+    task.spawn(function()
+        for day = 1, 7 do
+            local args = {
+                [1] = "Claim",
+                [2] = day
+            }
+            
+            pcall(function()
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Remote")
+                    :WaitForChild("Server")
+                    :WaitForChild("Lobby")
+                    :WaitForChild("DailyRewards")
+                    :FireServer(unpack(args))
+            end)
+            
+            task.wait(0.5)
+        end
+        
+        Fluent:Notify({
+            Title = "Auto Claim Daily Reward",
+            Content = "Claimed all 7 days!",
+            Duration = 4
+        })
+        
+        Options.AutoClaimDailyReward:SetValue(false)
+    end)
+end)
+
+Options.AutoClaimLevelMilestone = Tabs.Miscellaneous:AddToggle("AutoClaimLevelMilestone", {
+    Title = "Auto Claim Level Milestone",
+    Description = "Automatically claim all level milestones (5-200)",
+    Default = false
+})
+
+Options.AutoClaimLevelMilestone:OnChanged(function(enabled)
+    if not enabled then return end
+
+    task.spawn(function()
+        for level = 5, 200, 5 do
+            local args = {
+                [1] = level
+            }
+            
+            pcall(function()
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Remote")
+                    :WaitForChild("Server")
+                    :WaitForChild("Gameplay")
+                    :WaitForChild("LevelMilestone")
+                    :FireServer(unpack(args))
+            end)
+            
+            task.wait(0.1)
+        end
+        
+        Fluent:Notify({
+            Title = "Auto Claim Level Milestone",
+            Content = "Claimed all milestones (5-200)!",
+            Duration = 4
+        })
+        
+        Options.AutoClaimLevelMilestone:SetValue(false)
     end)
 end)
 
