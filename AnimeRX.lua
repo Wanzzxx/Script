@@ -702,11 +702,10 @@ end
 local SelectedStoryWorld = nil
 local SelectedStoryChapter = nil
 local SelectedDifficulty = "Normal"
-
 local SelectedInfiniteWorld = nil
 
-Options.StoryWorld = Tabs.Main:AddDropdown("StoryWorld", {
-    Title = "World (Story)",
+Options.StoryWorld = Tabs.Joiner:AddDropdown("StoryWorld", {
+    Title = "Select World (Story)",
     Values = WorldList,
     Callback = function(v)
         SelectedStoryWorld = v
@@ -715,15 +714,15 @@ Options.StoryWorld = Tabs.Main:AddDropdown("StoryWorld", {
     end
 })
 
-Options.StoryChapter = Tabs.Main:AddDropdown("StoryChapter", {
-    Title = "Chapter",
+Options.StoryChapter = Tabs.Joiner:AddDropdown("StoryChapter", {
+    Title = "Select Chapter",
     Values = {},
     Callback = function(v)
         SelectedStoryChapter = v
     end
 })
 
-Options.StoryDifficulty = Tabs.Main:AddDropdown("StoryDifficulty", {
+Options.StoryDifficulty = Tabs.Joiner:AddDropdown("StoryDifficulty", {
     Title = "Difficulty",
     Values = {"Normal","Hard","Nightmare"},
     Callback = function(v)
@@ -731,7 +730,7 @@ Options.StoryDifficulty = Tabs.Main:AddDropdown("StoryDifficulty", {
     end
 })
 
-Options.AutoStory = Tabs.Main:AddToggle("AutoStory",{
+Options.AutoStory = Tabs.Joiner:AddToggle("AutoStory",{
     Title = "Auto Join Story",
     Default = false,
     Callback = function(v)
@@ -759,15 +758,15 @@ Options.AutoStory = Tabs.Main:AddToggle("AutoStory",{
     end
 })
 
-Options.InfiniteWorld = Tabs.Main:AddDropdown("InfiniteWorld",{
-    Title = "World (Infinite)",
+Options.InfiniteWorld = Tabs.Joiner:AddDropdown("InfiniteWorld",{
+    Title = "Select World (Infinite)",
     Values = WorldList,
     Callback = function(v)
         SelectedInfiniteWorld = v
     end
 })
 
-Options.AutoInfinite = Tabs.Main:AddToggle("AutoInfinite",{
+Options.AutoInfinite = Tabs.Joiner:AddToggle("AutoInfinite",{
     Title = "Auto Join Infinite",
     Default = false,
     Callback = function(v)
