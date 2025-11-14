@@ -115,6 +115,7 @@ end)
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Menu", Icon = "home" }),
+    Ability = Window:AddTab({ Title = "Ability", Icon = "" }),
     Other = Window:AddTab({ Title = "Exploit", Icon = "layers" }),
     Joiner = Window:AddTab({ Title = "Auto Join", Icon = "users" }),
     Roll = Window:AddTab({ Title = "Rolling", Icon = "refresh-cw" }),
@@ -315,6 +316,116 @@ Options.AutoStart:OnChanged(function(state)
                 Duration = 3
             })
         end
+    end)
+end)
+
+-- Ability Section
+Tabs.Ability:AddParagraph({
+    Title = "- Auto Use Ability -",
+    Content = "Automatically uses all available unit abilities"
+})
+
+Options.AutoUseAbility = Tabs.Ability:AddToggle("AutoUseAbility", {
+    Title = "Auto Use Ability",
+    Description = "Automatically activate all unit abilities",
+    Default = false
+})
+
+Options.AutoUseAbility:OnChanged(function(enabled)
+    if not enabled then return end
+
+    task.spawn(function()
+        local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+        local hudGui = playerGui:WaitForChild("HUD")
+        local ultimateManager = hudGui.InGame.UltimateManager.Main.Main.ScrollingFrame
+        
+        local trackedAbilities = {}
+        
+        Fluent:Notify({
+            Title = "Auto Use Ability",
+            Content = "Now monitoring and using abilities!",
+            Duration = 4
+        })
+
+        while Options.AutoUseAbility.Value and not Fluent.Unloaded do
+            local anyAbilityReady = false
+            
+            -- Get all TextButtons in ScrollingFrame
+            for _, button in ipairs(ultimateManager:GetChildren()) do
+                if button:IsA("TextButton") then
+                    local buttonName = button.Name
+                    
+                    -- Get ability name from Value TextLabel
+                    local abilityName = "Unknown"
+                    pcall(function()
+                        local valueLabel = button:FindFirstChild("Value")
+                        if valueLabel and valueLabel:IsA("TextLabel") then
+                            abilityName = valueLabel.Text
+                        end
+                    end)
+                    
+                    -- Notify if new ability found
+                    if not trackedAbilities[buttonName] then
+                        trackedAbilities[buttonName] = true
+                        Fluent:Notify({
+                            Title = "Found Ability:",
+                            Content = abilityName,
+                            Duration = 3
+                        })
+                    end
+                    
+                    -- Check cooldown
+                    local isReady = false
+                    pcall(function()
+                        local lockLabel = button:FindFirstChild("LOCK")
+                        if lockLabel then
+                            local cooldownLabel = lockLabel:FindFirstChild("Value")
+                            if cooldownLabel and cooldownLabel:IsA("TextLabel") then
+                                if cooldownLabel.Text == "0s" then
+                                    isReady = true
+                                end
+                            end
+                        end
+                    end)
+                    
+                    if isReady then
+                        anyAbilityReady = true
+                        
+                        -- Find the unit in workspace
+                        local unitInWorkspace = workspace.Agent.UnitT:FindFirstChild(buttonName)
+                        
+                        if unitInWorkspace then
+                            -- Fire the ability
+                            local args = {
+                                [1] = unitInWorkspace
+                            }
+                            
+                            pcall(function()
+                                game:GetService("ReplicatedStorage")
+                                    :WaitForChild("Remote")
+                                    :WaitForChild("Server")
+                                    :WaitForChild("Units")
+                                    :WaitForChild("Ultimate")
+                                    :FireServer(unpack(args))
+                            end)
+                        end
+                    end
+                end
+            end
+            
+            -- If no abilities are ready, wait longer before checking again
+            if anyAbilityReady then
+                task.wait(0.5) -- Quick check if abilities were used
+            else
+                task.wait(2) -- Wait longer if all abilities on cooldown
+            end
+        end
+        
+        Fluent:Notify({
+            Title = "Auto Use Ability",
+            Content = "Stopped using abilities.",
+            Duration = 3
+        })
     end)
 end)
 
