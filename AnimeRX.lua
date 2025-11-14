@@ -678,23 +678,26 @@ Tabs.Joiner:AddParagraph({
 })
 
 local Levels = game:GetService("ReplicatedStorage").Shared.Info.GameWorld.Levels
+
 local WorldList = {}
-local ChapterList = {}
 local WorldToChapters = {}
 
 for _,module in ipairs(Levels:GetChildren()) do
     if module:IsA("ModuleScript") then
         local data = require(module)
-        for worldName, chapters in pairs(data) do
-            if not WorldToChapters[worldName] then
-                WorldToChapters[worldName] = {}
-                table.insert(WorldList, worldName)
+        local worldName = module.Name
+        local chapters = {}
+
+        for chapterNumber = 1,10 do
+            local chapterId = worldName .. "_Chapter" .. chapterNumber
+            if data[worldName] and data[worldName][chapterId] then
+                table.insert(chapters, chapterId)
             end
-            for id, info in pairs(chapters) do
-                if info.Wave and tostring(info.Wave):find("_Chapter") then
-                    table.insert(WorldToChapters[worldName], info.Wave)
-                end
-            end
+        end
+
+        if #chapters > 0 then
+            table.insert(WorldList, worldName)
+            WorldToChapters[worldName] = chapters
         end
     end
 end
@@ -709,8 +712,7 @@ Options.StoryWorld = Tabs.Joiner:AddDropdown("StoryWorld", {
     Values = WorldList,
     Callback = function(v)
         SelectedStoryWorld = v
-        ChapterList = WorldToChapters[v] or {}
-        Options.StoryChapter:SetValues(ChapterList)
+        Options.StoryChapter:SetValues(WorldToChapters[v] or {})
     end
 })
 
@@ -737,26 +739,18 @@ Options.AutoStory = Tabs.Joiner:AddToggle("AutoStory",{
         if not v then return end
         while Options.AutoStory.Value do
             if workspace:FindFirstChild("Lobby") then
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Create")
+                local pr = game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event
+                pr:FireServer("Create")
                 task.wait(0.5)
-
-                if SelectedStoryWorld then
-                    game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Change-World",{World = SelectedStoryWorld})
-                end
+                if SelectedStoryWorld then pr:FireServer("Change-World",{World = SelectedStoryWorld}) end
                 task.wait(0.5)
-
-                if SelectedStoryChapter then
-                    game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Change-Chapter",{Chapter = SelectedStoryChapter})
-                end
+                if SelectedStoryChapter then pr:FireServer("Change-Chapter",{Chapter = SelectedStoryChapter}) end
                 task.wait(0.5)
-
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Change-Difficulty",{Difficulty = SelectedDifficulty})
+                pr:FireServer("Change-Difficulty",{Difficulty = SelectedDifficulty})
                 task.wait(0.5)
-
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Submit")
+                pr:FireServer("Submit")
                 task.wait(0.5)
-
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Start")
+                pr:FireServer("Start")
             end
             task.wait(1)
         end
@@ -778,21 +772,16 @@ Options.AutoInfinite = Tabs.Joiner:AddToggle("AutoInfinite",{
         if not v then return end
         while Options.AutoInfinite.Value do
             if workspace:FindFirstChild("Lobby") then
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Create")
+                local pr = game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event
+                pr:FireServer("Create")
                 task.wait(0.5)
-
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Change-Mode",{Mode = "Infinite Stage"})
+                pr:FireServer("Change-Mode",{Mode = "Infinite Stage"})
                 task.wait(0.5)
-
-                if SelectedInfiniteWorld then
-                    game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Change-World",{World = SelectedInfiniteWorld})
-                end
+                if SelectedInfiniteWorld then pr:FireServer("Change-World",{World = SelectedInfiniteWorld}) end
                 task.wait(0.5)
-
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Submit")
+                pr:FireServer("Submit")
                 task.wait(0.5)
-
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Start")
+                pr:FireServer("Start")
             end
             task.wait(1)
         end
