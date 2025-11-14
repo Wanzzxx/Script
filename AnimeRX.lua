@@ -677,10 +677,16 @@ Tabs.Joiner:AddParagraph({
     Content = ""
 })
 
-local Levels = game:GetService("ReplicatedStorage").Shared.Info.GameWorld.Levels
-
 local WorldList = {}
 local WorldToChapters = {}
+
+local function isStoryChapter(str, world)
+    return str:match("^"..world.."_Chapter(%d+)$")
+end
+
+local function isRangerStage(str, world)
+    return str:match("^"..world.."_RangerStage(%d+)$")
+end
 
 for _,module in ipairs(Levels:GetChildren()) do
     if module:IsA("ModuleScript") then
@@ -692,15 +698,29 @@ for _,module in ipairs(Levels:GetChildren()) do
             local chapterId = worldName .. "_Chapter" .. chapterNumber
             if data[worldName] and data[worldName][chapterId] then
                 table.insert(chapters, chapterId)
+        local worldData = data[worldName]
+        if worldData then
+            for key, info in pairs(worldData) do
+                if type(key) == "string" then
+                    if isStoryChapter(key, worldName) then
+                        table.insert(chapters, key)
+                    elseif isRangerStage(key, worldName) then
+                        table.insert(chapters, key)
+                    end
+                end
             end
         end
 
         if #chapters > 0 then
             table.insert(WorldList, worldName)
+            table.sort(chapters, function(a, b)
+                local aNum = tonumber(a:match("%d+"))
+                local bNum = tonumber(b:match("%d+"))
+                return aNum < bNum
+            end)
             WorldToChapters[worldName] = chapters
         end
-    end
-end
+            end
 
 local SelectedStoryWorld = nil
 local SelectedStoryChapter = nil
