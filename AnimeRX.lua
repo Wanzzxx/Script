@@ -332,7 +332,14 @@ Options.AutoUseAbility = Tabs.Ability:AddToggle("AutoUseAbility", {
 })
 
 Options.AutoUseAbility:OnChanged(function(enabled)
-    if not enabled then return end
+    if not enabled then 
+        -- Clean up visibility connection when disabled
+        if Options._VisibilityConn then
+            Options._VisibilityConn:Disconnect()
+            Options._VisibilityConn = nil
+        end
+        return 
+    end
 
     task.spawn(function()
         local playerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -342,6 +349,14 @@ Options.AutoUseAbility:OnChanged(function(enabled)
         
         local trackedAbilities = {}
         
+        -- ALWAYS force visible - even if manually changed
+        ultimateManagerFrame.Visible = true
+        Options._VisibilityConn = ultimateManagerFrame:GetPropertyChangedSignal("Visible"):Connect(function()
+            if Options.AutoUseAbility.Value then
+                ultimateManagerFrame.Visible = true
+            end
+        end)
+        
         Fluent:Notify({
             Title = "Auto Use Ability",
             Content = "Now monitoring and using abilities!",
@@ -350,12 +365,10 @@ Options.AutoUseAbility:OnChanged(function(enabled)
 
         while Options.AutoUseAbility.Value and not Fluent.Unloaded do
             local anyAbilityReady = false
-            local hasAbilities = false
             
             -- Get all TextButtons in ScrollingFrame
             for _, button in ipairs(ultimateManager:GetChildren()) do
                 if button:IsA("TextButton") then
-                    hasAbilities = true
                     local buttonName = button.Name
                     
                     -- Get ability name from Value TextLabel
@@ -393,66 +406,42 @@ Options.AutoUseAbility:OnChanged(function(enabled)
                     
                     if isReady then
                         anyAbilityReady = true
+                        
+                        -- Find the unit in workspace
+                        local unitInWorkspace = workspace.Agent.UnitT:FindFirstChild(buttonName)
+                        
+                        if unitInWorkspace then
+                            -- Fire the ability
+                            local args = {
+                                [1] = unitInWorkspace
+                            }
+                            
+                            pcall(function()
+                                game:GetService("ReplicatedStorage")
+                                    :WaitForChild("Remote")
+                                    :WaitForChild("Server")
+                                    :WaitForChild("Units")
+                                    :WaitForChild("Ultimate")
+                                    :FireServer(unpack(args))
+                            end)
+                        end
                     end
                 end
             end
             
-            -- Manage frame visibility
-            if hasAbilities and anyAbilityReady then
-                -- Set visible if there are abilities ready
-                ultimateManagerFrame.Visible = true
-                
-                -- Use abilities that are ready
-                for _, button in ipairs(ultimateManager:GetChildren()) do
-                    if button:IsA("TextButton") then
-                        local buttonName = button.Name
-                        
-                        -- Check if this ability is ready
-                        local isReady = false
-                        pcall(function()
-                            local lockLabel = button:FindFirstChild("LOCK")
-                            if lockLabel then
-                                local cooldownLabel = lockLabel:FindFirstChild("Value")
-                                if cooldownLabel and cooldownLabel:IsA("TextLabel") then
-                                    if cooldownLabel.Text == "0s" then
-                                        isReady = true
-                                    end
-                                end
-                            end
-                        end)
-                        
-                        if isReady then
-                            -- Find the unit in workspace
-                            local unitInWorkspace = workspace.Agent.UnitT:FindFirstChild(buttonName)
-                            
-                            if unitInWorkspace then
-                                -- Fire the ability
-                                local args = {
-                                    [1] = unitInWorkspace
-                                }
-                                
-                                pcall(function()
-                                    game:GetService("ReplicatedStorage")
-                                        :WaitForChild("Remote")
-                                        :WaitForChild("Server")
-                                        :WaitForChild("Units")
-                                        :WaitForChild("Ultimate")
-                                        :FireServer(unpack(args))
-                                end)
-                            end
-                        end
-                    end
-                end
-                
+            -- Wait based on ability status
+            if anyAbilityReady then
                 task.wait(0.5)
             else
-                -- Set invisible if no abilities or all on cooldown
-                ultimateManagerFrame.Visible = false
                 task.wait(2)
             end
         end
         
-        -- Hide frame when stopped
+        -- Disconnect visibility forcer and hide frame when stopped
+        if Options._VisibilityConn then
+            Options._VisibilityConn:Disconnect()
+            Options._VisibilityConn = nil
+        end
         ultimateManagerFrame.Visible = false
         
         Fluent:Notify({
