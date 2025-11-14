@@ -769,7 +769,8 @@ end)
 -- Rolling Tab
 -- Roll Section
 Tabs.Roll:AddParagraph({
-    Title = "- Auto Trait Reroll -",
+    Title = "How To Use Auto Reroll:\n1. Go to Trait Reroll Npcs\n2. Select Your Unit\n3. Choose Desired Trait\n4. Enable Auto Reroll
+        ",
     Content = ""
 })
 
@@ -811,8 +812,8 @@ Options.MatchBothTraits = Tabs.Roll:AddToggle("MatchBothTraits", {
 
 -- Auto Roll Trait Toggle
 Options.AutoRollTrait = Tabs.Roll:AddToggle("AutoRollTrait", {
-    Title = "Roll Trait",
-    Description = "Start auto-rolling traits (Open Traits GUI first!)",
+    Title = "Roll Trait (Normal Mode)",
+    Description = "Start auto-rolling traits",
     Default = false
 })
 
