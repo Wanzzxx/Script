@@ -349,14 +349,6 @@ Options.AutoUseAbility:OnChanged(function(enabled)
         
         local trackedAbilities = {}
         
-        -- ALWAYS force visible - even if manually changed
-        ultimateManagerFrame.Visible = true
-        Options._VisibilityConn = ultimateManagerFrame:GetPropertyChangedSignal("Visible"):Connect(function()
-            if Options.AutoUseAbility.Value then
-                ultimateManagerFrame.Visible = true
-            end
-        end)
-        
         Fluent:Notify({
             Title = "Auto Use Ability",
             Content = "Now monitoring and using abilities!",
@@ -364,6 +356,19 @@ Options.AutoUseAbility:OnChanged(function(enabled)
         })
 
         while Options.AutoUseAbility.Value and not Fluent.Unloaded do
+            -- Do nothing if in lobby
+            if workspace:FindFirstChild("Lobby") then
+                task.wait(1)
+                continue
+            end
+            
+            -- Toggle visibility true -> false -> true to refresh abilities
+            ultimateManagerFrame.Visible = true
+            task.wait(0.5)
+            ultimateManagerFrame.Visible = false
+            task.wait(0.5)
+            ultimateManagerFrame.Visible = true
+            
             local anyAbilityReady = false
             
             -- Get all TextButtons in ScrollingFrame
@@ -433,15 +438,11 @@ Options.AutoUseAbility:OnChanged(function(enabled)
             if anyAbilityReady then
                 task.wait(0.5)
             else
-                task.wait(2)
+                task.wait(1)
             end
         end
         
-        -- Disconnect visibility forcer and hide frame when stopped
-        if Options._VisibilityConn then
-            Options._VisibilityConn:Disconnect()
-            Options._VisibilityConn = nil
-        end
+        -- Hide frame when stopped
         ultimateManagerFrame.Visible = false
         
         Fluent:Notify({
