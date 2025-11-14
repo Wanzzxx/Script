@@ -673,8 +673,8 @@ end)
 
 -- Auto Join Story & Infinite Section
 Tabs.Joiner:AddParagraph({
-    Title = "- Story & Infinite Mode -",
-    Content = ""
+    Title = "- Auto Join -",
+    Content = "[Story] [Raid] [Infinite]"
 })
 
 local Levels = game:GetService("ReplicatedStorage").Shared.Info.GameWorld.Levels
@@ -708,7 +708,7 @@ local SelectedDifficulty = "Normal"
 local SelectedInfiniteWorld = nil
 
 Options.StoryWorld = Tabs.Joiner:AddDropdown("StoryWorld", {
-    Title = "Select World (Story)",
+    Title = "Select World",
     Values = WorldList,
     Callback = function(v)
         SelectedStoryWorld = v
@@ -788,63 +788,7 @@ Options.AutoInfinite = Tabs.Joiner:AddToggle("AutoInfinite",{
     end
 })
 
-Tabs.Joiner:AddParagraph({
-    Title = "- Raid -",
-    Content = ""
-})
-
-Options.GateRaidChapter = Tabs.Joiner:AddDropdown("GateRaidChapter", {
-    Title = "Select Gate Raid Chapter",
-    Values = {
-        "TheGatedCity_Chapter1",
-        "TheGatedCity_Chapter2",
-        "TheGatedCity_Chapter3",
-        "TheGatedCity_Chapter4"
-    },
-    Multi = false,
-    Default = "TheGatedCity_Chapter1"
-})
-
-Options.AutoJoinGateRaid = Tabs.Joiner:AddToggle("AutoJoinGateRaid", {
-    Title = "Auto Join Gate Raid",
-    Default = false,
-    Callback = function(enabled)
-        if not enabled then return end
-
-        task.spawn(function()
-            while Options.AutoJoinGateRaid.Value and not Fluent.Unloaded do
-                if workspace:FindFirstChild("Lobby") then
-                   local ReplicatedStorage = game:GetService("ReplicatedStorage")
-                    local Remote = ReplicatedStorage
-                        :WaitForChild("Remote")
-                        :WaitForChild("Server")
-                        :WaitForChild("PlayRoom")
-                        :WaitForChild("Event")
-
-                    Remote:FireServer("Create")
-                    Remote:FireServer("Change-Mode", {["Mode"] = "Raids Stage"})
-                    Remote:FireServer("Change-World", {["World"] = "TheGatedCity"})
-                    local chapter = Options.GateRaidChapter.Value or "TheGatedCity_Chapter1"
-                    Remote:FireServer("Change-Chapter", {["Chapter"] = chapter})
-                    Remote:FireServer("Submit")
-                    Remote:FireServer("Start")
-
-                    Fluent:Notify({
-                        Title = "Auto Join Gate Raid",
-                        Content = "Joined " .. chapter,
-                        Duration = 4
-                    })
-
-                    break -- stop after success
-                else
-                    warn("[AutoJoinGateRaid] Lobby not found, retrying...")
-                end
-                task.wait(2) -- retry every 2s until lobby exists
-            end
-        end)
-    end
-})
-
+-- Dungeon
 Tabs.Joiner:AddParagraph({
     Title = "- Dungeon -",
     Content = ""
