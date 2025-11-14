@@ -677,7 +677,7 @@ Tabs.Joiner:AddParagraph({
     Content = ""
 })
 
-local Levels = rs.Shared.Info.GameWorld.Levels
+local Levels = game:GetService("ReplicatedStorage").Shared.Info.GameWorld.Levels
 local WorldList = {}
 local ChapterList = {}
 local WorldToChapters = {}
@@ -737,21 +737,26 @@ Options.AutoStory = Tabs.Joiner:AddToggle("AutoStory",{
         if not v then return end
         while Options.AutoStory.Value do
             if workspace:FindFirstChild("Lobby") then
-                rs.Remote.Server.PlayRoom.Event:FireServer("Create")
+                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Create")
                 task.wait(0.5)
+
                 if SelectedStoryWorld then
-                    rs.Remote.Server.PlayRoom.Event:FireServer("Change-World",{World = SelectedStoryWorld})
+                    game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Change-World",{World = SelectedStoryWorld})
                 end
                 task.wait(0.5)
+
                 if SelectedStoryChapter then
-                    rs.Remote.Server.PlayRoom.Event:FireServer("Change-Chapter",{Chapter = SelectedStoryChapter})
+                    game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Change-Chapter",{Chapter = SelectedStoryChapter})
                 end
                 task.wait(0.5)
-                rs.Remote.Server.PlayRoom.Event:FireServer("Change-Difficulty",{Difficulty = SelectedDifficulty})
+
+                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Change-Difficulty",{Difficulty = SelectedDifficulty})
                 task.wait(0.5)
-                rs.Remote.Server.PlayRoom.Event:FireServer("Submit")
+
+                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Submit")
                 task.wait(0.5)
-                rs.Remote.Server.PlayRoom.Event:FireServer("Start")
+
+                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Start")
             end
             task.wait(1)
         end
@@ -773,17 +778,21 @@ Options.AutoInfinite = Tabs.Joiner:AddToggle("AutoInfinite",{
         if not v then return end
         while Options.AutoInfinite.Value do
             if workspace:FindFirstChild("Lobby") then
-                rs.Remote.Server.PlayRoom.Event:FireServer("Create")
+                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Create")
                 task.wait(0.5)
-                rs.Remote.Server.PlayRoom.Event:FireServer("Change-Mode",{Mode = "Infinite Stage"})
+
+                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Change-Mode",{Mode = "Infinite Stage"})
                 task.wait(0.5)
+
                 if SelectedInfiniteWorld then
-                    rs.Remote.Server.PlayRoom.Event:FireServer("Change-World",{World = SelectedInfiniteWorld})
+                    game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Change-World",{World = SelectedInfiniteWorld})
                 end
                 task.wait(0.5)
-                rs.Remote.Server.PlayRoom.Event:FireServer("Submit")
+
+                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Submit")
                 task.wait(0.5)
-                rs.Remote.Server.PlayRoom.Event:FireServer("Start")
+
+                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer("Start")
             end
             task.wait(1)
         end
