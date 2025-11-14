@@ -1405,8 +1405,8 @@ Options.PingOnUnitDrop:OnChanged(function(enabled)
     end
 end)
 
--- Ping On Selected Trait Toggle
-Options.PingOnSelectedTrait = Tabs.Roll:AddToggle("PingOnSelectedTrait", {
+ -- Ping On Selected Trait Toggle
+Options.PingOnSelectedTrait = Tabs.Webhook:AddToggle("PingOnSelectedTrait", {
     Title = "Ping On Selected Trait",
     Description = "Will ping @everyone if you got one or both of selected trait",
     Default = false
@@ -1624,7 +1624,29 @@ Options.AutoRollTrait:OnChanged(function(enabled)
                     break
                 end
             end
+            
+            -- Roll the trait
+            local args = {
+                [1] = targetUnit,
+                [2] = "Reroll",
+                [3] = "Main",
+                [4] = "Shards"
+            }
 
+            pcall(function()
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Remote")
+                    :WaitForChild("Server")
+                    :WaitForChild("Gambling")
+                    :WaitForChild("RerollTrait")
+                    :FireServer(unpack(args))
+            end)
+
+            task.wait(0.1)
+        end
+    end)
+end)
+                
 -- Misc Section
 Options.AutoClaimQuest = Tabs.Misc:AddToggle("AutoClaimQuest", {
     Title   = "Auto Claim All Quest",
