@@ -117,6 +117,7 @@ local Tabs = {
     Main = Window:AddTab({ Title = "Menu", Icon = "home" }),
     Other = Window:AddTab({ Title = "Exploit", Icon = "layers" }),
     Joiner = Window:AddTab({ Title = "Auto Join", Icon = "users" }),
+    Roll = Window:AddTab({ Title = "Rolling", Icon = "" }),
     Shop = Window:AddTab({ Title = "Shop", Icon = "shopping-cart" }),
     Webhook = Window:AddTab({ Title = "Webhook", Icon = "globe" }),
     Misc = Window:AddTab({ Title = "Other Settings", Icon = "settings" }),
@@ -745,7 +746,193 @@ Options.AutoJoinChallenge:OnChanged(function(enabled)
     end)
 end)
 
+-- Rolling Tab
+-- Roll Section
+Tabs.Roll:AddParagraph({
+    Title = "- Auto Trait Reroll -",
+    Content = ""
+})
 
+-- Get all trait names from ReplicatedStorage
+local function getTraitNames()
+    local traits = {}
+    local traitIcons = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("TraitIcons")
+    for _, trait in ipairs(traitIcons:GetChildren()) do
+        table.insert(traits, trait.Name)
+    end
+    table.sort(traits)
+    return traits
+end
+
+local traitList = getTraitNames()
+
+-- Main Trait Dropdown
+Options.LockMainTrait = Tabs.Roll:AddDropdown("LockMainTrait", {
+    Title = "Select Lock-Main Traits",
+    Values = traitList,
+    Multi = false,
+    Default = traitList[1] or "None"
+})
+
+-- Sub Trait Dropdown
+Options.LockSubTrait = Tabs.Roll:AddDropdown("LockSubTrait", {
+    Title = "Select Lock-Sub Traits",
+    Values = traitList,
+    Multi = false,
+    Default = traitList[1] or "None"
+})
+
+-- Match Both Mode Toggle
+Options.MatchBothTraits = Tabs.Roll:AddToggle("MatchBothTraits", {
+    Title = "Match Main & Sub Trait Mode",
+    Description = "Keep rolling until BOTH traits match",
+    Default = false
+})
+
+-- Auto Roll Trait Toggle
+Options.AutoRollTrait = Tabs.Roll:AddToggle("AutoRollTrait", {
+    Title = "Roll Trait",
+    Description = "Start auto-rolling traits (Open Traits GUI first!)",
+    Default = false
+})
+
+Options.AutoRollTrait:OnChanged(function(enabled)
+    if not enabled then return end
+
+    task.spawn(function()
+        local traitGui = LocalPlayer.PlayerGui:FindFirstChild("Traits")
+        
+        -- Check if Traits GUI exists
+        if not traitGui then
+            Fluent:Notify({
+                Title = "Auto Trait Reroll",
+                Content = "Traits GUI not found! Please open a unit's trait menu first.",
+                Duration = 4
+            })
+            Options.AutoRollTrait:SetValue(false)
+            return
+        end
+
+        local unitFolderValue = traitGui.Main.Base.UnitFolder.Value
+        
+        -- Check if a unit is selected
+        if not unitFolderValue then
+            Fluent:Notify({
+                Title = "Auto Trait Reroll",
+                Content = "No unit detected! Please open a unit's trait menu first.",
+                Duration = 4
+            })
+            Options.AutoRollTrait:SetValue(false)
+            return
+        end
+
+        -- Notify unit found
+        local unitName = unitFolderValue.Name
+        Fluent:Notify({
+            Title = "Auto Trait Reroll",
+            Content = "Found Unit: " .. unitName,
+            Duration = 4
+        })
+
+        local playerData = ReplicatedStorage:WaitForChild("Player_Data")
+        local playerCollection = playerData:WaitForChild(LocalPlayer.Name):WaitForChild("Collection")
+        
+        local mainTraitLabel = traitGui.Main.Base.Main_Trait.Trait
+        local subTraitLabel = traitGui.Main.Base.Sub_Trait.Trait
+        
+        while Options.AutoRollTrait.Value and not Fluent.Unloaded do
+            -- Re-check unit value in case it changes
+            unitFolderValue = traitGui.Main.Base.UnitFolder.Value
+            
+            if not unitFolderValue then
+                Fluent:Notify({
+                    Title = "Auto Trait Reroll",
+                    Content = "Unit menu was closed! Stopping...",
+                    Duration = 3
+                })
+                Options.AutoRollTrait:SetValue(false)
+                break
+            end
+
+            unitName = unitFolderValue.Name
+            local targetUnit = playerCollection:FindFirstChild(unitName)
+            
+            if not targetUnit then
+                Fluent:Notify({
+                    Title = "Auto Trait Reroll",
+                    Content = "Unit not found in collection!",
+                    Duration = 3
+                })
+                Options.AutoRollTrait:SetValue(false)
+                break
+            end
+
+            -- Wait for trait update after roll
+            local lastMainTrait = mainTraitLabel.Text
+            local lastSubTrait = subTraitLabel.Text
+            
+            -- Roll the trait first
+            local args = {
+                [1] = targetUnit,
+                [2] = "Reroll",
+                [3] = "Main",
+                [4] = "Shards"
+            }
+
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("Remote")
+                :WaitForChild("Server")
+                :WaitForChild("Gambling")
+                :WaitForChild("RerollTrait")
+                :FireServer(unpack(args))
+
+            -- Wait for traits to update (monitor for change)
+            local timeout = 0
+            repeat
+                task.wait(0.05)
+                timeout = timeout + 0.05
+            until (mainTraitLabel.Text ~= lastMainTrait or subTraitLabel.Text ~= lastSubTrait) or timeout >= 2
+
+            -- Get current traits after update
+            local currentMainTrait = mainTraitLabel.Text
+            local currentSubTrait = subTraitLabel.Text
+
+            local targetMainTrait = Options.LockMainTrait.Value
+            local targetSubTrait = Options.LockSubTrait.Value
+            local matchBothMode = Options.MatchBothTraits.Value
+
+            -- Check if we got the desired traits
+            local mainMatches = (currentMainTrait == targetMainTrait)
+            local subMatches = (currentSubTrait == targetSubTrait)
+
+            if matchBothMode then
+                -- Match BOTH traits
+                if mainMatches and subMatches then
+                    Fluent:Notify({
+                        Title = "Auto Trait Reroll",
+                        Content = "Got both traits on " .. unitName .. "!\nMain: " .. currentMainTrait .. "\nSub: " .. currentSubTrait,
+                        Duration = 5
+                    })
+                    Options.AutoRollTrait:SetValue(false)
+                    break
+                end
+            else
+                -- Match EITHER trait
+                if mainMatches or subMatches then
+                    Fluent:Notify({
+                        Title = "Auto Trait Reroll",
+                        Content = "Got desired trait on " .. unitName .. "!\nMain: " .. currentMainTrait .. "\nSub: " .. currentSubTrait,
+                        Duration = 5
+                    })
+                    Options.AutoRollTrait:SetValue(false)
+                    break
+                end
+            end
+
+            task.wait(0.05) -- Minimal delay before next roll
+        end
+    end)
+end)
 
 -- Shop Section
 Tabs.Shop:AddParagraph({
