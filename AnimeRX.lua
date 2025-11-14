@@ -677,259 +677,118 @@ Tabs.Joiner:AddParagraph({
     Content = ""
 })
 
--- Get all worlds and chapters from modules
-local function getWorldsAndChapters()
-    local worlds = {}
-    local chapters = {}
-    
-    local levelsModule = ReplicatedStorage.Shared.Info.GameWorld.Levels
-    
-    for _, worldModule in pairs(levelsModule:GetChildren()) do
-        local worldData = require(worldModule)
-        
-        for worldName, worldInfo in pairs(worldData) do
-            if not worlds[worldName] then
-                worlds[worldName] = true
-            end
-            
-            if not chapters[worldName] then
-                chapters[worldName] = {}
-            end
-            
-            -- Get only Chapter 1-10 (story mode)
-            for chapterKey, chapterInfo in pairs(worldInfo) do
-                if chapterKey:match("_Chapter%d+$") and chapterInfo.Wave then
-                    local chapterNum = tonumber(chapterKey:match("Chapter(%d+)"))
-                    if chapterNum and chapterNum >= 1 and chapterNum <= 10 then
-                        table.insert(chapters[worldName], {
-                            key = chapterKey,
-                            wave = chapterInfo.Wave,
-                            name = chapterInfo.Name or chapterKey,
-                            world = chapterInfo.World
-                        })
+local RS = game:GetService("ReplicatedStorage")
+local PlayRoomEvent = RS.Remote.Server.PlayRoom.Event
+
+local function BuildLevelLists()
+    local Levels = RS.Shared.Info.GameWorld.Levels
+    local Worlds = {}
+    local StoryLabels = {}
+    local StoryMap = {}
+
+    for _, m in pairs(Levels:GetChildren()) do
+        local ok, data = pcall(require, m)
+        if ok and type(data) == "table" then
+            for waveKey, info in pairs(data) do
+                local n = tonumber(waveKey:match("_Chapter(%d+)"))
+                if n and n >= 1 and n <= 10 then
+                    local w = info.World
+                    if w then
+                        Worlds[w] = true
+                        local label = w .. "_" .. waveKey .. " - " .. (info.Name or waveKey)
+                        StoryMap[label] = {world = w, wave = waveKey, name = info.Name or waveKey}
+                        table.insert(StoryLabels, label)
                     end
                 end
             end
-            
-            -- Sort chapters by number
-            table.sort(chapters[worldName], function(a, b)
-                local numA = tonumber(a.key:match("Chapter(%d+)"))
-                local numB = tonumber(b.key:match("Chapter(%d+)"))
-                return numA < numB
-            end)
         end
     end
-    
-    local worldList = {}
-    for world, _ in pairs(worlds) do
-        table.insert(worldList, world)
-    end
-    table.sort(worldList)
-    
-    return worldList, chapters
+
+    table.sort(StoryLabels)
+
+    local WL = {}
+    for w in pairs(Worlds) do table.insert(WL, w) end
+    table.sort(WL)
+
+    return WL, StoryLabels, StoryMap
 end
 
-local worldList, chaptersData = getWorldsAndChapters()
+local WorldList, StoryLabels, StoryMap = BuildLevelLists()
 
--- Story Mode Section
--- Select World (Multi)
-Options.StoryWorlds = Tabs.Joiner:AddDropdown("StoryWorlds", {
-    Title = "Story Mode - Select Worlds",
-    Values = worldList,
-    Multi = true,
-    Default = {}
+Options.StorySelect = Tabs.Joiner:AddDropdown("StorySelect", {
+    Title = "Select Story",
+    Values = StoryLabels,
+    Multi = false,
+    Default = StoryLabels[1] or ""
 })
 
--- Select Difficulty
 Options.StoryDifficulty = Tabs.Joiner:AddDropdown("StoryDifficulty", {
-    Title = "Story Mode - Difficulty",
+    Title = "Difficulty",
     Values = {"Normal", "Hard", "Nightmare"},
     Multi = false,
     Default = "Normal"
 })
 
--- Auto Join Story Toggle
 Options.AutoJoinStory = Tabs.Joiner:AddToggle("AutoJoinStory", {
-    Title = "Auto Join Story Mode",
-    Description = "Plays through selected worlds' chapters",
+    Title = "Auto Join Story",
     Default = false
 })
 
-Options.AutoJoinStory:OnChanged(function(enabled)
-    if not enabled then return end
-
-    task.spawn(function()
-        while Options.AutoJoinStory.Value and not Fluent.Unloaded do
-            if workspace:FindFirstChild("Lobby") then
-                local selectedWorlds = Options.StoryWorlds.Value
-                local difficulty = Options.StoryDifficulty.Value
-                
-                local hasSelectedWorld = false
-                for world, isSelected in pairs(selectedWorlds) do
-                    if isSelected then
-                        hasSelectedWorld = true
-                        break
-                    end
-                end
-                
-                if not hasSelectedWorld then
-                    Fluent:Notify({
-                        Title = "Auto Join Story",
-                        Content = "Please select at least one world!",
-                        Duration = 4
-                    })
-                    Options.AutoJoinStory:SetValue(false)
-                    break
-                end
-                
-                -- Loop through selected worlds
-                for world, isSelected in pairs(selectedWorlds) do
-                    if isSelected and chaptersData[world] then
-                        -- Set difficulty
-                        local diffArgs = {
-                            [1] = "Change-Difficulty",
-                            [2] = {
-                                ["Difficulty"] = difficulty
-                            }
-                        }
-                        game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer(unpack(diffArgs))
-                        task.wait(0.5)
-                        
-                        -- Loop through all chapters in this world
-                        for _, chapter in ipairs(chaptersData[world]) do
-                            if not Options.AutoJoinStory.Value then break end
-                            if not workspace:FindFirstChild("Lobby") then break end
-                            
-                            -- Step 1: Select World
-                            local worldArgs = {
-                                [1] = "Change-World",
-                                [2] = {
-                                    ["World"] = chapter.world
-                                }
-                            }
-                            game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer(unpack(worldArgs))
-                            task.wait(0.5)
-                            
-                            -- Step 2: Select Chapter
-                            local chapterArgs = {
-                                [1] = "Change-Chapter",
-                                [2] = {
-                                    ["Chapter"] = chapter.key
-                                }
-                            }
-                            game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer(unpack(chapterArgs))
-                            task.wait(0.5)
-                            
-                            -- Step 3: Submit
-                            local submitArgs = {
-                                [1] = "Submit"
-                            }
-                            game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer(unpack(submitArgs))
-                            task.wait(0.5)
-                            
-                            -- Step 4: Start
-                            local startArgs = {
-                                [1] = "Start"
-                            }
-                            game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer(unpack(startArgs))
-                            
-                            Fluent:Notify({
-                                Title = "Auto Join Story",
-                                Content = "Joined " .. world .. " - " .. chapter.name,
-                                Duration = 4
-                            })
-                            
-                            break -- Exit after starting one chapter
-                        end
-                    end
-                end
-                
-                break -- Exit after attempting to join
-            else
-                break -- Not in lobby
-            end
-            task.wait(2)
-        end
-    end)
-end)
-
--- Infinite Mode Section
-Options.InfiniteWorld = Tabs.Joiner:AddDropdown("InfiniteWorld", {
-    Title = "Infinite Mode - Select World",
-    Values = worldList,
+Options.InfiniteSelect = Tabs.Joiner:AddDropdown("InfiniteSelect", {
+    Title = "Select World (Infinite)",
+    Values = WorldList,
     Multi = false,
-    Default = worldList[1] or "None"
+    Default = WorldList[1] or ""
 })
 
 Options.AutoJoinInfinite = Tabs.Joiner:AddToggle("AutoJoinInfinite", {
-    Title = "Auto Join Infinite Mode",
-    Description = "Joins infinite mode for selected world",
+    Title = "Auto Join Infinite",
     Default = false
 })
 
-Options.AutoJoinInfinite:OnChanged(function(enabled)
-    if not enabled then return end
+Options.AutoJoinStory:OnChanged(function(v)
+    if not v then return end
+    if not workspace:FindFirstChild("Lobby") then Options.AutoJoinStory:SetValue(false) return end
 
     task.spawn(function()
-        while Options.AutoJoinInfinite.Value and not Fluent.Unloaded do
-            if workspace:FindFirstChild("Lobby") then
-                local selectedWorld = Options.InfiniteWorld.Value
-                
-                if not selectedWorld or selectedWorld == "None" then
-                    Fluent:Notify({
-                        Title = "Auto Join Infinite",
-                        Content = "Please select a world!",
-                        Duration = 4
-                    })
-                    Options.AutoJoinInfinite:SetValue(false)
-                    break
-                end
-                
-                -- Step 1: Change to Infinite Mode
-                local modeArgs = {
-                    [1] = "Change-Mode",
-                    [2] = {
-                        ["Mode"] = "Infinite Stage"
-                    }
-                }
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer(unpack(modeArgs))
-                task.wait(0.5)
-                
-                -- Step 2: Select World
-                local worldArgs = {
-                    [1] = "Change-World",
-                    [2] = {
-                        ["World"] = selectedWorld
-                    }
-                }
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer(unpack(worldArgs))
-                task.wait(0.5)
-                
-                -- Step 3: Submit
-                local submitArgs = {
-                    [1] = "Submit"
-                }
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer(unpack(submitArgs))
-                task.wait(0.5)
-                
-                -- Step 4: Start
-                local startArgs = {
-                    [1] = "Start"
-                }
-                game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event:FireServer(unpack(startArgs))
-                
-                Fluent:Notify({
-                    Title = "Auto Join Infinite",
-                    Content = "Joined Infinite Mode - " .. selectedWorld,
-                    Duration = 4
-                })
-                
-                break -- Exit after starting
-            else
-                break -- Not in lobby
-            end
-            task.wait(2)
+        local sel = StoryLabels[Options.StorySelect.Value] or Options.StorySelect.Value
+        local entry = StoryMap[Options.StorySelect.Value]
+        local diff = Options.StoryDifficulty.Value
+
+        if not entry then
+            Options.AutoJoinStory:SetValue(false)
+            return
         end
+
+        PlayRoomEvent:FireServer("Create"); task.wait(.25)
+        PlayRoomEvent:FireServer("Change-World", {World = entry.world}); task.wait(.25)
+        PlayRoomEvent:FireServer("Change-Chapter", {Chapter = entry.wave}); task.wait(.25)
+        PlayRoomEvent:FireServer("Change-Difficulty", {Difficulty = diff}); task.wait(.25)
+        PlayRoomEvent:FireServer("Submit"); task.wait(.25)
+        PlayRoomEvent:FireServer("Start")
+
+        Options.AutoJoinStory:SetValue(false)
+    end)
+end)
+
+Options.AutoJoinInfinite:OnChanged(function(v)
+    if not v then return end
+    if not workspace:FindFirstChild("Lobby") then Options.AutoJoinInfinite:SetValue(false) return end
+
+    task.spawn(function()
+        local world = Options.InfiniteSelect.Value
+        if not world or world == "" then
+            Options.AutoJoinInfinite:SetValue(false)
+            return
+        end
+
+        PlayRoomEvent:FireServer("Create"); task.wait(.25)
+        PlayRoomEvent:FireServer("Change-Mode", {Mode = "Infinite Stage"}); task.wait(.25)
+        PlayRoomEvent:FireServer("Change-World", {World = world}); task.wait(.25)
+        PlayRoomEvent:FireServer("Submit"); task.wait(.25)
+        PlayRoomEvent:FireServer("Start")
+
+        Options.AutoJoinInfinite:SetValue(false)
     end)
 end)
 
