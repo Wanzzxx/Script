@@ -13,7 +13,7 @@ local Window = Fluent:CreateWindow({
     Title = "Wanz HUB",
     SubTitle = "Private Versions",
     TabWidth = 160,
-    Size = UDim2.fromOffset(580, 480),
+    Size = UDim2.fromOffset(580, 350),
     Acrylic = false,
     Theme = "Darker",
     MinimizeKey = Enum.KeyCode.LeftControl
@@ -769,8 +769,8 @@ end)
 -- Rolling Tab
 -- Roll Section
 Tabs.Roll:AddParagraph({
-    Title = "How To Use Auto Reroll:\n1. Go to Trait Reroll Npcs\n2. Select Your Unit\n3. Choose Desired Trait\n4. Enable Auto Reroll",
-    Content = ""
+    Title = "How To Use Auto Reroll:",
+    Content = "1. Go to Trait Reroll Npcs\n2. Select Your Unit\n3. Choose Desired Trait\n4. Enable Auto Reroll"
 })
 
 -- Get all trait names from ReplicatedStorage
