@@ -680,43 +680,37 @@ Tabs.Joiner:AddParagraph({
 local Levels = game:GetService("ReplicatedStorage").Shared.Info.GameWorld.Levels
 
 local WorldList = {}
-local WorldToChapters = {}
-
-local function isStoryChapter(str, world)
-    return str:match("^"..world.."_Chapter(%d+)$")
-end
-
-local function isRangerStage(str, world)
-    return str:match("^"..world.."_RangerStage(%d+)$")
-end
+local StoryChapters = {}
+local RangerStages = {}
 
 for _,module in ipairs(Levels:GetChildren()) do
     if module:IsA("ModuleScript") then
-        local data = require(module)
         local worldName = module.Name
-        local chapters = {}
+        local data = require(module)
 
-        local worldData = data[worldName]
-        if worldData then
-            for key, info in pairs(worldData) do
-                if type(key) == "string" then
-                    if isStoryChapter(key, worldName) then
-                        table.insert(chapters, key)
-                    elseif isRangerStage(key, worldName) then
-                        table.insert(chapters, key)
+        local foundStory = {}
+        local foundRanger = {}
+
+        if data[worldName] then
+            for id,info in pairs(data[worldName]) do
+                if info.Wave then
+                    local wave = tostring(info.Wave)
+
+                    if wave:find("_Chapter") then
+                        table.insert(foundStory, wave)
+                    end
+                    
+                    if wave:find("RangerStage") then
+                        table.insert(foundRanger, wave)
                     end
                 end
             end
         end
 
-        if #chapters > 0 then
+        if #foundStory > 0 or #foundRanger > 0 then
             table.insert(WorldList, worldName)
-            table.sort(chapters, function(a, b)
-                local aNum = tonumber(a:match("%d+"))
-                local bNum = tonumber(b:match("%d+"))
-                return aNum < bNum
-            end)
-            WorldToChapters[worldName] = chapters
+            StoryChapters[worldName] = foundStory
+            RangerStages[worldName] = foundRanger
         end
     end
 end
@@ -770,6 +764,51 @@ Options.AutoStory = Tabs.Joiner:AddToggle("AutoStory",{
                 pr:FireServer("Submit")
                 task.wait(0.5)
                 pr:FireServer("Start")
+            end
+            task.wait(1)
+        end
+    end
+})
+
+local SelectedRangerWorld = nil
+local SelectedRangerStage = nil
+
+Options.RangerWorld = Tabs.Joiner:AddDropdown("RangerWorld", {
+    Title = "Ranger World",
+    Values = WorldList,
+    Callback = function(v)
+        SelectedRangerWorld = v
+        Options.RangerStage:SetValues(RangerStages[v] or {})
+    end
+})
+
+Options.RangerStage = Tabs.Joiner:AddDropdown("RangerStage", {
+    Title = "Ranger Stage",
+    Values = {},
+    Callback = function(v)
+        SelectedRangerStage = v
+    end
+})
+
+Options.AutoRanger = Tabs.Joiner:AddToggle("AutoRanger", {
+    Title = "Auto Join Ranger",
+    Default = false,
+    Callback = function(v)
+        if not v then return end
+
+        while Options.AutoRanger.Value do
+            if workspace:FindFirstChild("Lobby") then
+                local e = game:GetService("ReplicatedStorage").Remote.Server.PlayRoom.Event
+                
+                e:FireServer("Create")
+                task.wait(0.3)
+                e:FireServer("Change-World",{World = SelectedRangerWorld})
+                task.wait(0.3)
+                e:FireServer("Change-Chapter",{Chapter = SelectedRangerStage})
+                task.wait(0.3)
+                e:FireServer("Submit")
+                task.wait(0.3)
+                e:FireServer("Start")
             end
             task.wait(1)
         end
