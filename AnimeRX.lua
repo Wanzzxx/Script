@@ -814,7 +814,7 @@ Options.AutoJoinGateRaid = Tabs.Joiner:AddToggle("AutoJoinGateRaid", {
         task.spawn(function()
             while Options.AutoJoinGateRaid.Value and not Fluent.Unloaded do
                 if workspace:FindFirstChild("Lobby") then
-                  l  local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                   local ReplicatedStorage = game:GetService("ReplicatedStorage")
                     local Remote = ReplicatedStorage
                         :WaitForChild("Remote")
                         :WaitForChild("Server")
