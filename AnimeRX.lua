@@ -337,7 +337,8 @@ Options.AutoUseAbility:OnChanged(function(enabled)
     task.spawn(function()
         local playerGui = LocalPlayer:WaitForChild("PlayerGui")
         local hudGui = playerGui:WaitForChild("HUD")
-        local ultimateManager = hudGui.InGame.UltimateManager.Main.Main.ScrollingFrame
+        local ultimateManagerFrame = hudGui.InGame:WaitForChild("UltimateManager")
+        local ultimateManager = ultimateManagerFrame.Main.Main.ScrollingFrame
         
         local trackedAbilities = {}
         
@@ -349,10 +350,12 @@ Options.AutoUseAbility:OnChanged(function(enabled)
 
         while Options.AutoUseAbility.Value and not Fluent.Unloaded do
             local anyAbilityReady = false
+            local hasAbilities = false
             
             -- Get all TextButtons in ScrollingFrame
             for _, button in ipairs(ultimateManager:GetChildren()) do
                 if button:IsA("TextButton") then
+                    hasAbilities = true
                     local buttonName = button.Name
                     
                     -- Get ability name from Value TextLabel
@@ -390,36 +393,67 @@ Options.AutoUseAbility:OnChanged(function(enabled)
                     
                     if isReady then
                         anyAbilityReady = true
-                        
-                        -- Find the unit in workspace
-                        local unitInWorkspace = workspace.Agent.UnitT:FindFirstChild(buttonName)
-                        
-                        if unitInWorkspace then
-                            -- Fire the ability
-                            local args = {
-                                [1] = unitInWorkspace
-                            }
-                            
-                            pcall(function()
-                                game:GetService("ReplicatedStorage")
-                                    :WaitForChild("Remote")
-                                    :WaitForChild("Server")
-                                    :WaitForChild("Units")
-                                    :WaitForChild("Ultimate")
-                                    :FireServer(unpack(args))
-                            end)
-                        end
                     end
                 end
             end
             
-            -- If no abilities are ready, wait longer before checking again
-            if anyAbilityReady then
-                task.wait(0.5) -- Quick check if abilities were used
+            -- Manage frame visibility
+            if hasAbilities and anyAbilityReady then
+                -- Set visible if there are abilities ready
+                ultimateManagerFrame.Visible = true
+                
+                -- Use abilities that are ready
+                for _, button in ipairs(ultimateManager:GetChildren()) do
+                    if button:IsA("TextButton") then
+                        local buttonName = button.Name
+                        
+                        -- Check if this ability is ready
+                        local isReady = false
+                        pcall(function()
+                            local lockLabel = button:FindFirstChild("LOCK")
+                            if lockLabel then
+                                local cooldownLabel = lockLabel:FindFirstChild("Value")
+                                if cooldownLabel and cooldownLabel:IsA("TextLabel") then
+                                    if cooldownLabel.Text == "0s" then
+                                        isReady = true
+                                    end
+                                end
+                            end
+                        end)
+                        
+                        if isReady then
+                            -- Find the unit in workspace
+                            local unitInWorkspace = workspace.Agent.UnitT:FindFirstChild(buttonName)
+                            
+                            if unitInWorkspace then
+                                -- Fire the ability
+                                local args = {
+                                    [1] = unitInWorkspace
+                                }
+                                
+                                pcall(function()
+                                    game:GetService("ReplicatedStorage")
+                                        :WaitForChild("Remote")
+                                        :WaitForChild("Server")
+                                        :WaitForChild("Units")
+                                        :WaitForChild("Ultimate")
+                                        :FireServer(unpack(args))
+                                end)
+                            end
+                        end
+                    end
+                end
+                
+                task.wait(0.5)
             else
-                task.wait(2) -- Wait longer if all abilities on cooldown
+                -- Set invisible if no abilities or all on cooldown
+                ultimateManagerFrame.Visible = false
+                task.wait(2)
             end
         end
+        
+        -- Hide frame when stopped
+        ultimateManagerFrame.Visible = false
         
         Fluent:Notify({
             Title = "Auto Use Ability",
