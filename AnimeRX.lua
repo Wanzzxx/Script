@@ -2214,7 +2214,6 @@ Options.DisableYenNotify = Tabs.Misc:AddToggle("DisableYenNotify", {
     end
 })
 
-
 Options.BlackoutScreen = Tabs.Misc:AddToggle("BlackoutScreen", {
     Title = "Full Black Background",
     Default = false
@@ -2225,20 +2224,30 @@ Options.BlackoutScreen:OnChanged(function(state)
     local playerGui = player:WaitForChild("PlayerGui")
 
     if state then
-        local gui = Instance.new("ScreenGui")
-        gui.Name = "BlackoutGui"
-        gui.IgnoreGuiInset = true
-        gui.ResetOnSpawn = false
-        gui.Parent = playerGui
+        local gui = playerGui:FindFirstChild("BlackoutGui")
+        if not gui then
+            gui = Instance.new("ScreenGui")
+            gui.Name = "BlackoutGui"
+            gui.IgnoreGuiInset = true
+            gui.ResetOnSpawn = false
+            gui.Parent = playerGui
 
-        local frame = Instance.new("Frame")
-        frame.Name = "BlackFrame"
-        frame.Size = UDim2.new(1, 0, 1, 0)
-        frame.Position = UDim2.new(0, 0, 0, 0)
-        frame.BackgroundColor3 = Color3.new(0, 0, 0) -- black
-        frame.BorderSizePixel = 0
-        frame.ZIndex = 0 -- keep it behind GameEndedAnimationUI
-        frame.Parent = gui
+            local frame = Instance.new("Frame")
+            frame.Name = "BlackFrame"
+            frame.Size = UDim2.new(1, 0, 1, 0)
+            frame.BackgroundColor3 = Color3.new(0, 0, 0)
+            frame.BorderSizePixel = 0
+            frame.ZIndex = 0
+            frame.Parent = gui
+        end
+
+        task.spawn(function()
+            while Options.BlackoutScreen.Value do
+                local inLobby = workspace:FindFirstChild("Lobby") ~= nil
+                gui.BlackFrame.Visible = not inLobby
+                task.wait(0.2)
+            end
+        end)
 
         Fluent:Notify({
             Title = "Blackout",
