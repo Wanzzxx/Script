@@ -1013,6 +1013,25 @@ Options.AutoJoinFrightFest:OnChanged(function(enabled)
     end)
 end)
 
+Options.AutoJoinAscension = Tabs.Joiner:AddToggle("AutoJoinAscension", {
+    Title = "Auto Join Ascension Event",
+    Default = false
+})
+
+task.spawn(function()
+    while task.wait(0.5) do
+        if Options.AutoJoinAscension.Value then
+            if workspace:FindFirstChild("Lobby") then
+                local args1 = { "AscensionEvent" }
+                game.ReplicatedStorage.Remote.Server.PlayRoom.Event:FireServer(unpack(args1))
+                task.wait(2)
+                local args2 = { "Start" }
+                game.ReplicatedStorage.Remote.Server.PlayRoom.Event:FireServer(unpack(args2))
+            end
+        end
+    end
+end)
+
 Tabs.Joiner:AddParagraph({
     Title = "- Others -",
     Content = ""
@@ -2105,29 +2124,82 @@ Options.AutoRejoinDisconnect:OnChanged(function(enabled)
     end
 end)
 
-Options.AutoRejoin2H = Tabs.Misc:AddToggle("AutoRejoin2H", {
-    Title = "Auto Rejoin After 2 Hours",
-    Description = "To Prevent Lag During A Long Playtime",
-    Default = false,
-    Callback = function(Value)
-        if Value then
-            task.spawn(function()
-                local Players = game:GetService("Players")
-                local TeleportService = game:GetService("TeleportService")
-                local LocalPlayer = Players.LocalPlayer
-
-                local startTick = tick()
-                while Options.AutoRejoin2H.Value do
-                    task.wait(5)
-                    if tick() - startTick >= 7200 then -- 2 hours
-                        TeleportService:Teleport(game.PlaceId, LocalPlayer)
-                        break
-                    end
-                end
-            end)
-        end
-    end,
+Options.AutoBackNoEnemies = Tabs.Misc:AddToggle("AutoBackNoEnemies", {
+    Title = "Auto Back To Lobby If No Enemies Spawned",
+    Description = "Automatically Teleport You Into Lobby When No Enemies Spawned (To Prevent Stuck On The Game)",
+    Default = false
 })
+
+task.spawn(function()
+    local TeleportService = game:GetService("TeleportService")
+    local Players = game:GetService("Players")
+    local Workspace = game:GetService("Workspace")
+    local LocalPlayer = Players.LocalPlayer
+
+    local noEnemyThreshold = 20
+    local checkInterval = 1
+
+    while task.wait(checkInterval) do
+        if not Options.AutoBackNoEnemies.Value then
+            continue
+        end
+
+        if Workspace:FindFirstChild("Lobby") then
+            continue
+        end
+
+        local agentFolder = Workspace:FindFirstChild("Agent")
+        if not agentFolder then
+            continue
+        end
+
+        local enemyFolder = agentFolder:FindFirstChild("EnemyT")
+        if not enemyFolder then
+            continue
+        end
+
+        local noEnemyTimer = 0
+
+        while not Workspace:FindFirstChild("Lobby") and Options.AutoBackNoEnemies.Value do
+            enemyFolder = Workspace:FindFirstChild("Agent") and Workspace.Agent:FindFirstChild("EnemyT")
+            if not enemyFolder then
+                break
+            end
+
+            local enemyCount = #enemyFolder:GetChildren()
+
+            if enemyCount == 0 then
+                noEnemyTimer = noEnemyTimer + checkInterval
+
+                if noEnemyTimer == 15 then
+                    Fluent:Notify({
+                        Title = "No Enemy Detected",
+                        Content = "No enemies for 15s. Rejoining in 5s...",
+                        Duration = 5
+                    })
+                end
+
+                if noEnemyTimer >= noEnemyThreshold then
+                    Fluent:Notify({
+                        Title = "Auto Rejoin",
+                        Content = "No enemies detected for 20s. Rejoining now...",
+                        Duration = 3
+                    })
+
+                    task.wait(1)
+                    pcall(function()
+                        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+                    end)
+                    break
+                end
+            else
+                noEnemyTimer = 0
+            end
+
+            task.wait(checkInterval)
+        end
+    end
+end)
 
 Options.DisableYenNotify = Tabs.Misc:AddToggle("DisableYenNotify", {
     Title = "Disable Yen Notify",
