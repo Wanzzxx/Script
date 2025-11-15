@@ -1589,9 +1589,7 @@ local function getMatchTotalTime()
     if not left then return nil end
     local totalTimeLabel = left:WaitForChild("TotalTime", 5)
     if not totalTimeLabel then return nil end
-    local text = totalTimeLabel.Text or ""
-    local extracted = text:match("(%d+:%d+)")
-    return extracted
+    return totalTimeLabel.Text
 end
 
 local function sendGameWebhook(resultRewards)
@@ -1603,11 +1601,9 @@ local function sendGameWebhook(resultRewards)
     lastSentTime = matchTime
 
     local placeName = MarketplaceService:GetProductInfo(game.PlaceId).Name
-
     local stageName = "Unknown Stage"
     pcall(function()
-        local label = LocalPlayer.PlayerGui.HUD.InGame.Main.GameInfo.Stage.Label
-        stageName = label.Text
+        stageName = LocalPlayer.PlayerGui.HUD.InGame.Main.GameInfo.Stage.Label.Text
     end)
 
     local data = {
@@ -1619,7 +1615,7 @@ local function sendGameWebhook(resultRewards)
                 { name = "Stage", value = stageName, inline = false },
                 { name = "Username", value = "||" .. LocalPlayer.Name .. "||", inline = true },
                 { name = "Rewards", value = resultRewards, inline = false },
-                { name = "Clear Time)", value = "**" .. matchTime .. "**", inline = false }
+                { name = "Clear Time", value = "**" .. matchTime .. "**", inline = false }
             }
         }}
     }
