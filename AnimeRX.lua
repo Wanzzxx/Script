@@ -1581,31 +1581,24 @@ local lastSentTime = ""
 
 local function getMatchTotalTime()
     local pg = LocalPlayer:WaitForChild("PlayerGui")
-    local rewardsUI = pg:WaitForChild("RewardsUI", 10)
-    if not rewardsUI then return nil end
-    local main = rewardsUI:WaitForChild("Main", 5)
-    if not main then return nil end
-    local left = main:WaitForChild("LeftSide", 5)
-    if not left then return nil end
-    local totalTimeLabel = left:WaitForChild("TotalTime", 5)
-    if not totalTimeLabel then return nil end
+    local rewardsUI = pg:WaitForChild("RewardsUI")
+    local main = rewardsUI:WaitForChild("Main")
+    local left = main:WaitForChild("LeftSide")
+    local totalTimeLabel = left:WaitForChild("TotalTime")
     return totalTimeLabel.Text
 end
 
 local function sendGameWebhook(resultRewards)
     if not Options.ActiveWebhook.Value then return end
     if Options.WebhookURL.Value == "" then return end
-
     local matchTime = getMatchTotalTime() or "Unknown"
     if matchTime == lastSentTime then return end
     lastSentTime = matchTime
-
     local placeName = MarketplaceService:GetProductInfo(game.PlaceId).Name
     local stageName = "Unknown Stage"
     pcall(function()
         stageName = LocalPlayer.PlayerGui.HUD.InGame.Main.GameInfo.Stage.Label.Text
     end)
-
     local data = {
         username = "WanzHook",
         embeds = {{
@@ -1619,7 +1612,6 @@ local function sendGameWebhook(resultRewards)
             }
         }}
     }
-
     pcall(function()
         request({
             Url = Options.WebhookURL.Value,
@@ -1633,7 +1625,8 @@ end
 task.spawn(function()
     while task.wait(0.2) do
         local pg = LocalPlayer:FindFirstChild("PlayerGui")
-        if pg and pg:FindFirstChild("GameEndedAnimationUI") then
+        local ui = pg and pg:FindFirstChild("GameEndedAnimationUI")
+        if ui then
             local rw = LocalPlayer:FindFirstChild("RewardsShow")
             local rewardsText = "No Rewards"
             if rw and #rw:GetChildren() > 0 then
@@ -1653,9 +1646,11 @@ task.spawn(function()
                 Duration = 20
             })
 
-            sendGameWebhook(rewardsText)
+            repeat task.wait(0.1) until not pg:FindFirstChild("GameEndedAnimationUI")
 
-            repeat task.wait(0.5) until not pg:FindFirstChild("GameEndedAnimationUI")
+            task.wait(0.1)
+
+            sendGameWebhook(rewardsText)
         end
     end
 end)
