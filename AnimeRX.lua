@@ -1596,6 +1596,15 @@ local function sendWebhook(results)
         end
     end)
 
+    -- Get match total time
+    local totalTime = "Unknown"
+    pcall(function()
+        local timeLabel = LocalPlayer.PlayerGui.RewardsUI.Main.LeftSide.TotalTime
+        if timeLabel then
+            totalTime = timeLabel.Text
+        end
+    end)
+
     local data = {
         username = "WanzHook",
         embeds = {{
@@ -1605,7 +1614,7 @@ local function sendWebhook(results)
                 { name = "Stage", value = stageName, inline = false },
                 { name = "Username", value = "||" .. LocalPlayer.Name .. "||", inline = true },
                 { name = "Rewards", value = results, inline = false },
-                { name = "Time", value = "**" .. os.date("%Y-%m-%d %H:%M:%S") .. "**", inline = false }
+                { name = "Match Time", value = "**" .. totalTime .. "**", inline = false }
             }
         }}
     }
