@@ -1532,8 +1532,6 @@ Options.AutoBuyGraveyard:OnChanged(function(enabled)
     end
 end)
 
-
-
 -- Webhook Section
 Options.WebhookURL = Tabs.Webhook:AddInput("WebhookInput", {
     Title = "Paste Your Webhook",
@@ -1579,7 +1577,7 @@ local function getPlayerItemAmount(name)
     return 0
 end
 
-local function sendWebhook(results, matchTime)
+local function sendWebhook(results)
     if not Options.ActiveWebhook.Value then return end
     local url = Options.WebhookURL.Value
     if url == "" then return end
@@ -1605,7 +1603,7 @@ local function sendWebhook(results, matchTime)
                 { name = "Stage", value = stageName, inline = false },
                 { name = "Username", value = "||" .. LocalPlayer.Name .. "||", inline = true },
                 { name = "Rewards", value = results, inline = false },
-                { name = "Total Time", value = "**" .. matchTime .. "**", inline = false }
+                { name = "Time", value = "**" .. os.date("%Y-%m-%d %H:%M:%S") .. "**", inline = false }
             }
         }}
     }
