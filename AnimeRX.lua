@@ -1577,21 +1577,37 @@ local function getPlayerItemAmount(name)
     return 0
 end
 
-local function sendWebhook(results)
-    if not Options.ActiveWebhook.Value then return end
-    local url = Options.WebhookURL.Value
-    if url == "" then return end
+local lastSentTime = ""
 
-    -- Get place name
+local function getMatchTotalTime()
+    local pg = LocalPlayer:WaitForChild("PlayerGui")
+    local rewardsUI = pg:WaitForChild("RewardsUI", 10)
+    if not rewardsUI then return nil end
+    local main = rewardsUI:WaitForChild("Main", 5)
+    if not main then return nil end
+    local left = main:WaitForChild("LeftSide", 5)
+    if not left then return nil end
+    local totalTimeLabel = left:WaitForChild("TotalTime", 5)
+    if not totalTimeLabel then return nil end
+    local text = totalTimeLabel.Text or ""
+    local extracted = text:match("(%d+:%d+)")
+    return extracted
+end
+
+local function sendGameWebhook(resultRewards)
+    if not Options.ActiveWebhook.Value then return end
+    if Options.WebhookURL.Value == "" then return end
+
+    local matchTime = getMatchTotalTime() or "Unknown"
+    if matchTime == lastSentTime then return end
+    lastSentTime = matchTime
+
     local placeName = MarketplaceService:GetProductInfo(game.PlaceId).Name
-    
-    -- Get stage name
+
     local stageName = "Unknown Stage"
     pcall(function()
-        local stageLabel = LocalPlayer.PlayerGui.HUD.InGame.Main.GameInfo.Stage.Label
-        if stageLabel then
-            stageName = stageLabel.Text
-        end
+        local label = LocalPlayer.PlayerGui.HUD.InGame.Main.GameInfo.Stage.Label
+        stageName = label.Text
     end)
 
     local data = {
@@ -1602,69 +1618,48 @@ local function sendWebhook(results)
             fields = {
                 { name = "Stage", value = stageName, inline = false },
                 { name = "Username", value = "||" .. LocalPlayer.Name .. "||", inline = true },
-                { name = "Rewards", value = results, inline = false },
-                { name = "Time", value = "**" .. os.date("%Y-%m-%d %H:%M:%S") .. "**", inline = false }
+                { name = "Rewards", value = resultRewards, inline = false },
+                { name = "Clear Time)", value = "**" .. matchTime .. "**", inline = false }
             }
         }}
     }
 
-    local success, err = pcall(function()
+    pcall(function()
         request({
-            Url = url,
+            Url = Options.WebhookURL.Value,
             Method = "POST",
             Headers = {["Content-Type"] = "application/json"},
             Body = HttpService:JSONEncode(data)
         })
     end)
-
-    if not success then
-        warn("Webhook failed:", err)
-    end
-end
-
-local function showGameResults()
-    task.spawn(function()
-        local timeout = 5
-        local rw
-        repeat
-            rw = LocalPlayer:FindFirstChild("RewardsShow")
-            task.wait(0)
-            timeout -= 0.25
-        until rw or timeout <= 0
-
-        if not rw then
-            Fluent:Notify({ Title = "Game Ended", Content = "No rewards panel found", Duration = 3 })
-            return
-        end
-
-        task.wait(0)
-
-        local children = rw:GetChildren()
-        if #children == 0 then
-            Fluent:Notify({ Title = "Game Ended", Content = "No rewards detected", Duration = 3 })
-            return
-        end
-
-        local lines = {}
-        for _, item in ipairs(children) do
-            local rewardName = item.Name
-            local amount = item:IsA("NumberValue") and item.Value or ((item:FindFirstChild("Amount") and item.Amount.Value) or 1)
-            local nowAmount = getPlayerItemAmount(rewardName)
-            table.insert(lines, ("[ %d+ ] %s  [Now: %dx]"):format(amount, rewardName, nowAmount))
-        end
-
-        local resultText = table.concat(lines, "\n")
-        Fluent:Notify({ Title = "Results Notify", Content = resultText, Duration = 20 })
-        sendWebhook(resultText)
-    end)
 end
 
 task.spawn(function()
-    while task.wait(0) do
+    while task.wait(0.2) do
         local pg = LocalPlayer:FindFirstChild("PlayerGui")
         if pg and pg:FindFirstChild("GameEndedAnimationUI") then
-            showGameResults()
-            repeat task.wait(1) until not pg:FindFirstChild("GameEndedAnimationUI")
+            local rw = LocalPlayer:FindFirstChild("RewardsShow")
+            local rewardsText = "No Rewards"
+            if rw and #rw:GetChildren() > 0 then
+                local lines = {}
+                for _, item in ipairs(rw:GetChildren()) do
+                    local rewardName = item.Name
+                    local amount = item:IsA("NumberValue") and item.Value or ((item:FindFirstChild("Amount") and item.Amount.Value) or 1)
+                    local nowAmount = getPlayerItemAmount(rewardName)
+                    table.insert(lines, ("[ %d+ ] %s  [Now: %dx]"):format(amount, rewardName, nowAmount))
+                end
+                rewardsText = table.concat(lines, "\n")
+            end
+
+            Fluent:Notify({
+                Title = "Results Notify",
+                Content = rewardsText,
+                Duration = 20
+            })
+
+            sendGameWebhook(rewardsText)
+
+            repeat task.wait(0.5) until not pg:FindFirstChild("GameEndedAnimationUI")
         end
     end
 end)
