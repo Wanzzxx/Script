@@ -2063,7 +2063,7 @@ Options.HideName:OnChanged(function(enabled)
         
         Fluent:Notify({
             Title = "Hide Name",
-            Content = "Name hidden with rainbow effect!",
+            Content = "Name hidden!",
             Duration = 4
         })
     else
@@ -2085,7 +2085,7 @@ Options.HideName:OnChanged(function(enabled)
         
         Fluent:Notify({
             Title = "Hide Name",
-            Content = "Name visibility restored (rejoin to fully reset).",
+            Content = "Name Restored (rejoin to fully reset).",
             Duration = 4
         })
     end
