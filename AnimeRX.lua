@@ -8,12 +8,8 @@ end
 local player = game:GetService("Players").LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-for i = 1, 10 do
-    if playerGui:FindFirstChild("WnZGUI") then break end
-    if i == 10 then
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Wanzzxx/ScriptV2/refs/heads/main/MainHub"))()
-        return
-    end
+while not playerGui:FindFirstChild("WnZGUI") do
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Wanzzxx/ScriptV2/refs/heads/main/MainHub"))()
     task.wait(2)
 end
 
