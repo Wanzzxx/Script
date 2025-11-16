@@ -179,6 +179,56 @@ Options.SetMaxSpeed = Tabs.Main:AddToggle("SetMaxSpeed", {
     end
 })
 
+Options.HideName = Tabs.Main:AddToggle("HideName", {
+    Title = "Hide Name",
+    Description "Hiding Your Name To Avoid Reports!",
+    Default = true
+})
+
+local function applyHiddenName()
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    if not char then return end
+
+    local head = char:FindFirstChild("Head")
+    if not head then return end
+
+    local gui = head:FindFirstChild("PlayerHeadGui")
+    if not gui then return end
+
+    local level = gui:FindFirstChild("Level")
+    local title = gui:FindFirstChild("Title")
+    local pname = gui:FindFirstChild("PlayerName")
+
+    if level then level.Text = "Private Script" end
+    if title then title.Text = "Name Sensored Lol" end
+    if pname then pname.Text = "WanZHUB" end
+end
+
+Options.HideName:OnChanged(function(state)
+    if state then
+        applyHiddenName()
+        Fluent:Notify({
+            Title = "Hide Name",
+            Content = "Your name has been hidden.",
+            Duration = 3
+        })
+    else
+        Fluent:Notify({
+            Title = "Hide Name",
+            Content = "Name returned to normal.",
+            Duration = 3
+        })
+    end
+end)
+
+game.Players.LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    if Options.HideName.Value then
+        applyHiddenName()
+    end
+end)
+
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
