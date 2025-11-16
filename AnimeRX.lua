@@ -2003,43 +2003,90 @@ end)
 
 Options.HideName = Tabs.Misc:AddToggle("HideName", {
     Title = "Hide Name",
-    Description "Hiding Your Name To Avoid Reports!",
-    Default = true
+    Description = "Hiding your name to avoid reports!",
+    Default = false
 })
 
-local function applyHiddenName()
-    local player = game.Players.LocalPlayer
-    local char = player.Character
-    if not char then return end
+local hideNameForcing = false
+local hideNameRainbow = false
+local hideNameConnections = {}
 
-    local head = char:FindFirstChild("Head")
-    if not head then return end
+local function hideName()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local head = char:WaitForChild("Head")
+    local gui = head:WaitForChild("PlayerHeadGui")
 
-    local gui = head:FindFirstChild("PlayerHeadGui")
-    if not gui then return end
-
-    local level = gui:FindFirstChild("Level")
-    local title = gui:FindFirstChild("Title")
-    local pname = gui:FindFirstChild("PlayerName")
-
-    if level then level.Text = "Private Script" end
-    if title then title.Text = "Name Sensored Lol" end
-    if pname then pname.Text = "WanZHUB" end
+    gui.Level.Text = "Private Script"
+    gui.Title.Text = "Name Sensored By"
+    gui.PlayerName.Text = "WanZHUB"
 end
 
-Options.HideName:OnChanged(function(state)
-    if state then
-        applyHiddenName()
+Options.HideName:OnChanged(function(enabled)
+    if enabled then
+        hideNameForcing = true
+        hideNameRainbow = true
+        
+        -- Initial hide
+        pcall(hideName)
+        
+        -- Force hide name loop
+        hideNameConnections.forceLoop = task.spawn(function()
+            while hideNameForcing do
+                pcall(hideName)
+                task.wait(0.15)
+            end
+        end)
+        
+        -- Rainbow color loop
+        hideNameConnections.rainbowLoop = task.spawn(function()
+            while hideNameRainbow do
+                local char = LocalPlayer.Character
+                if char then
+                    local gui = char.Head:FindFirstChild("PlayerHeadGui")
+                    if gui then
+                        local h = tick() % 5 / 5
+                        local color = Color3.fromHSV(h, 1, 1)
+                        gui.Level.TextColor3 = color
+                        gui.Title.TextColor3 = color
+                        gui.PlayerName.TextColor3 = color
+                    end
+                end
+                task.wait(0.05)
+            end
+        end)
+        
+        -- Character respawn handler
+        hideNameConnections.charAdded = LocalPlayer.CharacterAdded:Connect(function()
+            task.wait(1)
+            pcall(hideName)
+        end)
+        
         Fluent:Notify({
             Title = "Hide Name",
-            Content = "Your name has been hidden.",
-            Duration = 3
+            Content = "Name hidden with rainbow effect!",
+            Duration = 4
         })
     else
+        hideNameForcing = false
+        hideNameRainbow = false
+        
+        -- Cancel loops
+        if hideNameConnections.forceLoop then
+            task.cancel(hideNameConnections.forceLoop)
+        end
+        if hideNameConnections.rainbowLoop then
+            task.cancel(hideNameConnections.rainbowLoop)
+        end
+        if hideNameConnections.charAdded then
+            hideNameConnections.charAdded:Disconnect()
+        end
+        
+        hideNameConnections = {}
+        
         Fluent:Notify({
             Title = "Hide Name",
-            Content = "Name returned to normal.",
-            Duration = 3
+            Content = "Name visibility restored (rejoin to fully reset).",
+            Duration = 4
         })
     end
 end)
