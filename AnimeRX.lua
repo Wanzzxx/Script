@@ -2201,6 +2201,65 @@ task.spawn(function()
     end
 end)
 
+Options.PingFreezeRejoin = Tabs.Misc:AddToggle("PingFreezeRejoin", {
+    Title = "Auto Back To Lobby If Ping Freeze",
+    Description = "Must Enable",
+    Default = false
+})
+
+do
+    local heartbeatConnection = nil
+
+    Options.PingFreezeRejoin:OnChanged(function(enabled)
+        if enabled then
+            Fluent:Notify({
+                Title = "Auto Rejoin",
+                Content = "Enabled: Rejoining if ping freezes for 20 seconds",
+                Duration = 4
+            })
+
+            local Players = game:GetService("Players")
+            local TeleportService = game:GetService("TeleportService")
+            local RunService = game:GetService("RunService")
+            local LocalPlayer = Players.LocalPlayer
+            local lastPing = 0
+            local lastChangeTime = tick()
+            local PING_FREEZE_LIMIT = 20
+
+            heartbeatConnection = RunService.Heartbeat:Connect(function()
+                local success, currentPing = pcall(function()
+                    return stats().Network.ServerStatsItem["Data Ping"]:GetValue()
+                end)
+
+                if not success then return end
+
+                if currentPing ~= lastPing then
+                    lastPing = currentPing
+                    lastChangeTime = tick()
+                elseif tick() - lastChangeTime >= PING_FREEZE_LIMIT then
+                    Fluent:Notify({
+                        Title = "Auto Rejoin",
+                        Content = "Ping frozen! Rejoining...",
+                        Duration = 4
+                    })
+                    TeleportService:Teleport(game.PlaceId, LocalPlayer)
+                end
+            end)
+        else
+            Fluent:Notify({
+                Title = "Auto Rejoin",
+                Content = "Disabled",
+                Duration = 3
+            })
+
+            if heartbeatConnection then
+                heartbeatConnection:Disconnect()
+                heartbeatConnection = nil
+            end
+        end
+    end)
+end
+
 Options.DisableYenNotify = Tabs.Misc:AddToggle("DisableYenNotify", {
     Title = "Disable Yen Notify",
     Description = "Removed Yen Notification",
