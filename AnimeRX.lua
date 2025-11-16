@@ -179,6 +179,33 @@ Options.SetMaxSpeed = Tabs.Main:AddToggle("SetMaxSpeed", {
     end
 })
 
+Options.EnableAutoplay = Tabs.Main:AddToggle("EnableAutoplay", {
+    Title = "Enable Autoplay",
+    Default = false
+})
+
+Options.EnableAutoplay:OnChanged(function(state)
+    local player = game.Players.LocalPlayer
+    local data = game.ReplicatedStorage.Player_Data[player.Name]
+    local autoplay = data.Data.AutoPlay
+
+    autoplay.Value = state
+
+    if state then
+        Fluent:Notify({
+            Title = "Autoplay",
+            Content = "Autoplay Enabled",
+            Duration = 3
+        })
+    else
+        Fluent:Notify({
+            Title = "Autoplay",
+            Content = "Autoplay Disabled",
+            Duration = 3
+        })
+    end
+end)
+
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
@@ -2275,6 +2302,33 @@ do
         end
     end)
 end
+
+Options.EnableAutoplay = Tabs.Main:AddToggle("EnableAutoplay", {
+    Title = "Enable Autoplay",
+    Default = false
+})
+
+Options.EnableAutoplay:OnChanged(function(state)
+    local player = game.Players.LocalPlayer
+    local data = game.ReplicatedStorage.Player_Data[player.Name]
+    local autoplay = data.Data.AutoPlay
+
+    autoplay.Value = state
+
+    if state then
+        Fluent:Notify({
+            Title = "Autoplay",
+            Content = "Autoplay Enabled",
+            Duration = 3
+        })
+    else
+        Fluent:Notify({
+            Title = "Autoplay",
+            Content = "Autoplay Disabled",
+            Duration = 3
+        })
+    end
+end)
 
 Options.DisableYenNotify = Tabs.Misc:AddToggle("DisableYenNotify", {
     Title = "Disable Yen Notify",
