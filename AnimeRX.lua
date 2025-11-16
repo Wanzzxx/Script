@@ -2087,6 +2087,25 @@ local hideNameForcing = false
 local hideNameRainbow = false
 local hideNameConnections = {}
 
+local function wipeAppearance()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+
+    for _, v in ipairs(char:GetChildren()) do
+        if v:IsA("Accessory") then
+            v:Destroy()
+        end
+        if v:IsA("Shirt") then
+            v:Destroy()
+        end
+        if v:IsA("Pants") then
+            v:Destroy()
+        end
+        if v:IsA("ShirtGraphic") then
+            v:Destroy()
+        end
+    end
+end
+
 local function hideName()
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local head = char:WaitForChild("Head")
@@ -2095,6 +2114,8 @@ local function hideName()
     gui.Level.Text = "Private Script"
     gui.Title.Text = "Name Sensored By"
     gui.PlayerName.Text = "WanZHUB"
+
+    wipeAppearance()
 end
 
 Options.HideName:OnChanged(function(enabled)
@@ -2139,7 +2160,7 @@ Options.HideName:OnChanged(function(enabled)
         
         Fluent:Notify({
             Title = "Hide Name",
-            Content = "Name hidden!",
+            Content = "Name hidden with rainbow effect and appearance wiped!",
             Duration = 4
         })
     else
@@ -2161,7 +2182,7 @@ Options.HideName:OnChanged(function(enabled)
         
         Fluent:Notify({
             Title = "Hide Name",
-            Content = "Name Restored (rejoin to fully reset).",
+            Content = "Name visibility restored (rejoin to fully reset appearance).",
             Duration = 4
         })
     end
