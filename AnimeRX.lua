@@ -270,6 +270,70 @@ task.spawn(function()
     end
 end)
 
+Options.SmartVote = Tabs.Main:AddToggle("SmartVote", {
+    Title = "Smart Vote Next & Retry",
+    Description = "(Recommended For Story/Raid/LegendStage)",
+    Default = false
+})
+
+task.spawn(function()
+    local rs = game:GetService("ReplicatedStorage")
+    local playerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    local lastVote = nil
+
+    while task.wait(0.5) do
+        if Options.SmartVote.Value then
+            local ui = playerGui:FindFirstChild("GameEndedAnimationUI")
+            if ui then
+                if lastVote == "Next" then
+                    rs.Remote.Server.OnGame.Voting.VoteNext:FireServer()
+                elseif lastVote == "Retry" then
+                    rs.Remote.Server.OnGame.Voting.VoteRetry:FireServer()
+                end
+
+                Fluent:Notify({
+                    Title = "Smart Vote",
+                    Content = "Voting Next...",
+                    Duration = 2
+                })
+
+                rs.Remote.Server.OnGame.Voting.VoteNext:FireServer()
+
+                local canNext = false
+                local start = os.clock()
+
+                while os.clock() - start < 4 do
+                    if not playerGui:FindFirstChild("GameEndedAnimationUI") then
+                        canNext = true
+                        break
+                    end
+                    task.wait(0.2)
+                end
+
+                if canNext then
+                    lastVote = "Next"
+                    Fluent:Notify({
+                        Title = "Smart Vote",
+                        Content = "Next accepted.",
+                        Duration = 2
+                    })
+                else
+                    lastVote = "Retry"
+                    Fluent:Notify({
+                        Title = "Smart Vote",
+                        Content = "Next failed. Trying Retry...",
+                        Duration = 2
+                    })
+                    rs.Remote.Server.OnGame.Voting.VoteRetry:FireServer()
+                end
+
+                while playerGui:FindFirstChild("GameEndedAnimationUI") do
+                    task.wait(0.5)
+                end
+            end
+        end
+    end
+end)
 
 Options.AutoStart = Tabs.Main:AddToggle("AutoStart", {
     Title = "Auto Start",
