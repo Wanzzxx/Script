@@ -1625,8 +1625,22 @@ local function sendGameWebhook(resultRewards)
     local units = {}
     local folder = LocalPlayer:FindFirstChild("UnitsFolder")
     if folder then
-        for _, v in ipairs(folder:GetChildren()) do
-            table.insert(units, "**[ " .. v.Name .. " ]**")
+        local list = folder:GetChildren()
+        for slot = 1, #list do
+            local unit = list[slot]
+            if unit then
+                local mainTrait = "-"
+                local subTrait = "-"
+                local mt = unit:FindFirstChild("PrimaryTrait")
+                local st = unit:FindFirstChild("SecondaryTrait")
+                if mt and mt.Value ~= "" then mainTrait = mt.Value end
+                if st and st.Value ~= "" then subTrait = st.Value end
+                table.insert(units,
+                    "**[ " .. slot .. " ] [ " .. unit.Name .. " ]**" ..
+                    "\n**Main Trait:** " .. mainTrait ..
+                    "\n**Sub Trait:** " .. subTrait
+                )
+            end
         end
     end
 
@@ -1641,7 +1655,7 @@ local function sendGameWebhook(resultRewards)
                 { name = "Stage", value = stageName, inline = false },
                 { name = "Username", value = "||" .. LocalPlayer.Name .. "||", inline = true },
                 { name = "Rewards", value = resultRewards, inline = false },
-                { name = "Equipped Unit", value = equippedList, inline = false },
+                { name = "Equipped Units", value = equippedList, inline = false },
                 { name = "Clear Time", value = matchTime, inline = false }
             }
         }}
