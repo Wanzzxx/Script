@@ -166,18 +166,6 @@ loadSettings()
 
 
 -- Main Section
-Options.SetMaxSpeed = Tabs.Main:AddToggle("SetMaxSpeed", {
-    Title = "Set Max GameSpeed",
-    Description = "Automatically Set Your GameSpeed",
-    Default = true,
-    Callback = function(state)
-        local args = {
-            [1] = "Auto Set Max Speed",
-            [2] = state -- true = enable, false = disable
-        }
-        game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("Settings"):WaitForChild("Setting_Event"):FireServer(unpack(args))
-    end
-})
 
 Options.HideName = Tabs.Main:AddToggle("HideName", {
     Title = "Hide Name",
@@ -222,12 +210,18 @@ Options.HideName:OnChanged(function(state)
     end
 end)
 
-game.Players.LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    if Options.HideName.Value then
-        applyHiddenName()
+Options.SetMaxSpeed = Tabs.Main:AddToggle("SetMaxSpeed", {
+    Title = "Set Max GameSpeed",
+    Description = "Automatically Set Your GameSpeed",
+    Default = true,
+    Callback = function(state)
+        local args = {
+            [1] = "Auto Set Max Speed",
+            [2] = state -- true = enable, false = disable
+        }
+        game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("Settings"):WaitForChild("Setting_Event"):FireServer(unpack(args))
     end
-end)
+})
 
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
