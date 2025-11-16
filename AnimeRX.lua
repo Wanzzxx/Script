@@ -169,7 +169,7 @@ loadSettings()
 Options.SetMaxSpeed = Tabs.Main:AddToggle("SetMaxSpeed", {
     Title = "Set Max GameSpeed",
     Description = "Automatically Set Your GameSpeed",
-    Default = false,
+    Default = true,
     Callback = function(state)
         local args = {
             [1] = "Auto Set Max Speed",
@@ -181,7 +181,8 @@ Options.SetMaxSpeed = Tabs.Main:AddToggle("SetMaxSpeed", {
 
 Options.EnableAutoplay = Tabs.Main:AddToggle("EnableAutoplay", {
     Title = "Enable Autoplay",
-    Default = false
+    Description = "Yeah you're right, an literal autoplay."
+    Default = true
 })
 
 Options.EnableAutoplay:OnChanged(function(state)
@@ -2303,28 +2304,29 @@ do
     end)
 end
 
-Options.EnableAutoplay = Tabs.Main:AddToggle("EnableAutoplay", {
-    Title = "Enable Autoplay",
-    Default = false
+Options.DisableAbilitiesVFX = Tabs.Misc:AddToggle("DisableAbilitiesVFX", {
+    Title = "Disable Abilities VFX",
+    Description = "I know it's already exist but who's care",
+    Default = true
 })
 
-Options.EnableAutoplay:OnChanged(function(state)
+Options.DisableAbilitiesVFX:OnChanged(function(state)
     local player = game.Players.LocalPlayer
     local data = game.ReplicatedStorage.Player_Data[player.Name]
-    local autoplay = data.Data.AutoPlay
-
-    autoplay.Value = state
+    local setting = data.Setting["Abilities VFX"]
 
     if state then
+        setting.Value = false
         Fluent:Notify({
-            Title = "Autoplay",
-            Content = "Autoplay Enabled",
+            Title = "Abilities VFX",
+            Content = "Abilities VFX Disabled",
             Duration = 3
         })
     else
+        setting.Value = true
         Fluent:Notify({
-            Title = "Autoplay",
-            Content = "Autoplay Disabled",
+            Title = "Abilities VFX",
+            Content = "Abilities VFX Enabled",
             Duration = 3
         })
     end
