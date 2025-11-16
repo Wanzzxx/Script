@@ -1308,7 +1308,7 @@ Options.AutoRollTrait:OnChanged(function(enabled)
                     :FireServer(unpack(args))
             end)
 
-            task.wait(0.1)
+            task.wait(0.3)
         end
     end)
 end)
