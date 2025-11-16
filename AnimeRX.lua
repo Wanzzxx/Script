@@ -2098,7 +2098,7 @@ end)
 Options.AutoRejoinDisconnect = Tabs.Misc:AddToggle("AutoRejoinDisconnect", {
     Title = "Auto Rejoin If Disconnected",
     Description = "Automatically Rejoin Even If You Disconnected",
-    Default = false
+    Default = true
 })
 
 Options.AutoRejoinDisconnect:OnChanged(function(enabled)
@@ -2220,7 +2220,7 @@ end)
 Options.PingFreezeRejoin = Tabs.Misc:AddToggle("PingFreezeRejoin", {
     Title = "Auto Back To Lobby If Ping Freeze",
     Description = "Must Enable",
-    Default = false
+    Default = true
 })
 
 do
@@ -2288,6 +2288,45 @@ Options.DisableYenNotify = Tabs.Misc:AddToggle("DisableYenNotify", {
         game:GetService("ReplicatedStorage"):WaitForChild("Remote"):WaitForChild("Server"):WaitForChild("Settings"):WaitForChild("Setting_Event"):FireServer(unpack(args))
     end
 })
+
+Options.WalkingAround = Tabs.Misc:AddToggle("WalkingAround", {
+    Title = "Walking Around",
+    Description = "Idk, Just walking around?",
+    Default = false
+})
+
+task.spawn(function()
+    while task.wait(0.5) do
+        if Options.WalkingAround.Value then
+            if not workspace:FindFirstChild("Lobby") then
+                local player = game.Players.LocalPlayer
+                local char = player.Character or player.CharacterAdded:Wait()
+                local hrp = char:WaitForChild("HumanoidRootPart")
+                local humanoid = char:WaitForChild("Humanoid")
+
+                local WALK_RADIUS = 20
+                local MOVE_INTERVAL = 3
+                local MIN_DISTANCE = 5
+                local START_POS = hrp.Position
+
+                while Options.WalkingAround.Value and not workspace:FindFirstChild("Lobby") do
+                    local angle = math.random() * math.pi * 2
+                    local distance = math.random(MIN_DISTANCE, WALK_RADIUS)
+                    local offset = Vector3.new(
+                        math.cos(angle) * distance,
+                        0,
+                        math.sin(angle) * distance
+                    )
+                    local targetPos = START_POS + offset
+
+                    humanoid:MoveTo(targetPos)
+                    humanoid.MoveToFinished:Wait()
+                    task.wait(MOVE_INTERVAL)
+                end
+            end
+        end
+    end
+end)
 
 Options.BlackoutScreen = Tabs.Misc:AddToggle("BlackoutScreen", {
     Title = "Full Black Background",
