@@ -45,7 +45,7 @@ Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 local title = Instance.new("TextLabel")
 title.Size          = UDim2.new(1, -12, 0, 20)
 title.Position      = UDim2.new(0, 6, 0, 4)
-title.Text          = "Timer Since Script Executed:"
+title.Text          = "Game Timer:"
 title.Font          = Enum.Font.GothamBold
 title.TextSize      = 16
 title.TextColor3    = Color3.new(1, 1, 1)
@@ -86,13 +86,13 @@ local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
 local logoGui = Instance.new("ScreenGui")
-logoGui.Name = "FluentLogoToggle"
+logoGui.Name = "WnZGUI"
 logoGui.ResetOnSpawn = false
 logoGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 logoGui.Parent = player:WaitForChild("PlayerGui")
 
 local logoButton = Instance.new("ImageButton")
-logoButton.Name = "LogoButton"
+logoButton.Name = "VeryNormalImage"
 logoButton.Size = UDim2.new(0, 50, 0, 50)
 logoButton.Position = UDim2.new(0, 10, 0, 10)
 logoButton.BackgroundTransparency = 1
