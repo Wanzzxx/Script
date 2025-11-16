@@ -1730,27 +1730,32 @@ Options.PingOnUnitDrop:OnChanged(function(enabled)
         
         -- Monitor for new units
         unitDropConnection = playerCollection.ChildAdded:Connect(function(newUnit)
-            -- Send webhook notification
-            local data = {
-                content = "@everyone You got unit **" .. newUnit.Name .. "**"
-            }
-            
-            pcall(function()
-                request({
-                    Url = url,
-                    Method = "POST",
-                    Headers = {["Content-Type"] = "application/json"},
-                    Body = HttpService:JSONEncode(data)
-                })
-            end)
-            
-            -- Also show in-game notification
-            Fluent:Notify({
-                Title = "New Unit!",
-                Content = "You got: " .. newUnit.Name,
-                Duration = 5
-            })
-        end)
+    -- Only ping if NOT in lobby
+    if workspace:FindFirstChild("Lobby") then
+        return
+    end
+    
+    -- Send webhook notification
+    local data = {
+        content = "@everyone Unit Drop Detected: **" .. newUnit.Name .. "**"
+    }
+
+    pcall(function()
+        request({
+            Url = Options.WebhookURL.Value,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode(data)
+        })
+    end)
+
+    -- In-game notification
+    Fluent:Notify({
+        Title = "New Unit!",
+        Content = "You got: " .. newUnit.Name,
+        Duration = 20
+    })
+end)
         
         Fluent:Notify({
             Title = "Unit Drop Monitor",
