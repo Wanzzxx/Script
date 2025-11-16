@@ -1610,14 +1610,28 @@ end
 local function sendGameWebhook(resultRewards)
     if not Options.ActiveWebhook.Value then return end
     if Options.WebhookURL.Value == "" then return end
+
     local matchTime = getMatchTotalTime() or "Unknown"
     if matchTime == lastSentTime then return end
     lastSentTime = matchTime
+
     local placeName = MarketplaceService:GetProductInfo(game.PlaceId).Name
+
     local stageName = "Unknown Stage"
     pcall(function()
         stageName = LocalPlayer.PlayerGui.HUD.InGame.Main.GameInfo.Stage.Label.Text
     end)
+
+    local units = {}
+    local folder = LocalPlayer:FindFirstChild("UnitsFolder")
+    if folder then
+        for _, v in ipairs(folder:GetChildren()) do
+            table.insert(units, "**[ " .. v.Name .. " ]**")
+        end
+    end
+
+    local equippedList = #units > 0 and table.concat(units, "\n") or "None"
+
     local data = {
         username = "WanzHook",
         embeds = {{
@@ -1627,10 +1641,12 @@ local function sendGameWebhook(resultRewards)
                 { name = "Stage", value = stageName, inline = false },
                 { name = "Username", value = "||" .. LocalPlayer.Name .. "||", inline = true },
                 { name = "Rewards", value = resultRewards, inline = false },
-                { name = "Clear Time", value = "**" .. matchTime .. "**", inline = false }
+                { name = "Equipped Unit", value = equippedList, inline = false },
+                { name = "Clear Time", value = matchTime, inline = false }
             }
         }}
     }
+
     pcall(function()
         request({
             Url = Options.WebhookURL.Value,
