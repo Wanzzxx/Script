@@ -5,6 +5,18 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
+local player = game:GetService("Players").LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+for i = 1, 10 do
+    if playerGui:FindFirstChild("WnZGUI") then break end
+    if i == 10 then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Wanzzxx/ScriptV2/refs/heads/main/MainHub"))()
+        return
+    end
+    task.wait(2)
+end
+
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
