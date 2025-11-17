@@ -549,7 +549,6 @@ local function updateDropdownTitles()
     
     for unitName, unitInfo in pairs(units) do
         if upgradeDropdowns[unitName] then
-            -- Check if maxed
             local isMaxed = false
             pcall(function()
                 local hudGui = LocalPlayer.PlayerGui:FindFirstChild("HUD")
@@ -563,7 +562,7 @@ local function updateDropdownTitles()
                             local upgradeText = costText:FindFirstChild("UpgradeText")
                             if upgradeText then
                                 local text = upgradeText.Text
-                                if text:find("%(MAX%)") or text:find("%d+ %(MAX%)") then
+                                if text:find("%(MAX%)") then
                                     isMaxed = true
                                 end
                             end
@@ -572,11 +571,10 @@ local function updateDropdownTitles()
                 end
             end)
             
-            -- Update title with cost or MAX
             if isMaxed then
-                upgradeDropdowns[unitName].Title = unitName .. " - [MAX UPGRADE]"
+                upgradeDropdowns[unitName].Description = "[MAX UPGRADE]"
             else
-                upgradeDropdowns[unitName].Title = unitName .. " - Cost: " .. unitInfo.cost
+                upgradeDropdowns[unitName].Description = "Cost: " .. unitInfo.cost
             end
         end
     end
@@ -588,7 +586,8 @@ local function createUnitDropdowns()
     for unitName, unitInfo in pairs(units) do
         if not upgradeDropdowns[unitName] then
             upgradeDropdowns[unitName] = Tabs.Upgrade:AddDropdown("UpgradePriority_" .. unitName, {
-                Title = unitName .. " - Cost: " .. unitInfo.cost,
+                Title = unitName,
+                Description = "Cost: " .. unitInfo.cost,
                 Values = {"1", "2", "3", "4", "5", "6", "Disabled"},
                 Multi = false,
                 Default = "Disabled"
@@ -599,7 +598,6 @@ local function createUnitDropdowns()
     lastUnitData = units
 end
 
--- Wait for UnitsFolder to load
 task.spawn(function()
     local timeout = 10
     while not LocalPlayer:FindFirstChild("UnitsFolder") and timeout > 0 do
@@ -613,14 +611,12 @@ task.spawn(function()
     end
 end)
 
--- Auto-update dropdowns titles every 2 seconds
 task.spawn(function()
     while task.wait(2) do
         updateDropdownTitles()
     end
 end)
 
--- Auto Upgrade Toggle
 Options.AutoUpgrade = Tabs.Upgrade:AddToggle("AutoUpgrade", {
     Title = "Enable Auto Upgrade",
     Description = "Automatically upgrades units by priority",
@@ -655,8 +651,7 @@ Options.AutoUpgrade:OnChanged(function(enabled)
                         local upgradeText = costText:FindFirstChild("UpgradeText")
                         if upgradeText then
                             local text = upgradeText.Text
-                            -- Check for (MAX) or number followed by (MAX)
-                            if text:find("%(MAX%)") or text:find("%d+%s*%(MAX%)") then
+                            if text:find("%(MAX%)") then
                                 maxed = true
                             end
                         end
@@ -709,7 +704,6 @@ Options.AutoUpgrade:OnChanged(function(enabled)
         local function upgradeLoop()
             local priorities = getUpgradePriorities()
             
-            -- Upgrade by priority 1 to 6
             for priority = 1, 6 do
                 if not Options.AutoUpgrade.Value then break end
                 
@@ -719,7 +713,6 @@ Options.AutoUpgrade:OnChanged(function(enabled)
                 if #unitsInPriority > 0 then
                     local allMaxed = false
                     
-                    -- Keep upgrading this priority until all units are maxed
                     while not allMaxed and Options.AutoUpgrade.Value do
                         allMaxed = true
                         
@@ -729,21 +722,18 @@ Options.AutoUpgrade:OnChanged(function(enabled)
                             if not isUnitMaxed(unitName) then
                                 allMaxed = false
                                 upgradeUnit(unitName)
-                                task.wait(0.1) -- Faster upgrade
+                                task.wait(0.1)
                             end
                         end
                         
                         if not allMaxed then
-                            task.wait(0.2) -- Faster recheck
+                            task.wait(0.2)
                         end
                     end
-                    
-                    print("[Auto Upgrade] Priority", priority, "completed! Moving to next...")
                 end
             end
         end
         
-        -- Main loop
         while Options.AutoUpgrade.Value and not Fluent.Unloaded do
             local pg = LocalPlayer:FindFirstChild("PlayerGui")
             if pg and pg:FindFirstChild("GameEndedAnimationUI") then
@@ -753,7 +743,7 @@ Options.AutoUpgrade:OnChanged(function(enabled)
                 task.wait(2)
             else
                 upgradeLoop()
-                task.wait(0.5) -- Faster main loop
+                task.wait(0.5)
             end
         end
         
