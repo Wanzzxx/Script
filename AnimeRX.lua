@@ -562,7 +562,8 @@ local function updateDropdownTitles()
                             local upgradeText = costText:FindFirstChild("UpgradeText")
                             if upgradeText then
                                 local text = upgradeText.Text
-                                if text:find("%(MAX%)") then
+                                -- Check for MAX in any format
+                                if text:match("MAX") or text:match("%(MAX%)") then
                                     isMaxed = true
                                 end
                             end
@@ -651,7 +652,8 @@ Options.AutoUpgrade:OnChanged(function(enabled)
                         local upgradeText = costText:FindFirstChild("UpgradeText")
                         if upgradeText then
                             local text = upgradeText.Text
-                            if text:find("%(MAX%)") then
+                            -- Check for any of these patterns: "(MAX)", "MAX)", or just the word MAX
+                            if text:match("MAX") or text:match("%(MAX%)") then
                                 maxed = true
                             end
                         end
@@ -711,24 +713,26 @@ Options.AutoUpgrade:OnChanged(function(enabled)
                 local unitsInPriority = priorities[priorityStr]
                 
                 if #unitsInPriority > 0 then
-                    local allMaxed = false
-                    
-                    while not allMaxed and Options.AutoUpgrade.Value do
-                        allMaxed = true
+                    -- Keep upgrading this priority until all units are maxed
+                    while Options.AutoUpgrade.Value do
+                        local allMaxedInThisPriority = true
                         
                         for _, unitName in ipairs(unitsInPriority) do
                             if not Options.AutoUpgrade.Value then break end
                             
                             if not isUnitMaxed(unitName) then
-                                allMaxed = false
+                                allMaxedInThisPriority = false
                                 upgradeUnit(unitName)
                                 task.wait(0.1)
                             end
                         end
                         
-                        if not allMaxed then
-                            task.wait(0.2)
+                        -- If all units in this priority are maxed, move to next priority
+                        if allMaxedInThisPriority then
+                            break
                         end
+                        
+                        task.wait(0.2)
                     end
                 end
             end
