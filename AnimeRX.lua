@@ -484,7 +484,8 @@ Options.AutoUseAbility:OnChanged(function(enabled)
                                 game:GetService("ReplicatedStorage")
                                     :WaitForChild("Remote")
                                     :WaitForChild("Server")
-                                    :WaitForChild("Units")
+                                    :W
+                                            aitForChild("Units")
                                     :WaitForChild("Ultimate")
                                     :FireServer(unpack(args))
                             end)
@@ -514,16 +515,13 @@ end)
 
 -- Upgrade Tab Section
 local upgradeDropdowns = {}
-local lastUnitCount = 0
+local lastUnitData = {}
 
 local function getUnitUpgradeInfo()
     local units = {}
     local unitsFolder = LocalPlayer:FindFirstChild("UnitsFolder")
     
-    if not unitsFolder then 
-        warn("[Auto Upgrade] UnitsFolder not found!")
-        return units 
-    end
+    if not unitsFolder then return units end
     
     for _, unitFolder in ipairs(unitsFolder:GetChildren()) do
         if unitFolder:IsA("Folder") then
@@ -539,7 +537,6 @@ local function getUnitUpgradeInfo()
                         cost = cost,
                         folder = unitFolder
                     }
-                    print("[Auto Upgrade] Found unit:", unitName, "Cost:", cost)
                 end
             end
         end
@@ -548,13 +545,48 @@ local function getUnitUpgradeInfo()
     return units
 end
 
-local function createUnitDropdowns()
+local function updateDropdownTitles()
     local units = getUnitUpgradeInfo()
-    local unitCount = 0
     
     for unitName, unitInfo in pairs(units) do
-        unitCount = unitCount + 1
-        
+        if upgradeDropdowns[unitName] then
+            -- Check if maxed
+            local isMaxed = false
+            pcall(function()
+                local hudGui = LocalPlayer.PlayerGui:FindFirstChild("HUD")
+                if hudGui then
+                    local unitsManager = hudGui.InGame.UnitsManager.Main.Main.ScrollingFrame
+                    local unitButton = unitsManager:FindFirstChild(unitName)
+                    
+                    if unitButton then
+                        local costText = unitButton:FindFirstChild("CostText")
+                        if costText then
+                            local upgradeText = costText:FindFirstChild("UpgradeText")
+                            if upgradeText then
+                                local text = upgradeText.Text
+                                if text:find("%(MAX%)") or text:find("%d+ %(MAX%)") then
+                                    isMaxed = true
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+            
+            -- Update title with cost or MAX
+            if isMaxed then
+                upgradeDropdowns[unitName].Title = unitName .. " - [MAX UPGRADE]"
+            else
+                upgradeDropdowns[unitName].Title = unitName .. " - Cost: " .. unitInfo.cost
+            end
+        end
+    end
+end
+
+local function createUnitDropdowns()
+    local units = getUnitUpgradeInfo()
+    
+    for unitName, unitInfo in pairs(units) do
         if not upgradeDropdowns[unitName] then
             upgradeDropdowns[unitName] = Tabs.Upgrade:AddDropdown("UpgradePriority_" .. unitName, {
                 Title = unitName .. " - Cost: " .. unitInfo.cost,
@@ -565,8 +597,7 @@ local function createUnitDropdowns()
         end
     end
     
-    lastUnitCount = unitCount
-    print("[Auto Upgrade] Created dropdowns for", unitCount, "units")
+    lastUnitData = units
 end
 
 -- Wait for UnitsFolder to load
@@ -578,27 +609,15 @@ task.spawn(function()
     end
     
     if LocalPlayer:FindFirstChild("UnitsFolder") then
-        task.wait(2) -- Wait for units to populate
+        task.wait(2)
         createUnitDropdowns()
-    else
-        warn("[Auto Upgrade] UnitsFolder not found after waiting!")
     end
 end)
 
--- Auto-update dropdowns every 5 seconds
+-- Auto-update dropdowns titles every 2 seconds
 task.spawn(function()
-    while task.wait(5) do
-        local units = getUnitUpgradeInfo()
-        local currentCount = 0
-        
-        for _ in pairs(units) do
-            currentCount = currentCount + 1
-        end
-        
-        if currentCount ~= lastUnitCount and currentCount > 0 then
-            print("[Auto Upgrade] Unit count changed, updating dropdowns...")
-            createUnitDropdowns()
-        end
+    while task.wait(2) do
+        updateDropdownTitles()
     end
 end)
 
@@ -616,8 +635,6 @@ Options.AutoUpgrade:OnChanged(function(enabled)
         local playerGui = LocalPlayer:WaitForChild("PlayerGui")
         local unitsFolder = LocalPlayer:WaitForChild("UnitsFolder")
         
-        print("[Auto Upgrade] Starting auto upgrade...")
-        
         Fluent:Notify({
             Title = "Auto Upgrade",
             Content = "Auto upgrade started!",
@@ -625,9 +642,10 @@ Options.AutoUpgrade:OnChanged(function(enabled)
         })
         
         local function isUnitMaxed(unitName)
+            local maxed = false
             pcall(function()
                 local hudGui = playerGui:FindFirstChild("HUD")
-                if not hudGui then return false end
+                if not hudGui then return end
                 
                 local unitsManager = hudGui.InGame.UnitsManager.Main.Main.ScrollingFrame
                 local unitButton = unitsManager:FindFirstChild(unitName)
@@ -637,16 +655,16 @@ Options.AutoUpgrade:OnChanged(function(enabled)
                     if costText then
                         local upgradeText = costText:FindFirstChild("UpgradeText")
                         if upgradeText then
-                            local hasMax = upgradeText.Text:find("%(MAX%)") ~= nil
-                            if hasMax then
-                                print("[Auto Upgrade]", unitName, "is MAXED")
+                            local text = upgradeText.Text
+                            -- Check for (MAX) or number followed by (MAX)
+                            if text:find("%(MAX%)") or text:find("%d+%s*%(MAX%)") then
+                                maxed = true
                             end
-                            return hasMax
                         end
                     end
                 end
             end)
-            return false
+            return maxed
         end
         
         local function getUpgradePriorities()
@@ -663,7 +681,6 @@ Options.AutoUpgrade:OnChanged(function(enabled)
                 local priority = dropdown.Value
                 if priority and priority ~= "Disabled" then
                     table.insert(priorities[priority], unitName)
-                    print("[Auto Upgrade] Priority", priority, ":", unitName)
                 end
             end
             
@@ -672,19 +689,13 @@ Options.AutoUpgrade:OnChanged(function(enabled)
         
         local function upgradeUnit(unitName)
             local unitFolder = unitsFolder:FindFirstChild(unitName)
-            
-            if not unitFolder then
-                warn("[Auto Upgrade] Unit folder not found:", unitName)
-                return false
-            end
-            
-            print("[Auto Upgrade] Upgrading:", unitName)
+            if not unitFolder then return false end
             
             local args = {
                 [1] = unitFolder
             }
             
-            local success = pcall(function()
+            pcall(function()
                 game:GetService("ReplicatedStorage")
                     :WaitForChild("Remote")
                     :WaitForChild("Server")
@@ -693,62 +704,60 @@ Options.AutoUpgrade:OnChanged(function(enabled)
                     :FireServer(unpack(args))
             end)
             
-            if success then
-                print("[Auto Upgrade] Successfully upgraded:", unitName)
-            else
-                warn("[Auto Upgrade] Failed to upgrade:", unitName)
-            end
-            
-            return success
+            return true
         end
         
         local function upgradeLoop()
             local priorities = getUpgradePriorities()
             
+            -- Upgrade by priority 1 to 6
             for priority = 1, 6 do
-                local priorityStr = tostring(priority)
-                local allMaxed = false
+                if not Options.AutoUpgrade.Value then break end
                 
-                while not allMaxed and Options.AutoUpgrade.Value do
-                    allMaxed = true
+                local priorityStr = tostring(priority)
+                local unitsInPriority = priorities[priorityStr]
+                
+                if #unitsInPriority > 0 then
+                    local allMaxed = false
                     
-                    for _, unitName in ipairs(priorities[priorityStr]) do
-                        if not Options.AutoUpgrade.Value then break end
+                    -- Keep upgrading this priority until all units are maxed
+                    while not allMaxed and Options.AutoUpgrade.Value do
+                        allMaxed = true
                         
-                        if not isUnitMaxed(unitName) then
-                            allMaxed = false
-                            upgradeUnit(unitName)
-                            task.wait(0.3)
+                        for _, unitName in ipairs(unitsInPriority) do
+                            if not Options.AutoUpgrade.Value then break end
+                            
+                            if not isUnitMaxed(unitName) then
+                                allMaxed = false
+                                upgradeUnit(unitName)
+                                task.wait(0.1) -- Faster upgrade
+                            end
+                        end
+                        
+                        if not allMaxed then
+                            task.wait(0.2) -- Faster recheck
                         end
                     end
                     
-                    if not allMaxed then
-                        task.wait(0.5)
-                    end
-                end
-                
-                if #priorities[priorityStr] > 0 then
-                    print("[Auto Upgrade] Priority", priority, "complete!")
+                    print("[Auto Upgrade] Priority", priority, "completed! Moving to next...")
                 end
             end
         end
         
+        -- Main loop
         while Options.AutoUpgrade.Value and not Fluent.Unloaded do
             local pg = LocalPlayer:FindFirstChild("PlayerGui")
             if pg and pg:FindFirstChild("GameEndedAnimationUI") then
-                print("[Auto Upgrade] Waiting for game to end...")
                 repeat 
                     task.wait(1) 
                 until not pg:FindFirstChild("GameEndedAnimationUI")
-                
                 task.wait(2)
             else
                 upgradeLoop()
-                task.wait(1)
+                task.wait(0.5) -- Faster main loop
             end
         end
         
-        print("[Auto Upgrade] Stopped")
         Fluent:Notify({
             Title = "Auto Upgrade",
             Content = "Auto upgrade stopped.",
@@ -756,7 +765,7 @@ Options.AutoUpgrade:OnChanged(function(enabled)
         })
     end)
 end)
-
+        
 -- Miscellaneous
 Options.AutoClaimQuest = Tabs.Miscellaneous:AddToggle("AutoClaimQuest", {
     Title   = "Auto Claim All Quest",
