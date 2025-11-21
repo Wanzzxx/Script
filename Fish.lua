@@ -108,90 +108,185 @@ Tabs.Main:AddParagraph({
 -- Auto Fishing (Replaced with fast detection system)
 local rodEquipped = false
 local isFishing = false
+local currentMode = "Legit"
+local autoClickLoop = nil
 
+-- Check Allowed Rod
+local player = game:GetService("Players").LocalPlayer
+local display = player.PlayerGui:WaitForChild("Backpack"):WaitForChild("Display")
+
+local allowedRod = {
+    ["Elemental Rod"] = true,
+    ["Ghostfinn Rod"] = true,
+    ["Ares Rod"] = true,
+    ["Astral Rod"] = true,
+}
+
+local function GetRodName()
+    for _, o in ipairs(display:GetChildren()) do
+        if o.Name ~= "Rods" and o.Name == "Tile" then
+            for _, x in ipairs(o:GetDescendants()) do
+                if x:IsA("TextLabel") and x.Text:find("Rod") then
+                    return x.Text
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- Mode Dropdown
+local ModeDropdown = Tabs.Main:AddDropdown("FishingMode", {
+    Title = "Choose Mode",
+    Values = {"Legit", "Instant"},
+    Multi = false,
+    Default = "Legit",
+})
+
+ModeDropdown:OnChanged(function(Value)
+    local rodName = GetRodName()
+    
+    if Value == "Instant" then
+        if rodName and allowedRod[rodName] then
+            currentMode = "Instant"
+            Fluent:Notify({
+                Title = "Mode Changed",
+                Content = "Switched to Instant Mode with " .. rodName,
+                Duration = 3
+            })
+        else
+            ModeDropdown:SetValue("Legit")
+            Fluent:Notify({
+                Title = "Not Allowed",
+                Content = "Your rod (" .. (rodName or "Unknown") .. ") is not allowed for Instant Mode. Use Legit Mode.",
+                Duration = 5
+            })
+        end
+    else
+        currentMode = "Legit"
+        Fluent:Notify({
+            Title = "Mode Changed",
+            Content = "Switched to Legit Mode",
+            Duration = 3
+        })
+    end
+end)
+
+-- Auto Fishing Toggle
 Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", {
     Title = "Auto Fishing",
     Default = false,
-    Description = "Automatically catches fish using exclaim detection"
+    Description = "Automatically catches fish"
 })
 
 Options.AutoFishing:OnChanged(function()
     if not Options.AutoFishing.Value then
         rodEquipped = false
         isFishing = false
+        
+        -- Stop auto click if running
+        if autoClickLoop then
+            autoClickLoop = false
+        end
+        
+        -- Disable auto fishing remote if legit mode
+        if currentMode == "Legit" then
+            local args = { [1] = false }
+            game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/UpdateAutoFishingState"):InvokeServer(unpack(args))
+        end
+        
         return
     end
     
-    task.spawn(function()
-        local character = player.Character or player.CharacterAdded:Wait()
-        local humanoid = character:WaitForChild("Humanoid")
-        
-        local function equipRod()
-            local args = { [1] = 1 }
-            game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
-            task.wait(0.3)
-        end
-        
-        local function chargeFishingRod()
-            local args = {
-                [4] = 1763683599.610848
-            }
-            game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/ChargeFishingRod"):InvokeServer(unpack(args))
-        end
-        
-        local function requestMinigame()
-            local args = {
-                [1] = -1.233184814453125,
-                [2] = 0.9998747641116499,
-                [3] = 1763683601.17936
-            }
-            game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/RequestFishingMinigameStarted"):InvokeServer(unpack(args))
-        end
-        
-        local function completeFishing()
-            game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RE/FishingCompleted"):FireServer()
-            isFishing = false
-        end
-        
-        local exclaimDetected = false
-        local completionInProgress = false
-        
-        workspace.DescendantAdded:Connect(function(descendant)
-            if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" and not completionInProgress then
-                exclaimDetected = true
-                completionInProgress = true
-                task.wait(2)
-                completeFishing()
-                task.wait(0.5)
-                completionInProgress = false
+    if currentMode == "Instant" then
+        -- Instant Mode (Exclaim Detection - Requires Allowed Rod)
+        task.spawn(function()
+            local character = player.Character or player.CharacterAdded:Wait()
+            local humanoid = character:WaitForChild("Humanoid")
+            
+            local function equipRod()
+                local args = { [1] = 1 }
+                game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
+                task.wait(0.3)
             end
-        end)
-        
-        workspace.DescendantRemoving:Connect(function(descendant)
-            if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" then
-                exclaimDetected = false
+            
+            local function chargeFishingRod()
+                local args = {
+                    [4] = 1763683599.610848
+                }
+                game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/ChargeFishingRod"):InvokeServer(unpack(args))
             end
-        end)
-        
-        if not rodEquipped then
-            equipRod()
-            rodEquipped = true
-        end
-        
-        while Options.AutoFishing.Value do
-            if humanoid.Health > 0 and not completionInProgress then
-                exclaimDetected = false
-                
-                while not exclaimDetected and Options.AutoFishing.Value and not completionInProgress do
-                    chargeFishingRod()
+            
+            local function requestMinigame()
+                local args = {
+                    [1] = -1.233184814453125,
+                    [2] = 0.9998747641116499,
+                    [3] = 1763683601.17936
+                }
+                game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/RequestFishingMinigameStarted"):InvokeServer(unpack(args))
+            end
+            
+            local function completeFishing()
+                game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RE/FishingCompleted"):FireServer()
+                isFishing = false
+            end
+            
+            local exclaimDetected = false
+            local completionInProgress = false
+            
+            workspace.DescendantAdded:Connect(function(descendant)
+                if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" and not completionInProgress then
+                    exclaimDetected = true
+                    completionInProgress = true
+                    task.wait(2)
+                    completeFishing()
                     task.wait(0.5)
-                    requestMinigame()
-                    task.wait(0.1)
+                    completionInProgress = false
                 end
+            end)
+            
+            workspace.DescendantRemoving:Connect(function(descendant)
+                if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" then
+                    exclaimDetected = false
+                end
+            end)
+            
+            if not rodEquipped then
+                equipRod()
+                rodEquipped = true
             end
-            task.wait(0.1)
-        end
-    end)
+            
+            while Options.AutoFishing.Value do
+                if humanoid.Health > 0 and not completionInProgress then
+                    exclaimDetected = false
+                    
+                    while not exclaimDetected and Options.AutoFishing.Value and not completionInProgress do
+                        chargeFishingRod()
+                        task.wait(0.5)
+                        requestMinigame()
+                        task.wait(0.1)
+                    end
+                end
+                task.wait(0.1)
+            end
+        end)
+    else
+        -- Legit Mode (Auto Fishing Remote + Auto Click)
+        task.spawn(function()
+            local args = { [1] = true }
+            game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/UpdateAutoFishingState"):InvokeServer(unpack(args))
+            
+            local VirtualInputManager = game:GetService("VirtualInputManager")
+            autoClickLoop = true
+            
+            while Options.AutoFishing.Value and autoClickLoop do
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                task.wait(0.01)
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+                task.wait(0.1)
+            end
+        end)
+    end
 end)
 
 -- Save / Teleport fishing location
