@@ -106,43 +106,97 @@ Tabs.Main:AddParagraph({
     })
 
 -- Auto Fishing (Replaced with fast detection system)
-local firstAutoFishingRun = true
-Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", { Title = "Auto Fishing", Default = false })
+local rodEquipped = false
+local isFishing = false
+
+Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", {
+    Title = "Auto Fishing",
+    Default = false,
+    Description = "Automatically Fishing"
+})
+
 Options.AutoFishing:OnChanged(function()
-    if Options.AutoFishing.Value then
-        Fluent:Notify({ Title = "Auto Fishing", Content = "Enabled", Duration = 5 })
-        task.spawn(function()
-            if firstAutoFishingRun then
-                firstAutoFishingRun = false
-                local args = { [1] = 1 }
-                game:GetService("ReplicatedStorage").Packages._Index
-                    :FindFirstChild("sleitnick_net@0.2.0").net
-                    :FindFirstChild("RE/EquipToolFromHotbar")
-                    :FireServer(unpack(args))
-                task.wait(3)
-            end
-
-            local itemLabel = player.PlayerGui:WaitForChild("Small Notification")
-                :WaitForChild("Display")
-                :WaitForChild("Container")
-                :WaitForChild("ItemName")
-
-            local lastName = itemLabel.Text
-
-            while Options.AutoFishing.Value do
-                ChargeFishingRod:InvokeServer(1761102828.99703)
-                RequestFishingMinigameStarted:InvokeServer(-1.233184814453125, 0.9834602731840376)
-                repeat
-                    FishingCompleted:FireServer()
-                    task.wait()
-                until itemLabel.Text ~= lastName
-                lastName = itemLabel.Text
-                task.wait(0.05)
+    if not Options.AutoFishing.Value then
+        rodEquipped = false
+        isFishing = false
+        return
+    end
+    
+    task.spawn(function()
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:WaitForChild("Humanoid")
+        
+        local function equipRod()
+            local args = { [1] = 1 }
+            ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
+            task.wait(0.5)
+        end
+        
+        local function chargeFishingRod()
+            local args = { [4] = tick() }
+            ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/ChargeFishingRod"):InvokeServer(unpack(args))
+        end
+        
+        local function requestMinigame()
+            local args = {
+                [1] = -1.233184814453125,
+                [2] = 0.9998747641116499,
+                [3] = tick()
+            }
+            ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/RequestFishingMinigameStarted"):InvokeServer(unpack(args))
+        end
+        
+        local function completeFishing()
+            ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RE/FishingCompleted"):FireServer()
+            isFishing = false
+        end
+        
+        workspace.DescendantAdded:Connect(function(descendant)
+            if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" then
+                print("EXCLAIM BILLBOARD ADDED!")
+                task.wait(2)
+                completeFishing()
             end
         end)
-    else
-        Fluent:Notify({ Title = "Auto Fishing", Content = "Disabled", Duration = 5 })
-    end
+        
+        workspace.DescendantRemoving:Connect(function(descendant)
+            if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" then
+                print("EXCLAIM BILLBOARD REMOVED!")
+                task.wait(1)
+                isFishing = false
+            end
+        end)
+        
+        local function startFishing()
+            if isFishing or not Options.AutoFishing.Value then
+                return
+            end
+            
+            if humanoid.Health <= 0 then
+                return
+            end
+            
+            isFishing = true
+            
+            pcall(function()
+                if not rodEquipped then
+                    equipRod()
+                    rodEquipped = true
+                end
+                task.wait(0.5)
+                chargeFishingRod()
+                task.wait(0.5)
+                requestMinigame()
+            end)
+        end
+        
+        while Options.AutoFishing.Value do
+            if not isFishing and humanoid.Health > 0 then
+                startFishing()
+            end
+            task.wait(0.5)
+        end
+    end)
 end)
 
 -- Save / Teleport fishing location
