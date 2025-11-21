@@ -138,6 +138,7 @@ end
 -- Mode Dropdown
 local ModeDropdown = Tabs.Main:AddDropdown("FishingMode", {
     Title = "Choose Mode",
+    Description = "Please Select Your Mode",
     Values = {"Legit", "Instant"},
     Multi = false,
     Default = "Legit",
@@ -150,7 +151,7 @@ ModeDropdown:OnChanged(function(Value)
         if rodName and allowedRod[rodName] then
             currentMode = "Instant"
             Fluent:Notify({
-                Title = "Mode Changed",
+                Title = "Changes",
                 Content = "Switched to Instant Mode with " .. rodName,
                 Duration = 3
             })
@@ -158,14 +159,14 @@ ModeDropdown:OnChanged(function(Value)
             ModeDropdown:SetValue("Legit")
             Fluent:Notify({
                 Title = "Not Allowed",
-                Content = "Your rod (" .. (rodName or "Unknown") .. ") is not allowed for Instant Mode. Use Legit Mode.",
+                Content = "Your rod (" .. (rodName or "Unknown") .. ") is not allowed for Instant Mode. Switched to Legit Mode.",
                 Duration = 5
             })
         end
     else
         currentMode = "Legit"
         Fluent:Notify({
-            Title = "Mode Changed",
+            Title = "Changes",
             Content = "Switched to Legit Mode",
             Duration = 3
         })
@@ -176,7 +177,7 @@ end)
 Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", {
     Title = "Auto Fishing",
     Default = false,
-    Description = "Automatically catches fish"
+    Description = "Yes, Auto Fishing of course?"
 })
 
 Options.AutoFishing:OnChanged(function()
@@ -196,6 +197,22 @@ Options.AutoFishing:OnChanged(function()
         end
         
         return
+    end
+    
+    -- Check if Instant mode with unlisted rod
+    if currentMode == "Instant" then
+        local rodName = GetRodName()
+        if not (rodName and allowedRod[rodName]) then
+            Options.AutoFishing:SetValue(false)
+            ModeDropdown:SetValue("Legit")
+            currentMode = "Legit"
+            Fluent:Notify({
+                Title = "Auto Switch",
+                Content = "Your rod is not allowed for Instant Mode. Switched to Legit Mode. Please Enable Again.",
+                Duration = 5
+            })
+            return
+        end
     end
     
     if currentMode == "Instant" then
