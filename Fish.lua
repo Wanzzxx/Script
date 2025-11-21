@@ -112,7 +112,7 @@ local isFishing = false
 Options.AutoFishing = Tabs.Main:AddToggle("AutoFishing", {
     Title = "Auto Fishing",
     Default = false,
-    Description = "Automatically Fishing"
+    Description = "Automatically catches fish using exclaim detection"
 })
 
 Options.AutoFishing:OnChanged(function()
@@ -141,7 +141,7 @@ Options.AutoFishing:OnChanged(function()
             local args = {
                 [1] = -1.233184814453125,
                 [2] = 0.9998747641116499,
-                [3] = tick()
+                [3] = 1763683601.17936
             }
             ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/RequestFishingMinigameStarted"):InvokeServer(unpack(args))
         end
@@ -162,7 +162,7 @@ Options.AutoFishing:OnChanged(function()
         workspace.DescendantRemoving:Connect(function(descendant)
             if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" then
                 print("EXCLAIM BILLBOARD REMOVED!")
-                task.wait(1)
+                task.wait(0.2)
                 isFishing = false
             end
         end)
@@ -183,9 +183,9 @@ Options.AutoFishing:OnChanged(function()
                     equipRod()
                     rodEquipped = true
                 end
-                task.wait(0.5)
+                task.wait(0.1)
                 chargeFishingRod()
-                task.wait(0.5)
+                task.wait(0.3)
                 requestMinigame()
             end)
         end
