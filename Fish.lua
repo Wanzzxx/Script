@@ -400,22 +400,40 @@ Options.AutoSellAllFish:OnChanged(function()
     if Options.AutoSellAllFish.Value then
         Fluent:Notify({ Title = "Auto Sell All Fish", Content = "Enabled", Duration = 3 })
         task.spawn(function()
-            while Options.AutoSellAllFish.Value do
-                -- Check if Exclaim exists
-                local exclaimExists = false
-                for _, descendant in ipairs(workspace:GetDescendants()) do
-                    if descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" then
-                        exclaimExists = true
-                        break
+            local player = game:GetService("Players").LocalPlayer
+            local display = player:WaitForChild("PlayerGui"):WaitForChild("Backpack"):WaitForChild("Display")
+            
+            local function isBlacklisted(text)
+                return string.find(text, "Rod") ~= nil or 
+                       text == "Fishing Radar" or 
+                       text == "Diving Gear"
+            end
+            
+            local function hasFish()
+                for _, obj in ipairs(display:GetDescendants()) do
+                    if obj:IsA("TextLabel") and obj.Name == "ItemName" then
+                        local itemName = obj.Text or ""
+                        if not isBlacklisted(itemName) and itemName ~= "" then
+                            return true
+                        end
                     end
                 end
-                
-                -- Only sell if no Exclaim
-                if not exclaimExists then
-                    game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/SellAllItems"):InvokeServer()
+                return false
+            end
+            
+            -- Monitor for fish additions
+            display.DescendantAdded:Connect(function(descendant)
+                if Options.AutoSellAllFish.Value and descendant:IsA("TextLabel") and descendant.Name == "ItemName" then
+                    task.wait(0.1)
+                    if hasFish() then
+                        game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/SellAllItems"):InvokeServer()
+                    end
                 end
-                
-                task.wait(3)
+            end)
+            
+            -- Check immediately if fish already exist
+            if hasFish() then
+                game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/SellAllItems"):InvokeServer()
             end
         end)
     else
