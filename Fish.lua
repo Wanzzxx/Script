@@ -162,7 +162,7 @@ Options.AutoFishing:OnChanged(function()
         workspace.DescendantRemoving:Connect(function(descendant)
             if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" then
                 print("EXCLAIM BILLBOARD REMOVED!")
-                task.wait(0.2)
+                task.wait(1)
                 isFishing = false
             end
         end)
@@ -183,9 +183,9 @@ Options.AutoFishing:OnChanged(function()
                     equipRod()
                     rodEquipped = true
                 end
-                task.wait(0.4)
+                task.wait(0.5)
                 chargeFishingRod()
-                task.wait(0.4)
+                task.wait(0.5)
                 requestMinigame()
             end)
         end
