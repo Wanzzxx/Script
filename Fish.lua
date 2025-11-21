@@ -183,9 +183,9 @@ Options.AutoFishing:OnChanged(function()
                     equipRod()
                     rodEquipped = true
                 end
-                task.wait(0.1)
+                task.wait(0.4)
                 chargeFishingRod()
-                task.wait(0.3)
+                task.wait(0.4)
                 requestMinigame()
             end)
         end
