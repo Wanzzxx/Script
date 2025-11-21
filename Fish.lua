@@ -154,12 +154,16 @@ Options.AutoFishing:OnChanged(function()
         end
         
         local exclaimDetected = false
+        local completionInProgress = false
         
         workspace.DescendantAdded:Connect(function(descendant)
-            if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" then
+            if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" and not completionInProgress then
                 exclaimDetected = true
+                completionInProgress = true
                 task.wait(2)
                 completeFishing()
+                task.wait(0.5)
+                completionInProgress = false
             end
         end)
         
@@ -175,10 +179,10 @@ Options.AutoFishing:OnChanged(function()
         end
         
         while Options.AutoFishing.Value do
-            if humanoid.Health > 0 then
+            if humanoid.Health > 0 and not completionInProgress then
                 exclaimDetected = false
                 
-                while not exclaimDetected and Options.AutoFishing.Value do
+                while not exclaimDetected and Options.AutoFishing.Value and not completionInProgress do
                     chargeFishingRod()
                     task.wait(0.5)
                     requestMinigame()
