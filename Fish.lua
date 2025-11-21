@@ -689,6 +689,48 @@ Tabs.Teleport:AddButton({
     end
 })
 
+-- Teleport to Treasure Room
+Tabs.Teleport:AddButton({
+    Title = "Treasure Room [Deep Sea Quest]",
+    Callback = function()
+        local hrp = player.Character and player.Character:WaitForChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = CFrame.new(
+                -3599.70752, -284.707336, -1497.68018,
+                0.999928594, -4.12398862e-08, 0.0119513385,
+                4.13049968e-08, 1, -5.2009459e-09,
+                -0.0119513385, 5.69422465e-09, 0.999928594
+            )
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Teleported to Treasure Room",
+                Duration = 4
+            })
+        end
+    end
+})
+
+-- Teleport to Elemental Rod Location
+Tabs.Teleport:AddButton({
+    Title = "Elemental Rod Location [Element Quest]",
+    Callback = function()
+        local hrp = player.Character and player.Character:WaitForChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = CFrame.new(
+                2082.79126, -90.6609344, -694.523865,
+                0.455305636, 4.79153535e-08, -0.890335202,
+                4.04750971e-08, 1, 7.45156328e-08,
+                0.890335202, -6.99637965e-08, 0.455305636
+            )
+            Fluent:Notify({
+                Title = "Teleport",
+                Content = "Teleported to Elemental Rod Location",
+                Duration = 4
+            })
+        end
+    end
+})
+
 -- Teleport to Ares Rod Stand
 Tabs.Teleport:AddButton({
     Title = "Ares Rod Location [3M Coins]",
