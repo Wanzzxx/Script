@@ -11,10 +11,10 @@ local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.
 
 -- Create Window
 local Window = Fluent:CreateWindow({
-    Title = "Fish It [Wanz HUB]",
+    Title = "Fish It [WaNZ HUB]",
     SubTitle = "PRIVATE TESTING",
     TabWidth = 120,
-    Size = UDim2.fromOffset(580, 460),
+    Size = UDim2.fromOffset(580, 480),
     Acrylic = true,
     Theme = "Darker",
     MinimizeKey = Enum.KeyCode.LeftControl
