@@ -141,7 +141,7 @@ Options.AutoFishing:OnChanged(function()
             local args = {
                 [1] = -1.233184814453125,
                 [2] = 0.9998747641116499,
-                [3] = 1763683601.17936
+                [3] = tick()
             }
             ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/RequestFishingMinigameStarted"):InvokeServer(unpack(args))
         end
@@ -151,9 +151,12 @@ Options.AutoFishing:OnChanged(function()
             isFishing = false
         end
         
+        local exclaimDetected = false
+        
         workspace.DescendantAdded:Connect(function(descendant)
             if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" then
                 print("EXCLAIM BILLBOARD ADDED!")
+                exclaimDetected = true
                 task.wait(2)
                 completeFishing()
             end
@@ -162,6 +165,7 @@ Options.AutoFishing:OnChanged(function()
         workspace.DescendantRemoving:Connect(function(descendant)
             if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" then
                 print("EXCLAIM BILLBOARD REMOVED!")
+                exclaimDetected = false
                 task.wait(1)
                 isFishing = false
             end
@@ -177,16 +181,39 @@ Options.AutoFishing:OnChanged(function()
             end
             
             isFishing = true
+            exclaimDetected = false
             
             pcall(function()
                 if not rodEquipped then
                     equipRod()
                     rodEquipped = true
                 end
-                task.wait(0.5)
-                chargeFishingRod()
-                task.wait(0.5)
-                requestMinigame()
+                
+                local attempts = 0
+                while not exclaimDetected and Options.AutoFishing.Value and attempts < 10 do
+                    task.wait(0.5)
+                    chargeFishingRod()
+                    task.wait(0.1)
+                    requestMinigame()
+                    
+                    local waitTime = 0
+                    while waitTime < 5 and not exclaimDetected and Options.AutoFishing.Value do
+                        task.wait(0.5)
+                        waitTime = waitTime + 0.5
+                    end
+                    
+                    if exclaimDetected then
+                        break
+                    end
+                    
+                    attempts = attempts + 1
+                    print("Retrying fishing... Attempt: " .. attempts)
+                end
+                
+                if not exclaimDetected then
+                    print("Failsafe: No exclaim after 10 attempts, resetting...")
+                    isFishing = false
+                end
             end)
         end
         
