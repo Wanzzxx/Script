@@ -101,8 +101,8 @@ local FishingCompleted = Net:WaitForChild("RE/FishingCompleted")
 local SellAllItems = Net:WaitForChild("RF/SellAllItems")
 
 Tabs.Main:AddParagraph({
-        Title = "Fishing Menu",
-        Content = "Auto Fish/nAuto Sell/nAuto Weather"
+        Title = "Fishing Section",
+        Content = "-Auto Fish\n-Auto Sell\n-Auto Weather"
     })
 
 -- Auto Fishing (Replaced with fast detection system)
@@ -331,7 +331,7 @@ if isfile and isfile(saveFile) then
 end
 Tabs.Main:AddButton({
     Title = "Set Position",
-    Description = "Set Your Current Position",
+    Description = "Save Your Current Position",
     Callback = function()
         Window:Dialog({
             Title = "Confirm Position",
