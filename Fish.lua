@@ -1252,6 +1252,107 @@ game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(func
     end
 end)
 
+--Hm?
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local isPlaying = false
+
+local function playCutscene()
+	if isPlaying then return end
+	isPlaying = true
+
+	local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+	gui.IgnoreGuiInset = true
+	gui.ResetOnSpawn = false
+	gui.Name = "RefusedCutscene"
+
+	local bg = Instance.new("Frame")
+	bg.Size = UDim2.new(1,0,1,0)
+	bg.BackgroundColor3 = Color3.new(0,0,0)
+	bg.Parent = gui
+
+	local soul = Instance.new("ImageLabel")
+	soul.AnchorPoint = Vector2.new(0.5,0.5)
+	soul.Position = UDim2.new(0.5,0,0.60,0)
+	soul.Size = UDim2.new(0,65,0,65)
+	soul.BackgroundTransparency = 1
+	soul.Image = "rbxassetid://113091167972150"
+	soul.Parent = gui
+
+	local text = Instance.new("TextLabel")
+	text.AnchorPoint = Vector2.new(0.5,0)
+	text.Position = UDim2.new(0.5,0,0.15,0)
+	text.Size = UDim2.new(0.8,0,0,60)
+	text.BackgroundTransparency = 1
+	text.Text = ""
+	text.TextColor3 = Color3.new(1,1,1)
+	text.TextScaled = false
+	text.TextSize = 42
+	text.Font = Enum.Font.Arcade
+	text.Parent = gui
+
+	local function shake(obj, duration, magnitude)
+		local start = os.clock()
+		local origin = obj.Position
+		while os.clock() - start < duration do
+			obj.Position = origin + UDim2.new(
+				0, math.random(-magnitude, magnitude),
+				0, math.random(-magnitude, magnitude)
+			)
+			RunService.RenderStepped:Wait()
+		end
+		obj.Position = origin
+	end
+
+	local function typeText(str, delay)
+		text.Text = ""
+		for i = 1, #str do
+			text.Text = string.sub(str, 1, i)
+			task.wait(delay)
+		end
+	end
+
+	task.wait(1)
+	soul.Image = "rbxassetid://100792322883962"
+	task.wait(2)
+	shake(soul, 2.5, 6)
+	soul.Image = "rbxassetid://113091167972150"
+	task.wait(0.5)
+	typeText("* But it refused.", 0.07)
+	task.wait(1)
+
+	local white = Instance.new("Frame")
+	white.Size = UDim2.new(1,0,1,0)
+	white.BackgroundColor3 = Color3.new(1,1,1)
+	white.BackgroundTransparency = 1
+	white.Parent = gui
+
+	for i = 1, 20 do
+		white.BackgroundTransparency = 1 - (i / 20)
+		RunService.RenderStepped:Wait()
+	end
+
+	task.wait(0.3)
+	gui:Destroy()
+	isPlaying = false
+end
+
+local function onCharacterAdded(character)
+	local humanoid = character:WaitForChild("Humanoid")
+	humanoid.Died:Connect(function()
+		playCutscene()
+	end)
+end
+
+-- Connect to current character if it exists
+if player.Character then
+	onCharacterAdded(player.Character)
+end
+
+-- Connect to future character spawns
+player.CharacterAdded:Connect(onCharacterAdded)
 
 Window:SelectTab(1)
 Fluent:Notify({ Title = "Anti-Disconnect Systems", Content = "Anti-AFK / Auto Rejoin when ping freeze / Auto Rejoin When Kicked or Disconnected are automatically activated.", Duration = 20 })
