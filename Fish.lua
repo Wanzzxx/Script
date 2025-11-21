@@ -389,11 +389,27 @@ Options.TeleportSaved = Tabs.Main:AddToggle("TeleportSaved", {
     end
 })
 
--- Auto Sell
+-- Sell All Button
+Tabs.Main:AddButton({
+    Title = "Sell All Fish",
+    Description = "Yes This Is The Button Version.",
+    Callback = function()
+        game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/SellAllItems"):InvokeServer()
+        Fluent:Notify({
+            Title = "Sell All",
+            Content = "Sold all fish!",
+            Duration = 3
+        })
+    end
+})
+
+-- Auto Sell All Fish (When Max Capacity)
+local autoSellConnection = nil
+
 Options.AutoSellAllFish = Tabs.Main:AddToggle("AutoSellAllFish", {
-    Title = "Auto Sell All Fish",
+    Title = "Auto Sell All Fish When Max Cap",
     Default = false,
-    Description = "Automatically sells all fish"
+    Description = "Automatically sells when fish capacity is full"
 })
 
 Options.AutoSellAllFish:OnChanged(function()
@@ -401,42 +417,27 @@ Options.AutoSellAllFish:OnChanged(function()
         Fluent:Notify({ Title = "Auto Sell All Fish", Content = "Enabled", Duration = 3 })
         task.spawn(function()
             local player = game:GetService("Players").LocalPlayer
-            local display = player:WaitForChild("PlayerGui"):WaitForChild("Backpack"):WaitForChild("Display")
+            local bagSizeLabel = player.PlayerGui:WaitForChild("Inventory"):WaitForChild("Main"):WaitForChild("Top"):WaitForChild("Options"):WaitForChild("Fish"):WaitForChild("Label"):WaitForChild("BagSize")
             
-            local function isBlacklisted(text)
-                return string.find(text, "Rod") ~= nil or 
-                       text == "Fishing Radar" or 
-                       text == "Diving Gear"
+            if autoSellConnection then
+                autoSellConnection:Disconnect()
             end
             
-            local function hasFish()
-                for _, obj in ipairs(display:GetDescendants()) do
-                    if obj:IsA("TextLabel") and obj.Name == "ItemName" then
-                        local itemName = obj.Text or ""
-                        if not isBlacklisted(itemName) and itemName ~= "" then
-                            return true
-                        end
-                    end
-                end
-                return false
-            end
-            
-            -- Monitor for fish additions
-            display.DescendantAdded:Connect(function(descendant)
-                if Options.AutoSellAllFish.Value and descendant:IsA("TextLabel") and descendant.Name == "ItemName" then
-                    task.wait(0.1)
-                    if hasFish() then
+            autoSellConnection = bagSizeLabel:GetPropertyChangedSignal("Text"):Connect(function()
+                if Options.AutoSellAllFish.Value then
+                    local bagText = bagSizeLabel.Text
+                    local current, max = bagText:match("([^/]+)/([^/]+)")
+                    if current and max and current == max then
                         game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/SellAllItems"):InvokeServer()
                     end
                 end
             end)
-            
-            -- Check immediately if fish already exist
-            if hasFish() then
-                game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/SellAllItems"):InvokeServer()
-            end
         end)
     else
+        if autoSellConnection then
+            autoSellConnection:Disconnect()
+            autoSellConnection = nil
+        end
         Fluent:Notify({ Title = "Auto Sell All Fish", Content = "Disabled", Duration = 3 })
     end
 end)
