@@ -154,7 +154,7 @@ Options.AutoFishing:OnChanged(function()
         workspace.DescendantAdded:Connect(function(descendant)
             if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" then
                 print("EXCLAIM BILLBOARD ADDED!")
-                task.wait(1)
+                task.wait(2)
                 completeFishing()
             end
         end)
