@@ -11,7 +11,7 @@ local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.
 
 -- Create Window
 local Window = Fluent:CreateWindow({
-    Title = "Fish It [WaNZ HUB]",
+    Title = "Fish It [Neko-Ware]",
     SubTitle = "PRIVATE TESTING",
     TabWidth = 120,
     Size = UDim2.fromOffset(580, 480),
@@ -26,13 +26,13 @@ local player = Players.LocalPlayer
 
 -- Logo toggle
 local logoGui = Instance.new("ScreenGui")
-logoGui.Name = "FluentLogoToggle"
+logoGui.Name = "IconToggle"
 logoGui.ResetOnSpawn = false
 logoGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 logoGui.Parent = player:WaitForChild("PlayerGui")
 
 local logoButton = Instance.new("ImageButton")
-logoButton.Name = "LogoButton"
+logoButton.Name = "Button"
 logoButton.Size = UDim2.new(0, 50, 0, 50)
 logoButton.Position = UDim2.new(0, 10, 0, 10)
 logoButton.BackgroundTransparency = 1
