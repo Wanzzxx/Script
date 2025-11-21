@@ -506,7 +506,7 @@ Options.TeleportEvent = Tabs.Event:AddToggle("TeleportEvent", {
     end
 })
 
-Tabs.Main:AddParagraph({
+Tabs.Teleport:AddParagraph({
         Title = "Teleport Menu",
         Content = "Teleport Somewhere"
     })
@@ -516,52 +516,100 @@ local TeleportParent = workspace:FindFirstChild("!!!! ISLAND LOCATIONS !!!!")
 local NPCFolder = workspace:FindFirstChild("NPC")
 local MiscFolder = workspace:FindFirstChild("!!! MENU RINGS")
 
--- Dropdowns
+-- Island Teleport
 if TeleportParent then
     Options.TeleportIsland = Tabs.Teleport:AddDropdown("TeleportIsland", {
-        Title = "Teleport to Island",
+        Title = "Select Island",
         Values = getChildNames(TeleportParent),
-        Default = nil
+        Multi = false,
+        Default = 1
     })
-    Options.TeleportIsland:OnChanged(function(selected)
-        if not selected or not canTeleport() then return end
-        local cf = getModelCFrame(TeleportParent:FindFirstChild(selected))
-        if cf then
-            player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
-            Fluent:Notify({ Title = "Teleport", Content = "Teleported to Island: " .. selected, Duration = 4 })
+    
+    Tabs.Teleport:AddButton({
+        Title = "Teleport to Island",
+        Callback = function()
+            local selected = Options.TeleportIsland.Value
+            if not selected then
+                Fluent:Notify({ Title = "Teleport", Content = "Please select an island first", Duration = 3 })
+                return
+            end
+            if not canTeleport() then
+                Fluent:Notify({ Title = "Teleport", Content = "Cannot teleport while auto fishing", Duration = 3 })
+                return
+            end
+            local cf = getModelCFrame(TeleportParent:FindFirstChild(selected))
+            if cf then
+                player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
+                Fluent:Notify({ Title = "Teleport", Content = "Teleported to Island: " .. selected, Duration = 4 })
+            end
         end
-    end)
+    })
 end
+
+-- NPC Teleport
 if NPCFolder then
     Options.TeleportNPC = Tabs.Teleport:AddDropdown("TeleportNPC", {
-        Title = "Teleport to NPC",
+        Title = "Select NPC",
         Values = getChildNames(NPCFolder),
-        Default = nil
+        Multi = false,
+        Default = 1
     })
-    Options.TeleportNPC:OnChanged(function(selected)
-        if not selected or not canTeleport() then return end
-        local cf = getModelCFrame(NPCFolder:FindFirstChild(selected))
-        if cf then
-            player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
-            Fluent:Notify({ Title = "Teleport", Content = "Teleported to NPC: " .. selected, Duration = 4 })
+    
+    Tabs.Teleport:AddButton({
+        Title = "Teleport to NPC",
+        Callback = function()
+            local selected = Options.TeleportNPC.Value
+            if not selected then
+                Fluent:Notify({ Title = "Teleport", Content = "Please select an NPC first", Duration = 3 })
+                return
+            end
+            if not canTeleport() then
+                Fluent:Notify({ Title = "Teleport", Content = "Cannot teleport while auto fishing", Duration = 3 })
+                return
+            end
+            local cf = getModelCFrame(NPCFolder:FindFirstChild(selected))
+            if cf then
+                player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
+                Fluent:Notify({ Title = "Teleport", Content = "Teleported to NPC: " .. selected, Duration = 4 })
+            end
         end
-    end)
+    })
 end
+
+-- Misc Teleport
 if MiscFolder then
     Options.TeleportMisc = Tabs.Teleport:AddDropdown("TeleportMisc", {
-        Title = "Teleport to Misc",
+        Title = "Select Misc Location",
         Values = getChildNames(MiscFolder),
-        Default = nil
+        Multi = false,
+        Default = 1
     })
-    Options.TeleportMisc:OnChanged(function(selected)
-        if not selected or not canTeleport() then return end
-        local cf = getModelCFrame(MiscFolder:FindFirstChild(selected))
-        if cf then
-            player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
-            Fluent:Notify({ Title = "Teleport", Content = "Teleported to Misc: " .. selected, Duration = 4 })
+    
+    Tabs.Teleport:AddButton({
+        Title = "Teleport to Misc",
+        Callback = function()
+            local selected = Options.TeleportMisc.Value
+            if not selected then
+                Fluent:Notify({ Title = "Teleport", Content = "Please select a location first", Duration = 3 })
+                return
+            end
+            if not canTeleport() then
+                Fluent:Notify({ Title = "Teleport", Content = "Cannot teleport while auto fishing", Duration = 3 })
+                return
+            end
+            local cf = getModelCFrame(MiscFolder:FindFirstChild(selected))
+            if cf then
+                player.Character:WaitForChild("HumanoidRootPart").CFrame = cf + Vector3.new(0, 5, 0)
+                Fluent:Notify({ Title = "Teleport", Content = "Teleported to Misc: " .. selected, Duration = 4 })
+            end
         end
-    end)
+    })
 end
+
+Tabs.Teleport:AddParagraph({
+        Title = "Other Location",
+        Content = "Teleport Somewhere"
+    })
 
 -- Teleport to Enchanting Altar
 Tabs.Teleport:AddButton({
