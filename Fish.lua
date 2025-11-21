@@ -1276,7 +1276,7 @@ local function playCutscene()
 	local soul = Instance.new("ImageLabel")
 	soul.AnchorPoint = Vector2.new(0.5,0.5)
 	soul.Position = UDim2.new(0.5,0,0.60,0)
-	soul.Size = UDim2.new(0,65,0,65)
+	soul.Size = UDim2.new(0,16,0,16)
 	soul.BackgroundTransparency = 1
 	soul.Image = "rbxassetid://113091167972150"
 	soul.Parent = gui
