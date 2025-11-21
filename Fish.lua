@@ -166,58 +166,24 @@ Options.AutoFishing:OnChanged(function()
         workspace.DescendantRemoving:Connect(function(descendant)
             if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" then
                 exclaimDetected = false
-                task.wait(0.5)
-                isFishing = false
             end
         end)
         
-        local function startFishing()
-            if isFishing or not Options.AutoFishing.Value then
-                return
-            end
-            
-            if humanoid.Health <= 0 then
-                return
-            end
-            
-            isFishing = true
-            exclaimDetected = false
-            
-            pcall(function()
-                if not rodEquipped then
-                    equipRod()
-                    rodEquipped = true
-                end
+        if not rodEquipped then
+            equipRod()
+            rodEquipped = true
+        end
+        
+        while Options.AutoFishing.Value do
+            if humanoid.Health > 0 then
+                exclaimDetected = false
                 
-                local attempts = 0
-                while not exclaimDetected and Options.AutoFishing.Value and attempts < 5 do
+                while not exclaimDetected and Options.AutoFishing.Value do
                     chargeFishingRod()
                     task.wait(0.5)
                     requestMinigame()
                     task.wait(0.1)
-                    
-                    local waitTime = 0
-                    while waitTime < 2 and not exclaimDetected and Options.AutoFishing.Value do
-                        task.wait(0.1)
-                        waitTime = waitTime + 0.1
-                    end
-                    
-                    if exclaimDetected then
-                        break
-                    end
-                    
-                    attempts = attempts + 1
                 end
-                
-                if not exclaimDetected then
-                    isFishing = false
-                end
-            end)
-        end
-        
-        while Options.AutoFishing.Value do
-            if not isFishing and humanoid.Health > 0 then
-                startFishing()
             end
             task.wait(0.1)
         end
