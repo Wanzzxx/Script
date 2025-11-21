@@ -729,6 +729,60 @@ Tabs.Teleport:AddButton({
 
 -- Misc
 
+-- Deep Sea Quest Tracker
+local deepSeaTracker = workspace:FindFirstChild("!!! MENU RINGS") and workspace["!!! MENU RINGS"]:FindFirstChild("Deep Sea Tracker")
+
+if deepSeaTracker then
+    local board = deepSeaTracker:FindFirstChild("Board")
+    if board and board:FindFirstChild("Gui") and board.Gui:FindFirstChild("Content") then
+        local content = board.Gui.Content
+        local header = content:FindFirstChild("Header")
+        local label1 = content:FindFirstChild("Label1")
+        local label2 = content:FindFirstChild("Label2")
+        local label3 = content:FindFirstChild("Label3")
+        local label4 = content:FindFirstChild("Label4")
+        
+        -- Create the paragraph
+        local DeepSeaParagraph = Tabs.Misc:AddParagraph({
+            Title = header and header.Text or "Deep Sea Quest",
+            Content = string.format("%s\n%s\n%s\n%s",
+                label1 and label1.Text or "Quest 1: Unknown",
+                label2 and label2.Text or "Quest 2: Unknown",
+                label3 and label3.Text or "Quest 3: Unknown",
+                label4 and label4.Text or "Quest 4: Unknown"
+            )
+        })
+        
+        -- Monitor for text changes
+        local function updateParagraph()
+            DeepSeaParagraph:SetTitle(header and header.Text or "Deep Sea Quest")
+            DeepSeaParagraph:SetDesc(string.format("%s\n%s\n%s\n%s",
+                label1 and label1.Text or "Quest 1: Unknown",
+                label2 and label2.Text or "Quest 2: Unknown",
+                label3 and label3.Text or "Quest 3: Unknown",
+                label4 and label4.Text or "Quest 4: Unknown"
+            ))
+        end
+        
+        -- Connect to text changes
+        if header then
+            header:GetPropertyChangedSignal("Text"):Connect(updateParagraph)
+        end
+        if label1 then
+            label1:GetPropertyChangedSignal("Text"):Connect(updateParagraph)
+        end
+        if label2 then
+            label2:GetPropertyChangedSignal("Text"):Connect(updateParagraph)
+        end
+        if label3 then
+            label3:GetPropertyChangedSignal("Text"):Connect(updateParagraph)
+        end
+        if label4 then
+            label4:GetPropertyChangedSignal("Text"):Connect(updateParagraph)
+        end
+    end
+end
+
 -- Fish Radar
 Options.FishRadar = Tabs.Misc:AddToggle("FishRadar", {
     Title = "Fish Radar",
