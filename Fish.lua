@@ -288,22 +288,33 @@ Options.AutoFishing:OnChanged(function()
             end
         end)
     else
-        -- Legit Mode (Auto Fishing Remote + Auto Click)
-        task.spawn(function()
-            local args = { [1] = true }
-            game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/UpdateAutoFishingState"):InvokeServer(unpack(args))
-            
-            local VirtualInputManager = game:GetService("VirtualInputManager")
-            autoClickLoop = true
-            
-            while Options.AutoFishing.Value and autoClickLoop do
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-                task.wait(0.01)
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-                task.wait(0.1)
-            end
-        end)
-    end
+    -- Legit Mode (Auto Fishing Remote + Auto Click)
+    task.spawn(function()
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:WaitForChild("Humanoid")
+        
+        -- Equip rod first time or after death
+        if not rodEquipped then
+            local args = { [1] = 1 }
+            game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
+            task.wait(0.3)
+            rodEquipped = true
+        end
+        
+        local args = { [1] = true }
+        game:GetService("ReplicatedStorage").Packages._Index:FindFirstChild("sleitnick_net@0.2.0").net:FindFirstChild("RF/UpdateAutoFishingState"):InvokeServer(unpack(args))
+        
+        local VirtualInputManager = game:GetService("VirtualInputManager")
+        autoClickLoop = true
+        
+        while Options.AutoFishing.Value and autoClickLoop do
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+            task.wait(0.01)
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+            task.wait(0.1)
+        end
+    end)
+   end
 end)
 
 -- Save / Teleport fishing location
