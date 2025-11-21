@@ -878,6 +878,96 @@ if elementTracker then
     end
 end
 
+-- Hide Username
+Options.HideUsername = Tabs.Misc:AddToggle("HideUsername", {
+    Title = "Hide Username",
+    Default = false,
+    Description = "Hides your username to prevent reports."
+})
+
+Options.HideUsername:OnChanged(function()
+    if Options.HideUsername.Value then
+        Fluent:Notify({ Title = "Hide Username", Content = "Enabled", Duration = 3 })
+        
+        local function hideUsername(char)
+            local username = player.Name
+            
+            -- Remove accessories
+            for _, v in pairs(char:GetChildren()) do
+                if v:IsA("Accessory") then
+                    v:Destroy()
+                end
+            end
+            
+            -- Remove face
+            local head = char:FindFirstChild("Head")
+            if head then
+                local face = head:FindFirstChildWhichIsA("Decal")
+                if face then
+                    face:Destroy()
+                end
+            end
+            
+            -- Remove clothes
+            for _, v in pairs(char:GetChildren()) do
+                if v:IsA("Shirt") or v:IsA("Pants") then
+                    v:Destroy()
+                end
+            end
+            
+            local tshirt = char:FindFirstChildOfClass("ShirtGraphic")
+            if tshirt then
+                tshirt:Destroy()
+            end
+            
+            -- Lock text function
+            local function lockText(textObject, forcedText)
+                if not textObject then return end
+                textObject.Text = forcedText
+                textObject:GetPropertyChangedSignal("Text"):Connect(function()
+                    if Options.HideUsername.Value and textObject.Text ~= forcedText then
+                        textObject.Text = forcedText
+                    end
+                end)
+            end
+            
+            -- Hide overhead username
+            local charFolder = workspace:FindFirstChild("Characters")
+            if charFolder then
+                local model = charFolder:FindFirstChild(username)
+                if model then
+                    local root = model:FindFirstChild("HumanoidRootPart")
+                    if root and root:FindFirstChild("Overhead") then
+                        local overhead = root.Overhead
+                        if overhead:FindFirstChild("Content") and overhead.Content:FindFirstChild("Header") then
+                            lockText(overhead.Content.Header, "[Hidden]")
+                        end
+                        if overhead:FindFirstChild("LevelContainer") and overhead.LevelContainer:FindFirstChild("Label") then
+                            lockText(overhead.LevelContainer.Label, "Censored By\nNeko-Ware")
+                        end
+                    end
+                end
+            end
+        end
+        
+        -- Apply to current character
+        local char = player.Character
+        if char then
+            hideUsername(char)
+        end
+        
+        -- Apply on respawn
+        player.CharacterAdded:Connect(function(newChar)
+            if Options.HideUsername.Value then
+                task.wait(1) -- Wait for character to fully load
+                hideUsername(newChar)
+            end
+        end)
+    else
+        Fluent:Notify({ Title = "Hide Username", Content = "Disabled - Respawn to restore", Duration = 3 })
+    end
+end)
+
 -- Fish Radar
 Options.FishRadar = Tabs.Misc:AddToggle("FishRadar", {
     Title = "Fish Radar",
