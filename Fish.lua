@@ -102,7 +102,7 @@ local SellAllItems = Net:WaitForChild("RF/SellAllItems")
 
 Tabs.Main:AddParagraph({
         Title = "Fishing Section",
-        Content = "-Auto Fish\n-Auto Sell\n-Auto Weather"
+        Content = "- Auto Fish\n- Auto Sell\n- Auto Weather"
     })
 
 -- Auto Fishing (Replaced with fast detection system)
