@@ -255,9 +255,9 @@ Options.AutoFishing:OnChanged(function()
                 if Options.AutoFishing.Value and descendant:IsA("BillboardGui") and descendant.Name == "Exclaim" and not completionInProgress then
                     exclaimDetected = true
                     completionInProgress = true
-                    task.wait(1.2)
+                    task.wait(1.05)
                     completeFishing()
-                    task.wait(0.2)
+                    task.wait(0.1)
                     completionInProgress = false
                 end
             end)
@@ -279,7 +279,7 @@ Options.AutoFishing:OnChanged(function()
                     
                     while not exclaimDetected and Options.AutoFishing.Value and not completionInProgress do
                         chargeFishingRod()
-                        task.wait(0.3)
+                        task.wait(0.2)
                         requestMinigame()
                         task.wait(0.1)
                     end
