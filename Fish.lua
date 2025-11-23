@@ -279,12 +279,12 @@ Options.AutoFishing:OnChanged(function()
                     
                     while not exclaimDetected and Options.AutoFishing.Value and not completionInProgress do
                         chargeFishingRod()
-                        task.wait(0.2)
+                        task.wait(0.1)
                         requestMinigame()
                         task.wait(0.1)
                     end
                 end
-                task.wait(0.1)
+                task.wait(0)
             end
         end)
     else
