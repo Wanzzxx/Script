@@ -1,0 +1,662 @@
+-- Roblox Console GUI Script
+-- Place this in StarterGui as a LocalScript
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ConsoleGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- Create Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 600, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+-- Add rounded corners
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
+
+-- Add cyan outline
+local outline = Instance.new("UIStroke")
+outline.Color = Color3.fromRGB(0, 255, 255)
+outline.Thickness = 2
+outline.Transparency = 0
+outline.Parent = mainFrame
+
+-- Create Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
+
+-- Title Text
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -280, 1, 0)
+titleLabel.Position = UDim2.new(0, 140, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Developer Console"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 16
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+titleLabel.Parent = titleBar
+
+-- Mode Dropdown Button
+local modeButton = Instance.new("TextButton")
+modeButton.Size = UDim2.new(0, 130, 0, 25)
+modeButton.Position = UDim2.new(0, 5, 0, 2.5)
+modeButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+modeButton.BackgroundTransparency = 0
+modeButton.Text = "Console Mode ▼"
+modeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+modeButton.TextSize = 11
+modeButton.Font = Enum.Font.GothamBold
+modeButton.BorderSizePixel = 0
+modeButton.Parent = titleBar
+
+local modeCorner = Instance.new("UICorner")
+modeCorner.CornerRadius = UDim.new(0, 4)
+modeCorner.Parent = modeButton
+
+local modeStroke = Instance.new("UIStroke")
+modeStroke.Color = Color3.fromRGB(0, 255, 255)
+modeStroke.Thickness = 1.5
+modeStroke.Transparency = 0.3
+modeStroke.Parent = modeButton
+
+-- Dropdown Frame
+local dropdownFrame = Instance.new("Frame")
+dropdownFrame.Size = UDim2.new(0, 130, 0, 60)
+dropdownFrame.Position = UDim2.new(0, 5, 0, 32)
+dropdownFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+dropdownFrame.BorderSizePixel = 0
+dropdownFrame.Visible = false
+dropdownFrame.ZIndex = 10
+dropdownFrame.Parent = mainFrame
+
+local dropdownCorner = Instance.new("UICorner")
+dropdownCorner.CornerRadius = UDim.new(0, 4)
+dropdownCorner.Parent = dropdownFrame
+
+local dropdownStroke = Instance.new("UIStroke")
+dropdownStroke.Color = Color3.fromRGB(0, 255, 255)
+dropdownStroke.Thickness = 1
+dropdownStroke.Transparency = 0.5
+dropdownStroke.Parent = dropdownFrame
+
+-- Console Mode Option
+local consoleOption = Instance.new("TextButton")
+consoleOption.Size = UDim2.new(1, -4, 0, 28)
+consoleOption.Position = UDim2.new(0, 2, 0, 2)
+consoleOption.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+consoleOption.BackgroundTransparency = 0.3
+consoleOption.Text = "Console Mode"
+consoleOption.TextColor3 = Color3.fromRGB(255, 255, 255)
+consoleOption.TextSize = 11
+consoleOption.Font = Enum.Font.GothamBold
+consoleOption.ZIndex = 11
+consoleOption.Parent = dropdownFrame
+
+local consoleOptionCorner = Instance.new("UICorner")
+consoleOptionCorner.CornerRadius = UDim.new(0, 3)
+consoleOptionCorner.Parent = consoleOption
+
+-- RemoteSpy Mode Option
+local remoteOption = Instance.new("TextButton")
+remoteOption.Size = UDim2.new(1, -4, 0, 28)
+remoteOption.Position = UDim2.new(0, 2, 0, 32)
+remoteOption.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+remoteOption.BackgroundTransparency = 0.3
+remoteOption.Text = "RemoteSpy Mode"
+remoteOption.TextColor3 = Color3.fromRGB(255, 255, 255)
+remoteOption.TextSize = 11
+remoteOption.Font = Enum.Font.GothamBold
+remoteOption.ZIndex = 11
+remoteOption.Parent = dropdownFrame
+
+local remoteOptionCorner = Instance.new("UICorner")
+remoteOptionCorner.CornerRadius = UDim.new(0, 3)
+remoteOptionCorner.Parent = remoteOption
+
+-- Minimize Button
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 25, 0, 25)
+minimizeButton.Position = UDim2.new(1, -58, 0, 2.5)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.BackgroundTransparency = 0.85
+minimizeButton.Text = "-"
+minimizeButton.TextColor3 = Color3.fromRGB(255, 200, 0)
+minimizeButton.TextSize = 18
+minimizeButton.Font = Enum.Font.GothamBold
+minimizeButton.Parent = titleBar
+
+-- Close Button
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 25, 0, 25)
+closeButton.Position = UDim2.new(1, -28, 0, 2.5)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.BackgroundTransparency = 0.85
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+closeButton.TextSize = 14
+closeButton.Font = Enum.Font.GothamBold
+closeButton.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 4)
+closeCorner.Parent = closeButton
+
+-- Minimize button styling
+local minimizeCorner = Instance.new("UICorner")
+minimizeCorner.CornerRadius = UDim.new(0, 4)
+minimizeCorner.Parent = minimizeButton
+
+local minimizeGradient = Instance.new("UIGradient")
+minimizeGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 250, 200)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 230, 150))
+}
+minimizeGradient.Rotation = 135
+minimizeGradient.Transparency = NumberSequence.new{
+	NumberSequenceKeypoint.new(0, 0.5),
+	NumberSequenceKeypoint.new(1, 0.7)
+}
+minimizeGradient.Parent = minimizeButton
+
+local minimizeStroke = Instance.new("UIStroke")
+minimizeStroke.Color = Color3.fromRGB(255, 200, 0)
+minimizeStroke.Thickness = 1.5
+minimizeStroke.Transparency = 0.3
+minimizeStroke.Parent = minimizeButton
+
+local minimizeShine = Instance.new("Frame")
+minimizeShine.Size = UDim2.new(1, 0, 0.4, 0)
+minimizeShine.Position = UDim2.new(0, 0, 0, 0)
+minimizeShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+minimizeShine.BackgroundTransparency = 0.8
+minimizeShine.BorderSizePixel = 0
+minimizeShine.Parent = minimizeButton
+
+local minimizeShineCorner = Instance.new("UICorner")
+minimizeShineCorner.CornerRadius = UDim.new(0, 4)
+minimizeShineCorner.Parent = minimizeShine
+
+-- Glassy effect for close button
+local closeGradient = Instance.new("UIGradient")
+closeGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 200, 200)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 150, 150))
+}
+closeGradient.Rotation = 135
+closeGradient.Transparency = NumberSequence.new{
+	NumberSequenceKeypoint.new(0, 0.5),
+	NumberSequenceKeypoint.new(1, 0.7)
+}
+closeGradient.Parent = closeButton
+
+local closeStroke = Instance.new("UIStroke")
+closeStroke.Color = Color3.fromRGB(255, 100, 100)
+closeStroke.Thickness = 1.5
+closeStroke.Transparency = 0.3
+closeStroke.Parent = closeButton
+
+-- Glass shine effect
+local closeShine = Instance.new("Frame")
+closeShine.Size = UDim2.new(1, 0, 0.4, 0)
+closeShine.Position = UDim2.new(0, 0, 0, 0)
+closeShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+closeShine.BackgroundTransparency = 0.8
+closeShine.BorderSizePixel = 0
+closeShine.Parent = closeButton
+
+local closeShineCorner = Instance.new("UICorner")
+closeShineCorner.CornerRadius = UDim.new(0, 4)
+closeShineCorner.Parent = closeShine
+
+-- Clear Button
+local clearButton = Instance.new("TextButton")
+clearButton.Size = UDim2.new(0, 60, 0, 25)
+clearButton.Position = UDim2.new(1, -133, 0, 2.5)
+clearButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+clearButton.BackgroundTransparency = 0.85
+clearButton.Text = "Clear"
+clearButton.TextColor3 = Color3.fromRGB(0, 255, 255)
+clearButton.TextSize = 12
+clearButton.Font = Enum.Font.GothamBold
+clearButton.Parent = titleBar
+
+local clearCorner = Instance.new("UICorner")
+clearCorner.CornerRadius = UDim.new(0, 4)
+clearCorner.Parent = clearButton
+
+-- Glassy effect for clear button
+local clearGradient = Instance.new("UIGradient")
+clearGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(200, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 255, 255))
+}
+clearGradient.Rotation = 135
+clearGradient.Transparency = NumberSequence.new{
+	NumberSequenceKeypoint.new(0, 0.5),
+	NumberSequenceKeypoint.new(1, 0.7)
+}
+clearGradient.Parent = clearButton
+
+local clearStroke = Instance.new("UIStroke")
+clearStroke.Color = Color3.fromRGB(0, 255, 255)
+clearStroke.Thickness = 1.5
+clearStroke.Transparency = 0.3
+clearStroke.Parent = clearButton
+
+-- Glass shine effect
+local clearShine = Instance.new("Frame")
+clearShine.Size = UDim2.new(1, 0, 0.4, 0)
+clearShine.Position = UDim2.new(0, 0, 0, 0)
+clearShine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+clearShine.BackgroundTransparency = 0.8
+clearShine.BorderSizePixel = 0
+clearShine.Parent = clearButton
+
+local clearShineCorner = Instance.new("UICorner")
+clearShineCorner.CornerRadius = UDim.new(0, 4)
+clearShineCorner.Parent = clearShine
+
+-- Console Output Frame
+local consoleFrame = Instance.new("ScrollingFrame")
+consoleFrame.Name = "ConsoleFrame"
+consoleFrame.Size = UDim2.new(1, -10, 1, -40)
+consoleFrame.Position = UDim2.new(0, 5, 0, 35)
+consoleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+consoleFrame.BorderSizePixel = 0
+consoleFrame.ScrollBarThickness = 6
+consoleFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+consoleFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+consoleFrame.Parent = mainFrame
+
+local consoleCorner = Instance.new("UICorner")
+consoleCorner.CornerRadius = UDim.new(0, 4)
+consoleCorner.Parent = consoleFrame
+
+-- UIListLayout for console messages
+local listLayout = Instance.new("UIListLayout")
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Padding = UDim.new(0, 2)
+listLayout.Parent = consoleFrame
+
+-- Message counter
+local messageCount = 0
+local currentMode = "Console" -- "Console" or "RemoteSpy"
+local blockedRemotes = {} -- Store blocked remote paths
+
+-- Function to add a message to console
+local function addMessage(text, messageType, remotePath)
+	messageCount = messageCount + 1
+	
+	local messageFrame = Instance.new("Frame")
+	messageFrame.Name = "Message_" .. messageCount
+	messageFrame.Size = UDim2.new(1, -10, 0, 0)
+	messageFrame.BackgroundTransparency = 1
+	messageFrame.LayoutOrder = messageCount
+	messageFrame.Parent = consoleFrame
+	
+	-- Block button (only show in RemoteSpy mode)
+	local blockButton
+	if currentMode == "RemoteSpy" and remotePath then
+		blockButton = Instance.new("TextButton")
+		blockButton.Size = UDim2.new(0, 30, 0, 20)
+		blockButton.Position = UDim2.new(0, 0, 0, 0)
+		blockButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		blockButton.BackgroundTransparency = 0.9
+		blockButton.Text = "[-]"
+		blockButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+		blockButton.TextSize = 10
+		blockButton.Font = Enum.Font.Code
+		blockButton.Parent = messageFrame
+		
+		local blockCorner = Instance.new("UICorner")
+		blockCorner.CornerRadius = UDim.new(0, 3)
+		blockCorner.Parent = blockButton
+		
+		local blockStroke = Instance.new("UIStroke")
+		blockStroke.Color = Color3.fromRGB(255, 100, 100)
+		blockStroke.Thickness = 1
+		blockStroke.Transparency = 0.7
+		blockStroke.Parent = blockButton
+	end
+	
+	-- Copy button
+	local copyButton = Instance.new("TextButton")
+	copyButton.Size = UDim2.new(0, 30, 0, 20)
+	copyButton.Position = UDim2.new(0, blockButton and 35 or 0, 0, 0)
+	copyButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	copyButton.BackgroundTransparency = 0.9
+	copyButton.Text = "[/]"
+	copyButton.TextColor3 = Color3.fromRGB(0, 255, 255)
+	copyButton.TextSize = 10
+	copyButton.Font = Enum.Font.Code
+	copyButton.Parent = messageFrame
+	
+	local copyCorner = Instance.new("UICorner")
+	copyCorner.CornerRadius = UDim.new(0, 3)
+	copyCorner.Parent = copyButton
+	
+	local copyStroke = Instance.new("UIStroke")
+	copyStroke.Color = Color3.fromRGB(0, 255, 255)
+	copyStroke.Thickness = 1
+	copyStroke.Transparency = 0.7
+	copyStroke.Parent = copyButton
+	
+	-- Message label
+	local messageLabel = Instance.new("TextLabel")
+	messageLabel.Size = UDim2.new(1, blockButton and -70 or -35, 1, 0)
+	messageLabel.Position = UDim2.new(0, blockButton and 70 or 35, 0, 0)
+	messageLabel.BackgroundTransparency = 1
+	messageLabel.Text = text
+	messageLabel.TextSize = 14
+	messageLabel.Font = Enum.Font.Code
+	messageLabel.TextXAlignment = Enum.TextXAlignment.Left
+	messageLabel.TextYAlignment = Enum.TextYAlignment.Top
+	messageLabel.TextWrapped = true
+	messageLabel.RichText = true
+	messageLabel.Parent = messageFrame
+	
+	-- Color based on message type
+	if messageType == "error" then
+		messageLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+	elseif messageType == "warning" then
+		messageLabel.TextColor3 = Color3.fromRGB(255, 220, 100)
+	elseif messageType == "info" then
+		messageLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+	else
+		messageLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+	end
+	
+	-- Auto-resize frame based on text
+	messageFrame.Size = UDim2.new(1, -10, 0, messageLabel.TextBounds.Y + 5)
+	
+	-- Block button functionality
+	if blockButton and remotePath then
+		blockButton.MouseButton1Click:Connect(function()
+			if blockedRemotes[remotePath] then
+				blockedRemotes[remotePath] = nil
+				blockButton.Text = "[-]"
+				blockButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+				blockStroke.Color = Color3.fromRGB(255, 100, 100)
+			else
+				blockedRemotes[remotePath] = true
+				blockButton.Text = "[✓]"
+				blockButton.TextColor3 = Color3.fromRGB(100, 255, 100)
+				blockStroke.Color = Color3.fromRGB(100, 255, 100)
+			end
+		end)
+		
+		blockButton.MouseEnter:Connect(function()
+			blockButton.BackgroundTransparency = 0.7
+			blockStroke.Transparency = 0.4
+		end)
+		
+		blockButton.MouseLeave:Connect(function()
+			blockButton.BackgroundTransparency = 0.9
+			blockStroke.Transparency = 0.7
+		end)
+	end
+	
+	-- Copy button functionality
+	copyButton.MouseButton1Click:Connect(function()
+		setclipboard(text)
+		copyButton.Text = "✓"
+		copyButton.TextColor3 = Color3.fromRGB(100, 255, 100)
+		wait(1)
+		copyButton.Text = "[/]"
+		copyButton.TextColor3 = Color3.fromRGB(0, 255, 255)
+	end)
+	
+	-- Copy button hover effects
+	copyButton.MouseEnter:Connect(function()
+		copyButton.BackgroundTransparency = 0.7
+		copyStroke.Transparency = 0.4
+	end)
+	
+	copyButton.MouseLeave:Connect(function()
+		copyButton.BackgroundTransparency = 0.9
+		copyStroke.Transparency = 0.7
+	end)
+	
+	-- Scroll to bottom
+	consoleFrame.CanvasPosition = Vector2.new(0, consoleFrame.AbsoluteCanvasSize.Y)
+end
+
+-- Function to clear console
+local function clearConsole()
+	for _, child in pairs(consoleFrame:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+	messageCount = 0
+end
+
+-- Hook into output
+game:GetService("LogService").MessageOut:Connect(function(message, messageType)
+	if currentMode == "Console" then
+		if messageType == Enum.MessageType.MessageOutput then
+			addMessage("[OUTPUT]: " .. message, "output")
+		elseif messageType == Enum.MessageType.MessageInfo then
+			addMessage("[INFO]: " .. message, "info")
+		elseif messageType == Enum.MessageType.MessageWarning then
+			addMessage("[WARNING]: " .. message, "warning")
+		elseif messageType == Enum.MessageType.MessageError then
+			addMessage("[ERROR]: " .. message, "error")
+		end
+	end
+end)
+
+-- RemoteSpy functionality
+local hookmetamethod = hookmetamethod or (makewriteable and makereadonly and getrawmetatable) and function(obj, metamethod, func)
+	local old = getrawmetatable(obj)
+	
+	if hookfunction then
+		return hookfunction(old[metamethod], func)
+	else
+		local oldmetamethod = old[metamethod]
+		makewriteable(old)
+		old[metamethod] = func
+		makereadonly(old)
+		return oldmetamethod
+	end
+end
+
+local function setupRemoteSpy()
+	local oldNamecall
+	oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+		local method = getnamecallmethod()
+		local args = {...}
+		
+		if currentMode == "RemoteSpy" and (method == "FireServer" or method == "InvokeServer") then
+			-- Get full remote path
+			local remotePath = self:GetFullName()
+			
+			-- Check if this remote is blocked
+			if not blockedRemotes[remotePath] then
+				-- Format arguments as a table string
+				local argString = "local args = {\n"
+				for i, v in pairs(args) do
+					local valueStr = tostring(v)
+					if type(v) == "string" then
+						valueStr = '"' .. v .. '"'
+					elseif type(v) == "table" then
+						valueStr = "Table"
+					end
+					argString = argString .. "    [" .. i .. "] = " .. valueStr
+					if i < #args then
+						argString = argString .. ","
+					end
+					argString = argString .. "\n"
+				end
+				argString = argString .. "}\n\n"
+				
+				-- Add the remote path
+				argString = argString .. remotePath
+				
+				addMessage(argString, "info", remotePath)
+			end
+		end
+		
+		return oldNamecall(self, ...)
+	end)
+end
+
+-- Setup RemoteSpy
+pcall(setupRemoteSpy)
+
+-- Button functions
+closeButton.MouseButton1Click:Connect(function()
+	mainFrame.Visible = not mainFrame.Visible
+end)
+
+-- Mode dropdown toggle
+local dropdownOpen = false
+modeButton.MouseButton1Click:Connect(function()
+	dropdownOpen = not dropdownOpen
+	dropdownFrame.Visible = dropdownOpen
+	modeButton.Text = dropdownOpen and "Console Mode ▲" or "Console Mode ▼"
+end)
+
+-- Console Mode selection
+consoleOption.MouseButton1Click:Connect(function()
+	currentMode = "Console"
+	modeButton.Text = "Console Mode ▼"
+	titleLabel.Text = "Developer Console"
+	dropdownFrame.Visible = false
+	dropdownOpen = false
+	clearConsole()
+	addMessage("Console Mode activated. Showing all output messages.", "info")
+end)
+
+-- RemoteSpy Mode selection
+remoteOption.MouseButton1Click:Connect(function()
+	currentMode = "RemoteSpy"
+	modeButton.Text = "RemoteSpy Mode ▼"
+	titleLabel.Text = "RemoteSpy Console"
+	dropdownFrame.Visible = false
+	dropdownOpen = false
+	clearConsole()
+	addMessage("RemoteSpy Mode activated. Monitoring remote calls...", "info")
+end)
+
+-- Dropdown hover effects
+consoleOption.MouseEnter:Connect(function()
+	consoleOption.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+end)
+
+consoleOption.MouseLeave:Connect(function()
+	consoleOption.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+end)
+
+remoteOption.MouseEnter:Connect(function()
+	remoteOption.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+end)
+
+remoteOption.MouseLeave:Connect(function()
+	remoteOption.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+end)
+
+-- Mode button hover effects
+modeButton.MouseEnter:Connect(function()
+	modeButton.BackgroundTransparency = 0.7
+	modeStroke.Transparency = 0.1
+	modeShine.BackgroundTransparency = 0.6
+end)
+
+modeButton.MouseLeave:Connect(function()
+	modeButton.BackgroundTransparency = 0.85
+	modeStroke.Transparency = 0.3
+	modeShine.BackgroundTransparency = 0.8
+end)
+
+-- Minimize button functionality
+local isMinimized = false
+minimizeButton.MouseButton1Click:Connect(function()
+	isMinimized = not isMinimized
+	if isMinimized then
+		mainFrame:TweenSize(UDim2.new(0, 600, 0, 30), "Out", "Quad", 0.3, true)
+		consoleFrame.Visible = false
+		minimizeButton.Text = "+"
+	else
+		mainFrame:TweenSize(UDim2.new(0, 600, 0, 400), "Out", "Quad", 0.3, true)
+		consoleFrame.Visible = true
+		minimizeButton.Text = "-"
+	end
+end)
+
+-- Hover effects for minimize button
+minimizeButton.MouseEnter:Connect(function()
+	minimizeButton.BackgroundColor3 = Color3.fromRGB(255, 220, 50)
+end)
+
+minimizeButton.MouseLeave:Connect(function()
+	minimizeButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+end)
+
+-- Hover effects for close button
+closeButton.MouseEnter:Connect(function()
+	closeButton.BackgroundColor3 = Color3.fromRGB(255, 120, 120)
+end)
+
+closeButton.MouseLeave:Connect(function()
+	closeButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+end)
+
+clearButton.MouseButton1Click:Connect(function()
+	clearConsole()
+end)
+
+-- Hover effects for clear button
+clearButton.MouseEnter:Connect(function()
+	clearButton.BackgroundTransparency = 0.7
+	clearStroke.Transparency = 0.1
+	clearShine.BackgroundTransparency = 0.6
+end)
+
+clearButton.MouseLeave:Connect(function()
+	clearButton.BackgroundTransparency = 0.85
+	clearStroke.Transparency = 0.3
+	clearShine.BackgroundTransparency = 0.8
+end)
+
+-- Toggle console with F9 key
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not gameProcessed and input.KeyCode == Enum.KeyCode.F9 then
+		mainFrame.Visible = not mainFrame.Visible
+	end
+end)
+
+-- Welcome message
+addMessage("Developer Console initialized. Press F9 to toggle.", "info")
+addMessage("Use the dropdown menu to switch between Console and RemoteSpy modes.", "info")
+
+-- Test messages (you can remove these)
+wait(1)
+print("Console Mode: Ready to capture output!")
+print("Switch to RemoteSpy Mode to monitor remote calls.")
