@@ -179,7 +179,7 @@ do
 
 local BackToLobbyToggle = Tabs.Utility:AddToggle("BackToLobby", {
     Title = "Back to Lobby When Disconnected",
-    Description = "IF you're using DELTA, Make sure to disable "Verify Teleports", Else it's not going to work.",
+    Description = "IF you're using DELTA, Make sure to disable "Verify Teleports". Else it's not going to work.",
     Default = false
 })
 
