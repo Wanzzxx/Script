@@ -179,11 +179,12 @@ do
 
 local BackToLobbyToggle = Tabs.Utility:AddToggle("BackToLobby", {
     Title = "Back to Lobby When Disconnected",
+    Description = "IF you're using DELTA, Make sure to disable "Verify Teleports", Else it's not going to work.",
     Default = false
 })
 
-TeleportService.TeleportInitFailed:Connect(function(_, result)
-    if Options.BackToLobby.Value then
+game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(obj)
+    if obj.Name == "ErrorPrompt" then
         task.spawn(function()
             while Options.BackToLobby.Value do
                 task.wait(retryDelay)
