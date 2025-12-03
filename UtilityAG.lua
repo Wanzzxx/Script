@@ -52,10 +52,11 @@ game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
 end)
 
 local Tabs = {
+    Tracker = Window:AddTab({ Title = "Your inventory tracker", Icon = "users" }),
     Utility = Window:AddTab({ Title = "Utility", Icon = "wrench" }),
     Joiner = Window:AddTab({ Title = "Joiner", Icon = "layers" }),
     Webhook = Window:AddTab({ Title = "Webhook", Icon = "send" }),
-    Misc = Window:AddTab({ Title = "Misc", Icon = "sparkles" }),
+    Misc = Window:AddTab({ Title = "Misc", Icon = "plus" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
