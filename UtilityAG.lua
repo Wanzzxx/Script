@@ -182,8 +182,8 @@ local BackToLobbyToggle = Tabs.Utility:AddToggle("BackToLobby", {
     Default = false
 })
 
-game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(obj)
-    if obj.Name == "ErrorPrompt" and Options.BackToLobby.Value then
+TeleportService.TeleportInitFailed:Connect(function(player, result)
+    if Options.BackToLobby.Value then
         task.spawn(function()
             while Options.BackToLobby.Value do
                 task.wait(retryDelay)
