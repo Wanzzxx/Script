@@ -54,6 +54,7 @@ end)
 local Tabs = {
     Tracker = Window:AddTab({ Title = "Tracker", Icon = "users" }),
     Utility = Window:AddTab({ Title = "Utility", Icon = "wrench" }),
+    Shop = Window:AddTab({ Title = "Shop", Icon = "shopping-cart" }),
     Joiner = Window:AddTab({ Title = "Joiner", Icon = "layers" }),
     Webhook = Window:AddTab({ Title = "Webhook", Icon = "send" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "plus" }),
@@ -261,6 +262,146 @@ do
             else
                 challengeFired = false
                 startFired = false
+            end
+            
+            if Fluent.Unloaded then break end
+        end
+    end)
+end
+
+do
+    
+    local function getCSMShopItems()
+        local items = {}
+        local csmShop = LocalPlayer:FindFirstChild("NpcShop") and LocalPlayer.NpcShop:FindFirstChild("ChainsawMan")
+        if csmShop then
+            for _, item in pairs(csmShop:GetChildren()) do
+                if item:IsA("Folder") and item:FindFirstChild("Price") then
+                    table.insert(items, item.Name)
+                end
+            end
+        end
+        return items
+    end
+    
+    local function getCapsules()
+        local capsules = {}
+        if LocalPlayer:FindFirstChild("ItemsInventory") then
+            for _, item in pairs(LocalPlayer.ItemsInventory:GetChildren()) do
+                if item.Name:find("Capsule") and item:FindFirstChild("Amount") then
+                    table.insert(capsules, item.Name)
+                end
+            end
+        end
+        return capsules
+    end
+    
+    local CSMShopDropdown = Tabs.Shop:AddDropdown("AutoBuyCSMShop", {
+        Title = "Auto Buy CSM Shop",
+        Description = "Select item to auto-buy",
+        Values = getCSMShopItems(),
+        Multi = false,
+        Default = nil,
+    })
+    
+    local BuyAmountInput = Tabs.Shop:AddInput("BuyAmountItems", {
+        Title = "Buy Amount Items",
+        Default = "1",
+        Placeholder = "Amount to buy per cycle",
+        Numeric = true
+    })
+    
+    local StartBuyingToggle = Tabs.Shop:AddToggle("StartBuying", {
+        Title = "Start Buying",
+        Default = false
+    })
+    
+    local CapsuleDropdown = Tabs.Shop:AddDropdown("AutoOpenCapsule", {
+        Title = "Auto Open Capsule",
+        Description = "Select capsule to auto-open",
+        Values = getCapsules(),
+        Multi = false,
+        Default = nil,
+    })
+    
+    local UseAmountInput = Tabs.Shop:AddInput("UseAmountCapsule", {
+        Title = "Use Amount Capsule",
+        Default = "1",
+        Placeholder = "Amount to use per cycle",
+        Numeric = true
+    })
+    
+    local StartOpeningToggle = Tabs.Shop:AddToggle("StartOpening", {
+        Title = "Start Opening",
+        Default = false
+    })
+    
+    Tabs.Shop:AddButton({
+        Title = "Refresh Lists",
+        Description = "Refresh shop items and capsules",
+        Callback = function()
+            CSMShopDropdown:SetValues(getCSMShopItems())
+            CapsuleDropdown:SetValues(getCapsules())
+            Fluent:Notify({
+                Title = "Refreshed",
+                Content = "Shop and capsule lists updated",
+                Duration = 3
+            })
+        end
+    })
+    
+    task.spawn(function()
+        while true do
+            task.wait(1)
+            
+            if Options.StartBuying.Value then
+                local selectedItem = Options.AutoBuyCSMShop.Value
+                local buyAmount = tonumber(Options.BuyAmountItems.Value) or 1
+                
+                if selectedItem and selectedItem:find("Capsule") then
+                    local capsuleItem = LocalPlayer.ItemsInventory:FindFirstChild(selectedItem)
+                    if capsuleItem and capsuleItem:FindFirstChild("Amount") then
+                        local currentAmount = capsuleItem.Amount.Value
+                        local maxCapacity = 1000
+                        
+                        if currentAmount < maxCapacity then
+                            local smartBuyAmount = math.min(buyAmount, maxCapacity - currentAmount)
+                            
+                            pcall(function()
+                                ReplicatedStorage.PlayMode.Events.EventShop:InvokeServer(
+                                    smartBuyAmount,
+                                    selectedItem,
+                                    "ChainsawMan"
+                                )
+                            end)
+                        end
+                    end
+                elseif selectedItem then
+                    pcall(function()
+                        ReplicatedStorage.PlayMode.Events.EventShop:InvokeServer(
+                            buyAmount,
+                            selectedItem,
+                            "ChainsawMan"
+                        )
+                    end)
+                end
+            end
+            
+            if Options.StartOpening.Value then
+                local selectedCapsule = Options.AutoOpenCapsule.Value
+                local useAmount = tonumber(Options.UseAmountCapsule.Value) or 1
+                
+                if selectedCapsule then
+                    local capsuleItem = LocalPlayer.ItemsInventory:FindFirstChild(selectedCapsule)
+                    if capsuleItem and capsuleItem:FindFirstChild("Amount") and capsuleItem.Amount.Value > 0 then
+                        pcall(function()
+                            ReplicatedStorage.PlayMode.Events.Use:InvokeServer(
+                                selectedCapsule,
+                                useAmount
+                            )
+                        end)
+                    end
+                end
             end
             
             if Fluent.Unloaded then break end
