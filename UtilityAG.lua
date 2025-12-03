@@ -177,47 +177,28 @@ do
         Default = false
     })
 
-    local BackToLobbyToggle = Tabs.Utility:AddToggle("BackToLobby", {
-        Title = "Back to Lobby When Disconnected",
-        Default = false
-    })
+local BackToLobbyToggle = Tabs.Utility:AddToggle("BackToLobby", {
+    Title = "Back to Lobby When Disconnected",
+    Default = false
+})
 
-    task.spawn(function()
-        local errorPromptConnection
-        while true do
-            task.wait(1)
-            
-            if Options.BackToLobby.Value then
-                if not errorPromptConnection then
-                    errorPromptConnection = game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(obj)
-                        if obj.Name == "ErrorPrompt" and Options.BackToLobby.Value then
-                            task.spawn(function()
-                                while Options.BackToLobby.Value do
-                                    task.wait(retryDelay)
-                                    pcall(function()
-                                        TeleportService:Teleport(targetPlaceId, LocalPlayer)
-                                    end)
-                                end
-                            end)
-                        end
-                    end)
-                end
-            else
-                if errorPromptConnection then
-                    errorPromptConnection:Disconnect()
-                    errorPromptConnection = nil
-                end
+BackToLobbyToggle:OnChanged(function()
+    if Options.BackToLobby.Value then
+        game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(obj)
+            if obj.Name == "ErrorPrompt" and Options.BackToLobby.Value then
+                task.spawn(function()
+                    while Options.BackToLobby.Value do
+                        task.wait(retryDelay)
+                        pcall(function()
+                            TeleportService:Teleport(targetPlaceId, LocalPlayer)
+                        end)
+                    end
+                end)
             end
-            
-            if Fluent.Unloaded then 
-                if errorPromptConnection then
-                    errorPromptConnection:Disconnect()
-                end
-                break 
-            end
-        end
-    end)
-
+        end)
+    end
+end)
+    
     task.spawn(function()
         while true do
             task.wait(0.5)
