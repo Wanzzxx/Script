@@ -390,6 +390,7 @@ task.spawn(function()
         if Fluent.Unloaded then break end
     end
 end)
+end
 
 do
     Tabs.Joiner:AddParagraph({
