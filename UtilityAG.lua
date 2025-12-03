@@ -555,11 +555,13 @@ do
                         print("Sending webhook with description:\n" .. description)
                         
                         local embed = {
-                            ["embeds"] = {{
+                            ["embeds"] = {
+                                    {
                                 ["description"] = description,
                                 ["color"] = embedColor,
                                 ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
-                            }}
+                            }
+                                }
                         }
                         
                         local success, response = pcall(function()
