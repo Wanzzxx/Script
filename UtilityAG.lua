@@ -179,7 +179,7 @@ do
 
 local BackToLobbyToggle = Tabs.Utility:AddToggle("BackToLobby", {
     Title = "Back to Lobby When Disconnected",
-    Description = "IF you're using DELTA, Make sure to disable "Verify Teleports". Else it's not going to work.",
+    Description = "Disable *Verify Teleports* If you're using delta, else it's not going to work.",
     Default = false
 })
 
@@ -193,6 +193,8 @@ game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(func
                 end)
             end
         end)
+    end
+end)
     
     task.spawn(function()
         while true do
