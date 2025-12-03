@@ -253,16 +253,17 @@ end
 do
     
     local function getCSMShopItems()
-        local items = {}
-        local csmShop = LocalPlayer:FindFirstChild("NpcShop") and LocalPlayer.NpcShop:FindFirstChild("ChainsawMan")
-        if csmShop then
-            for _, item in pairs(csmShop:GetChildren()) do
-                if item:IsA("Folder") and item:FindFirstChild("Price") then
-                    table.insert(items, item.Name)
-                end
+    local items = {}
+    local csmShop = LocalPlayer:FindFirstChild("NpcShop") and LocalPlayer.NpcShop:FindFirstChild("ChainsawMan")
+    if csmShop then
+        for _, item in pairs(csmShop:GetChildren()) do
+            if item:IsA("Folder") and item:FindFirstChild("Price") then
+                local price = item.Price.Value
+                table.insert(items, item.Name .. " - " .. formatNumber(price))
             end
         end
-        return items
+    end
+    return items
     end
     
     local function getCapsules()
@@ -339,34 +340,56 @@ task.spawn(function()
             local selectedItem = Options.AutoBuyCSMShop.Value
             local buyAmount = tonumber(Options.BuyAmountItems.Value) or 1
             
-            if selectedItem and selectedItem:find("Capsule") then
-                local currentAmount = 0
-                local capsuleItem = LocalPlayer.ItemsInventory:FindFirstChild(selectedItem)
+            if selectedItem then
+                local itemName = selectedItem:match("^(.+)%s*-%s*%d")
+                if not itemName then itemName = selectedItem end
                 
-                if capsuleItem and capsuleItem:FindFirstChild("Amount") then
-                    currentAmount = capsuleItem.Amount.Value
+                local csmCoin = LocalPlayer.ItemsInventory:FindFirstChild("CSM Coin")
+                local currentTokens = csmCoin and csmCoin:FindFirstChild("Amount") and csmCoin.Amount.Value or 0
+                
+                local itemPrice = 0
+                local csmShop = LocalPlayer:FindFirstChild("NpcShop") and LocalPlayer.NpcShop:FindFirstChild("ChainsawMan")
+                if csmShop and csmShop:FindFirstChild(itemName) and csmShop[itemName]:FindFirstChild("Price") then
+                    itemPrice = csmShop[itemName].Price.Value
                 end
                 
-                local maxCapacity = 1000
-                if currentAmount < maxCapacity then
-                    local smartBuyAmount = math.min(buyAmount, maxCapacity - currentAmount)
+                local affordableAmount = itemPrice > 0 and math.floor(currentTokens / itemPrice) or 0
+                
+                if itemName:find("Capsule") then
+                    local currentAmount = 0
+                    local capsuleItem = LocalPlayer.ItemsInventory:FindFirstChild(itemName)
                     
-                    pcall(function()
-                        ReplicatedStorage.PlayMode.Events.EventShop:InvokeServer(
-                            smartBuyAmount,
-                            selectedItem,
-                            "ChainsawMan"
-                        )
-                    end)
+                    if capsuleItem and capsuleItem:FindFirstChild("Amount") then
+                        currentAmount = capsuleItem.Amount.Value
+                    end
+                    
+                    local maxCapacity = 1000
+                    local spaceAvailable = maxCapacity - currentAmount
+                    
+                    if spaceAvailable > 0 and affordableAmount > 0 then
+                        local finalBuyAmount = math.min(buyAmount, affordableAmount, spaceAvailable)
+                        
+                        pcall(function()
+                            ReplicatedStorage.PlayMode.Events.EventShop:InvokeServer(
+                                finalBuyAmount,
+                                itemName,
+                                "ChainsawMan"
+                            )
+                        end)
+                    end
+                else
+                    if affordableAmount > 0 then
+                        local finalBuyAmount = math.min(buyAmount, affordableAmount)
+                        
+                        pcall(function()
+                            ReplicatedStorage.PlayMode.Events.EventShop:InvokeServer(
+                                finalBuyAmount,
+                                itemName,
+                                "ChainsawMan"
+                            )
+                        end)
+                    end
                 end
-            elseif selectedItem then
-                pcall(function()
-                    ReplicatedStorage.PlayMode.Events.EventShop:InvokeServer(
-                        buyAmount,
-                        selectedItem,
-                        "ChainsawMan"
-                    )
-                end)
             end
         end
         
