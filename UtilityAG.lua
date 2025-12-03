@@ -100,6 +100,68 @@ local function formatNumber(num)
 end
 
 do
+    local EventCurrencyParagraph = Tabs.Tracker:AddParagraph({
+        Title = "Event Currency Tracker",
+        Content = "Getting your data..."
+    })
+
+    local MainCurrencyParagraph = Tabs.Tracker:AddParagraph({
+        Title = "Main Currency Tracker",
+        Content = "Getting your data..."
+    })
+
+    local allowedMainCurrency = {
+        "Coins",
+        "Mushroom",
+        "MoonNight",
+        "Reroll_Tokens",
+        "StatReroll",
+        "SuperStatReroll"
+    }
+
+    task.spawn(function()
+        while true do
+            task.wait(1)
+            
+            local eventContent = ""
+            if LocalPlayer:FindFirstChild("ItemsInventory") then
+                for _, item in pairs(LocalPlayer.ItemsInventory:GetChildren()) do
+                    if item.Name:find("Coin") and item:FindFirstChild("Amount") then
+                        local amount = formatNumber(item.Amount.Value)
+                        eventContent = eventContent .. item.Name .. ": " .. amount .. "\n"
+                    end
+                end
+            end
+            
+            if eventContent == "" then
+                eventContent = "No event coins found"
+            end
+            
+            EventCurrencyParagraph:SetDesc(eventContent)
+            
+            local mainContent = ""
+            if LocalPlayer:FindFirstChild("Data") then
+                for _, currencyName in ipairs(allowedMainCurrency) do
+                    local currencyObj = LocalPlayer.Data:FindFirstChild(currencyName)
+                    if currencyObj and currencyObj:IsA("NumberValue") then
+                        local amount = formatNumber(currencyObj.Value)
+                        mainContent = mainContent .. currencyName .. ": " .. amount .. "\n"
+                    end
+                end
+            end
+            
+            if mainContent == "" then
+                mainContent = "No currency data found"
+            end
+            
+            MainCurrencyParagraph:SetDesc(mainContent)
+            
+            if Fluent.Unloaded then break end
+        end
+    end)
+end
+
+do
     local ChallengeDropdown = Tabs.Utility:AddDropdown("SelectChallenge", {
         Title = "Select Challenge",
         Description = "Choose your challenge type",
