@@ -332,20 +332,26 @@ do
         end
     })
 
+-- Replace the buying task.spawn section with this fixed version:
+
 task.spawn(function()
     while true do
-        task.wait(1)
+        task.wait(0.1)
         
         if Options.StartBuying.Value then
             local selectedItem = Options.AutoBuyCSMShop.Value
             local buyAmount = tonumber(Options.BuyAmountItems.Value) or 1
             
             if selectedItem then
-                local itemName = selectedItem:match("^(.+)%s*-%s*%d")
-                if not itemName then itemName = selectedItem end
+                local itemName = selectedItem:match("^(.-)%s*%-%s*") or selectedItem
+                itemName = itemName:gsub("%s+$", "")
+                
+                print("Buying item:", itemName)
                 
                 local csmCoin = LocalPlayer.ItemsInventory:FindFirstChild("CSM Coin")
                 local currentTokens = csmCoin and csmCoin:FindFirstChild("Amount") and csmCoin.Amount.Value or 0
+                
+                print("Current tokens:", currentTokens)
                 
                 local itemPrice = 0
                 local csmShop = LocalPlayer:FindFirstChild("NpcShop") and LocalPlayer.NpcShop:FindFirstChild("ChainsawMan")
@@ -353,7 +359,11 @@ task.spawn(function()
                     itemPrice = csmShop[itemName].Price.Value
                 end
                 
+                print("Item price:", itemPrice)
+                
                 local affordableAmount = itemPrice > 0 and math.floor(currentTokens / itemPrice) or 0
+                
+                print("Affordable amount:", affordableAmount)
                 
                 if itemName:find("Capsule") then
                     local currentAmount = 0
@@ -366,8 +376,12 @@ task.spawn(function()
                     local maxCapacity = 1000
                     local spaceAvailable = maxCapacity - currentAmount
                     
+                    print("Capsule space available:", spaceAvailable)
+                    
                     if spaceAvailable > 0 and affordableAmount > 0 then
                         local finalBuyAmount = math.min(buyAmount, affordableAmount, spaceAvailable)
+                        
+                        print("Buying", finalBuyAmount, "capsules")
                         
                         pcall(function()
                             ReplicatedStorage.PlayMode.Events.EventShop:InvokeServer(
@@ -380,6 +394,8 @@ task.spawn(function()
                 else
                     if affordableAmount > 0 then
                         local finalBuyAmount = math.min(buyAmount, affordableAmount)
+                        
+                        print("Buying", finalBuyAmount, "items")
                         
                         pcall(function()
                             ReplicatedStorage.PlayMode.Events.EventShop:InvokeServer(
@@ -414,6 +430,7 @@ task.spawn(function()
     end
 end)
 end
+
 
 do
     Tabs.Joiner:AddParagraph({
