@@ -14,8 +14,8 @@ local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/d
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Fluent " .. Fluent.Version,
-    SubTitle = "by dawid",
+    Title = "Anime Guardians Helper Script",
+    SubTitle = "Half Human & Half AI",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
@@ -52,7 +52,7 @@ game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
 end)
 
 local Tabs = {
-    Tracker = Window:AddTab({ Title = "Your inventory tracker", Icon = "users" }),
+    Tracker = Window:AddTab({ Title = "Tracker", Icon = "users" }),
     Utility = Window:AddTab({ Title = "Utility", Icon = "wrench" }),
     Joiner = Window:AddTab({ Title = "Joiner", Icon = "layers" }),
     Webhook = Window:AddTab({ Title = "Webhook", Icon = "send" }),
@@ -102,12 +102,12 @@ end
 
 do
     local EventCurrencyParagraph = Tabs.Tracker:AddParagraph({
-        Title = "Event Currency Tracker",
+        Title = "Event Currency",
         Content = "Getting your data..."
     })
 
     local MainCurrencyParagraph = Tabs.Tracker:AddParagraph({
-        Title = "Main Currency Tracker",
+        Title = "Main Currency",
         Content = "Getting your data..."
     })
 
