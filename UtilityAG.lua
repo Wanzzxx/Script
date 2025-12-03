@@ -731,7 +731,7 @@ do
                             description = pingText .. "\n\n"
                         end
                         
-                        description = description .. "**Anime Guardian**\n\n||" .. LocalPlayer.Name .. "||\n\n**Result:**\n"
+                        description = description .. "**Anime Guardians**\n\n||" .. LocalPlayer.Name .. "||\n\n**Result:**\n"
                         description = description .. difficulty .. " (" .. stageName .. " - " .. actName .. ") " .. context .. "\n"
                         description = description .. "Time Cleared: " .. playTime .. "\n\n**Rewards:**\n"
                         
