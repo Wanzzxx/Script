@@ -330,65 +330,66 @@ do
             })
         end
     })
-    
-    task.spawn(function()
-        while true do
-            task.wait(1)
+
+task.spawn(function()
+    while true do
+        task.wait(1)
+        
+        if Options.StartBuying.Value then
+            local selectedItem = Options.AutoBuyCSMShop.Value
+            local buyAmount = tonumber(Options.BuyAmountItems.Value) or 1
             
-            if Options.StartBuying.Value then
-                local selectedItem = Options.AutoBuyCSMShop.Value
-                local buyAmount = tonumber(Options.BuyAmountItems.Value) or 1
+            if selectedItem and selectedItem:find("Capsule") then
+                local currentAmount = 0
+                local capsuleItem = LocalPlayer.ItemsInventory:FindFirstChild(selectedItem)
                 
-                if selectedItem and selectedItem:find("Capsule") then
-                    local capsuleItem = LocalPlayer.ItemsInventory:FindFirstChild(selectedItem)
-                    if capsuleItem and capsuleItem:FindFirstChild("Amount") then
-                        local currentAmount = capsuleItem.Amount.Value
-                        local maxCapacity = 1000
-                        
-                        if currentAmount < maxCapacity then
-                            local smartBuyAmount = math.min(buyAmount, maxCapacity - currentAmount)
-                            
-                            pcall(function()
-                                ReplicatedStorage.PlayMode.Events.EventShop:InvokeServer(
-                                    smartBuyAmount,
-                                    selectedItem,
-                                    "ChainsawMan"
-                                )
-                            end)
-                        end
-                    end
-                elseif selectedItem then
+                if capsuleItem and capsuleItem:FindFirstChild("Amount") then
+                    currentAmount = capsuleItem.Amount.Value
+                end
+                
+                local maxCapacity = 1000
+                if currentAmount < maxCapacity then
+                    local smartBuyAmount = math.min(buyAmount, maxCapacity - currentAmount)
+                    
                     pcall(function()
                         ReplicatedStorage.PlayMode.Events.EventShop:InvokeServer(
-                            buyAmount,
+                            smartBuyAmount,
                             selectedItem,
                             "ChainsawMan"
                         )
                     end)
                 end
+            elseif selectedItem then
+                pcall(function()
+                    ReplicatedStorage.PlayMode.Events.EventShop:InvokeServer(
+                        buyAmount,
+                        selectedItem,
+                        "ChainsawMan"
+                    )
+                end)
             end
+        end
+        
+        if Options.StartOpening.Value then
+            local selectedCapsule = Options.AutoOpenCapsule.Value
+            local useAmount = tonumber(Options.UseAmountCapsule.Value) or 1
             
-            if Options.StartOpening.Value then
-                local selectedCapsule = Options.AutoOpenCapsule.Value
-                local useAmount = tonumber(Options.UseAmountCapsule.Value) or 1
-                
-                if selectedCapsule then
-                    local capsuleItem = LocalPlayer.ItemsInventory:FindFirstChild(selectedCapsule)
-                    if capsuleItem and capsuleItem:FindFirstChild("Amount") and capsuleItem.Amount.Value > 0 then
-                        pcall(function()
-                            ReplicatedStorage.PlayMode.Events.Use:InvokeServer(
-                                selectedCapsule,
-                                useAmount
-                            )
-                        end)
-                    end
+            if selectedCapsule then
+                local capsuleItem = LocalPlayer.ItemsInventory:FindFirstChild(selectedCapsule)
+                if capsuleItem and capsuleItem:FindFirstChild("Amount") and capsuleItem.Amount.Value > 0 then
+                    pcall(function()
+                        ReplicatedStorage.PlayMode.Events.Use:InvokeServer(
+                            selectedCapsule,
+                            useAmount
+                        )
+                    end)
                 end
             end
-            
-            if Fluent.Unloaded then break end
         end
-    end)
-end
+        
+        if Fluent.Unloaded then break end
+    end
+end)
 
 do
     Tabs.Joiner:AddParagraph({
