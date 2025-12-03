@@ -182,17 +182,13 @@ local BackToLobbyToggle = Tabs.Utility:AddToggle("BackToLobby", {
     Default = false
 })
 
-BackToLobbyToggle:OnChanged(function()
-    if Options.BackToLobby.Value then
-        game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(obj)
-            if obj.Name == "ErrorPrompt" and Options.BackToLobby.Value then
-                task.spawn(function()
-                    while Options.BackToLobby.Value do
-                        task.wait(retryDelay)
-                        pcall(function()
-                            TeleportService:Teleport(targetPlaceId, LocalPlayer)
-                        end)
-                    end
+game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(obj)
+    if obj.Name == "ErrorPrompt" and Options.BackToLobby.Value then
+        task.spawn(function()
+            while Options.BackToLobby.Value do
+                task.wait(retryDelay)
+                pcall(function()
+                    TeleportService:Teleport(targetPlaceId, LocalPlayer)
                 end)
             end
         end)
