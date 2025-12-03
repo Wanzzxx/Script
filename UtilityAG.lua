@@ -182,7 +182,7 @@ local BackToLobbyToggle = Tabs.Utility:AddToggle("BackToLobby", {
     Default = false
 })
 
-TeleportService.TeleportInitFailed:Connect(function(player, result)
+TeleportService.TeleportInitFailed:Connect(function(_, result)
     if Options.BackToLobby.Value then
         task.spawn(function()
             while Options.BackToLobby.Value do
