@@ -730,44 +730,54 @@ do
                             end
                             description = pingText .. "\n\n"
                         end
-                        
-                        description = description .. "**Anime Guardians**\n\n||" .. LocalPlayer.Name .. "||\n\n**Result:**\n"
-                        description = description .. difficulty .. " (" .. stageName .. " - " .. actName .. ") " .. context .. "\n"
-                        description = description .. "Time Cleared: " .. playTime .. "\n\n**Rewards:**\n"
-                        
-                        for _, reward in ipairs(rewardsData) do
-                            if reward.isUnit then
-                                description = description .. reward.quantity .. " " .. reward.name .. "\n"
-                            elseif reward.name == "Gems" then
-                                description = description .. reward.quantity .. " " .. reward.name .. "\n"
-                            else
-                                local formattedAmount = formatNumber(reward.currentAmount)
-                                description = description .. reward.quantity .. " " .. reward.name .. " [" .. formattedAmount .. "]\n"
-                            end
-                        end
-                        
-                        for _, unitName in ipairs(unitsObtained) do
-                            description = description .. "+" .. unitName .. "\n"
-                        end
-                        
-                        if description == "" then
-                            description = "No rewards detected"
-                        end
-                        
-                        local embedColor = 16777215
-                        if context:lower():find("fail") or context:lower():find("defeat") or context:lower():find("loss") then
-                            embedColor = 16711680
-                        end
-                        
-                        print("Sending webhook with description:\n" .. description)
-                        
-                        local embed = {
-                            ["embeds"] = {{
-                                ["description"] = description,
-                                ["color"] = embedColor,
-                                ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
-                          }}
-                        }
+
+local description = "**Anime Guardian**\n\n||" .. LocalPlayer.Name .. "||\n\n**Result:**\n"
+description = description .. difficulty .. " (" .. stageName .. " - " .. actName .. ") " .. context .. "\n"
+description = description .. "Time Cleared: " .. playTime .. "\n\n**Rewards:**\n"
+
+for _, reward in ipairs(rewardsData) do
+    if reward.isUnit then
+        description = description .. reward.quantity .. " " .. reward.name .. "\n"
+    elseif reward.name == "Gems" then
+        description = description .. reward.quantity .. " " .. reward.name .. "\n"
+    else
+        local formattedAmount = formatNumber(reward.currentAmount)
+        description = description .. reward.quantity .. " " .. reward.name .. " [" .. formattedAmount .. "]\n"
+    end
+end
+
+for _, unitName in ipairs(unitsObtained) do
+    description = description .. "+" .. unitName .. "\n"
+end
+
+if description == "" then
+    description = "No rewards detected"
+end
+
+local embedColor = 16777215
+if context:lower():find("fail") or context:lower():find("defeat") or context:lower():find("loss") then
+    embedColor = 16711680
+end
+
+local webhookContent = ""
+if hasSecretDrop then
+    if Options.PingOnSecret.Value and Options.PingOnSecret.Value ~= "" then
+        webhookContent = "<@" .. Options.PingOnSecret.Value .. ">"
+    else
+        webhookContent = "@everyone"
+    end
+end
+
+print("Sending webhook with description:\n" .. description)
+
+local embed = {
+    ["content"] = webhookContent,
+    ["embeds"] = {{
+        ["description"] = description,
+        ["color"] = embedColor,
+        ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
+    }}
+                            }
                         
                         local success, response = pcall(function()
                             local requestFunc = syn and syn.request or http_request or request
