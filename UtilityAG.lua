@@ -413,6 +413,71 @@ end)
 end
 
 do
+
+local WheelDropdown = Tabs.Shop:AddDropdown("SelectWheel", {
+    Title = "Select Wheel",
+    Values = {"Kafka Wheel", "Skin Wheel"},
+    Multi = false,
+    Default = 1
+})
+
+local QuantityDropdown = Tabs.Shop:AddDropdown("SelectQuantity", {
+    Title = "Select Quantity Mode",
+    Values = {"1 - 1x Spin", "2 - 10x Spin"},
+    Multi = false,
+    Default = 1
+})
+
+local StartSpinToggle = Tabs.Shop:AddToggle("StartSpinWheel", {
+    Title = "Start Spin Wheel",
+    Default = false
+})
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+
+		if Options.StartSpinWheel.Value then
+			local selectedWheel = Options.SelectWheel.Value
+			local selectedQty = Options.SelectQuantity.Value
+
+			if selectedWheel and selectedQty then
+				local qtyData = {
+					["1 - 1x Spin"] = 1,
+					["2 - 10x Spin"] = 2,
+				}
+
+				local qty = qtyData[selectedQty] or 1
+
+				local wheelID = nil
+				if selectedWheel == "Kafka Wheel" then
+					wheelID = "Kafka Wheel"
+				elseif selectedWheel == "Skin Wheel" then
+					wheelID = "Skin Wheel"
+				end
+
+				if wheelID then
+					local args = {
+						wheelID,
+						"Normal",
+						qty
+					}
+
+					pcall(function()
+						game:GetService("ReplicatedStorage")
+							:WaitForChild("Remotes")
+							:WaitForChild("System")
+							:WaitForChild("WheelSpin")
+							:FireServer(unpack(args))
+					end)
+				end
+			end
+		end
+	end
+end)
+end
+
+do
     Tabs.Joiner:AddParagraph({
         Title = "Event Joiner",
         Content = "Quick join for OPM and Event stages"
