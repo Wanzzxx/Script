@@ -1,0 +1,119 @@
+local player = game:GetService("Players").LocalPlayer
+local rs = game:GetService("ReplicatedStorage")
+local sg = game:GetService("StarterGui")
+
+repeat wait() until player:GetAttribute("TraitRerolls") ~= nil
+repeat wait() until player.PlayerGui:FindFirstChild("HUD")
+repeat wait() until player.PlayerGui:FindFirstChild("Windows")
+
+local function notify(title, text)
+    sg:SetCore("SendNotification", {Title = title, Text = text, Duration = 5})
+end
+
+notify("Step 1", "Setting music scores...")
+
+local tracks = {"Skele King's Theme", "Vanguards!", "Selfish Intentions"}
+local diffs = {"Easy", "Medium", "Hard", "Expert"}
+local scores = {Easy = 200000, Medium = 200000, Hard = 200000, Expert = 200000}
+
+for _, track in ipairs(tracks) do
+    for _, diff in ipairs(diffs) do
+        rs.Networking.Events.JamSession.UpdateScore:FireServer(track, diff, scores[diff])
+        wait(0.1)
+    end
+end
+
+notify("Step 2", "Purchasing trait rerolls...")
+
+local purchaseAmounts = {100, 100, 55}
+for _, amount in ipairs(purchaseAmounts) do
+    local args = {
+        [1] = "Purchase",
+        [2] = {
+            [1] = "Skele King's Jam Session",
+            [2] = "TraitRerolls",
+            [3] = amount
+        }
+    }
+    rs.Networking.Events.EventsShopEvent:FireServer(unpack(args))
+    wait(0.5)
+end
+
+repeat
+    wait(0.5)
+until player:GetAttribute("TraitRerolls") and player:GetAttribute("TraitRerolls") >= 255
+
+local claimArgs = {
+    [1] = "Claim",
+    [2] = 1
+}
+rs.Networking.NewPlayerRewardsEvent:FireServer(unpack(claimArgs))
+
+notify("Step 3", "Finding Hollowseph...")
+
+local cache = player.PlayerGui.Windows.GlobalInventory.Holder.LeftContainer.FakeScrollingFrame.Items.CacheContainer
+
+local function findHollowseph()
+    for _, item in pairs(cache:GetChildren()) do
+        if item:IsA("Frame") then
+            for _, child in pairs(item:GetDescendants()) do
+                if child.Name == "Hollowseph" then
+                    return item.Name
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local uniqueID
+repeat
+    uniqueID = findHollowseph()
+    if not uniqueID then wait(1) end
+until uniqueID
+
+notify("Found", "Hollowseph")
+
+while true do
+    local traitRerolls = player:GetAttribute("TraitRerolls")
+    
+    if not traitRerolls or traitRerolls <= 0 then
+        local traitIcon = cache[uniqueID].Container.TraitIcon
+        
+        if traitIcon:FindFirstChild("Monarch") then
+            notify("Stopped", "Got: Monarch\nRerolls Left: " .. (traitRerolls or 0))
+        else
+            notify("Stopped", "Don't get anything.")
+            for i = 3, 1, -1 do
+                notify("Kicking in", tostring(i))
+                wait(1)
+            end
+            player:Kick("Don't get monarch.")
+        end
+        break
+    end
+    
+    local args = {
+        [1] = "Reroll",
+        [2] = {
+            [1] = uniqueID,
+            [2] = "Trait"
+        }
+    }
+    
+    rs.Networking.Units.TraitEvent:FireServer(unpack(args))
+    wait(0.4)
+end
+    end
+    
+    local args = {
+        [1] = "Reroll",
+        [2] = {
+            [1] = uniqueID,
+            [2] = "Trait"
+        }
+    }
+    
+    rs.Networking.Units.TraitEvent:FireServer(unpack(args))
+    wait(0.4)
+end
