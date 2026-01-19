@@ -92,6 +92,12 @@ local eventStageMap = {
     ["World Boss (Shinbara)"] = "Shinbara"
 }
 
+local fateEvent = {
+	["Gilgamesh"] = 1,
+	["Corrupt Saber"] = 2,
+	["Zero Two"] = 3
+}
+
 local function formatNumber(num)
     local formatted = tostring(num)
     while true do
@@ -523,6 +529,46 @@ do
             if Fluent.Unloaded then break end
         end
     end)
+
+	local FateDropdown = Tabs.Joiner:AddDropdown("SelectFate", {
+		Title = "Select Join Fate Event",
+		Description = "Choose which fate event to host",
+		Values = {"Gilgamesh", "Corrupt Saber", "Zero Two"},
+		Multi = false,
+		Default = nil,
+	})
+
+	local JoinFateToggle = Tabs.Joiner:AddToggle("FateToggle", {
+			Title = "Start",
+			Default = false
+		})
+
+	task.spawn(function()
+			while true do
+				task.wait(1)
+				if Options.FateToggle.Value then
+				    local selectedEvent = Options.SelectFate.Value
+					if selectedEvent and fateEvent[selectedEvent] then
+						local fateNumber = fateEvent[selectedEvent]
+						pcall(function()
+								ReplicatedStorage.Remote.RoomFunction:InvokeServer("host", {
+										["stage"] = "Celestial Castle of Aetherion",
+										["friendOnly"] = false,
+										["act"] = fateNumber
+									})
+							   end)
+
+						task.wait(0.5)
+
+						pcall(function()
+								ReplicatedStorage.Remote.RoomFunction:InvokeServer("start")
+							end)
+					end
+				end
+
+				if Fluent.Unloaded then break end
+			end
+		end)
 
     local JoinEventDropdown = Tabs.Joiner:AddDropdown("SelectJoinEvent", {
         Title = "Select Join Event",
