@@ -764,7 +764,7 @@ do
                         local playTime = playTimeRaw:gsub("Play Time: ", "")
                         
                         local scrollingFrame = endGUI:FindFirstChild("Main") and endGUI.Main:FindFirstChild("Stage") and endGUI.Main.Stage:FindFirstChild("Rewards") and endGUI.Main.Stage.Rewards:FindFirstChild("ScrollingFrame")
-                        
+
 if scrollingFrame then
     print("ScrollingFrame found!")
     for _, rewardFrame in pairs(scrollingFrame:GetChildren()) do
@@ -792,10 +792,15 @@ if scrollingFrame then
                 end
                 
                 local currentAmount = 0
+                local dataItemName = itemName
+                
+                if itemName == "TraitReroll" then
+                    dataItemName = "Reroll_Tokens"
+                end
                 
                 pcall(function()
-                    if LocalPlayer.Data:FindFirstChild(itemName) then
-                        local dataValue = LocalPlayer.Data[itemName]
+                    if LocalPlayer.Data:FindFirstChild(dataItemName) then
+                        local dataValue = LocalPlayer.Data[dataItemName]
                         if dataValue:IsA("NumberValue") or dataValue:IsA("IntValue") then
                             currentAmount = dataValue.Value
                         end
@@ -823,7 +828,7 @@ if scrollingFrame then
     end
 else
     print("ScrollingFrame not found!")
-							end
+end
                         
                         local unitsConnection
                         unitsConnection = LocalPlayer.UnitsInventory.ChildAdded:Connect(function(unitFrame)
