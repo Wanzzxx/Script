@@ -892,32 +892,6 @@ end
 print("Sending webhook with description:\n" .. description)
 
 -- Replace the getItemImage function and embed creation:
-
-local function getItemImage(itemName)
-    local itemStorage = ReplicatedStorage:FindFirstChild("ItemStorage")
-    if itemStorage then
-        local item = itemStorage:FindFirstChild(itemName)
-        if item and item:IsA("ImageLabel") then
-            return item.Image
-        end
-    end
-    return nil
-end
-
--- Then replace the embed creation section:
-
-local thumbnailUrl = nil
-if #rewardsData > 0 then
-    local firstReward = rewardsData[1]
-    local imageId = getItemImage(firstReward.name)
-    if imageId then
-        local assetId = imageId:match("%d+")
-        if assetId then
-            thumbnailUrl = "https://www.roblox.com/asset-thumbnail/image?assetId=" .. assetId .. "&width=420&height=420"
-        end
-    end
-end
-
 local embed = {
     ["content"] = webhookContent,
     ["embeds"] = {{
@@ -925,13 +899,7 @@ local embed = {
         ["color"] = embedColor,
         ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
     }}
-}
-
-if thumbnailUrl then
-    embed.embeds[1]["thumbnail"] = {
-        ["url"] = thumbnailUrl
-    }
-							end
+							}
                         
                         local success, response = pcall(function()
                             local requestFunc = syn and syn.request or http_request or request
