@@ -772,6 +772,7 @@ local WorldLineDropdown = Tabs.Joiner2:AddDropdown("SelectWorldLineStage", {
         end
     end)
 end
+end
 
 do
     local WebhookInput = Tabs.Webhook:AddInput("WebhookURL", {
