@@ -19,7 +19,7 @@ local Window = Fluent:CreateWindow({
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
-    Theme = "Dark",
+    Theme = "Darker",
     MinimizeKey = Enum.KeyCode.LeftControl
 })
 
@@ -34,7 +34,7 @@ logoButton.Name = "VeryNormalImage"
 logoButton.Size = UDim2.new(0, 50, 0, 50)
 logoButton.Position = UDim2.new(0, 10, 0, 10)
 logoButton.BackgroundTransparency = 1
-logoButton.Image = "rbxassetid://98905775020119"
+logoButton.Image = "rbxassetid://120548082790556"
 logoButton.Parent = logoGui
 
 local isMinimized = false
