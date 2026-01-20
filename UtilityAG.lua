@@ -765,60 +765,65 @@ do
                         
                         local scrollingFrame = endGUI:FindFirstChild("Main") and endGUI.Main:FindFirstChild("Stage") and endGUI.Main.Stage:FindFirstChild("Rewards") and endGUI.Main.Stage.Rewards:FindFirstChild("ScrollingFrame")
                         
-                        if scrollingFrame then
-                            print("ScrollingFrame found!")
-                            for _, rewardFrame in pairs(scrollingFrame:GetChildren()) do
-                                if rewardFrame:IsA("Frame") then
-                                    local itemName = rewardFrame.Name
-                                    local nameLabel = rewardFrame:FindFirstChild("name")
-                                    local quantityObj = rewardFrame:FindFirstChild("Quantity")
-                                    
-                                    if nameLabel and nameLabel:IsA("TextLabel") then
-                                        local unitName = nameLabel.Text
-                                        print("Found unit drop: +1 " .. unitName)
-                                        hasSecretDrop = true
-                                        table.insert(rewardsData, {
-                                            name = unitName,
-                                            quantity = "+1",
-                                            currentAmount = nil,
-                                            isUnit = true
-                                        })
-                                    elseif quantityObj then
-                                        local quantityValue = "0"
-                                        if quantityObj:IsA("TextLabel") or quantityObj:IsA("TextBox") then
-                                            quantityValue = quantityObj.Text:gsub("^x", "+")
-                                        elseif quantityObj:IsA("NumberValue") or quantityObj:IsA("IntValue") then
-                                            quantityValue = "+" .. tostring(quantityObj.Value)
-                                        end
-                                        
-                                        local currentAmount = 0
-                                        
-                                        pcall(function()
-                                            if LocalPlayer.ItemsInventory[itemName] and LocalPlayer.ItemsInventory[itemName].Amount then
-                                                currentAmount = LocalPlayer.ItemsInventory[itemName].Amount.Value
-                                            end
-                                        end)
-                                        
-                                        pcall(function()
-                                            if LocalPlayer.Data:FindFirstChild(itemName) and LocalPlayer.Data[itemName]:IsA("NumberValue") then
-                                                currentAmount = LocalPlayer.Data[itemName].Value
-                                            end
-                                        end)
-                                        
-                                        print("Found reward: " .. quantityValue .. " " .. itemName)
-                                        
-                                        table.insert(rewardsData, {
-                                            name = itemName,
-                                            quantity = quantityValue,
-                                            currentAmount = currentAmount,
-                                            isUnit = false
-                                        })
-                                    end
-                                end
-                            end
-                        else
-                            print("ScrollingFrame not found!")
+if scrollingFrame then
+    print("ScrollingFrame found!")
+    for _, rewardFrame in pairs(scrollingFrame:GetChildren()) do
+        if rewardFrame:IsA("Frame") then
+            local itemName = rewardFrame.Name
+            local nameLabel = rewardFrame:FindFirstChild("name")
+            local quantityObj = rewardFrame:FindFirstChild("Quantity")
+            
+            if nameLabel and nameLabel:IsA("TextLabel") then
+                local unitName = nameLabel.Text
+                print("Found unit drop: +1 " .. unitName)
+                hasSecretDrop = true
+                table.insert(rewardsData, {
+                    name = unitName,
+                    quantity = "+1",
+                    currentAmount = nil,
+                    isUnit = true
+                })
+            elseif quantityObj then
+                local quantityValue = "0"
+                if quantityObj:IsA("TextLabel") or quantityObj:IsA("TextBox") then
+                    quantityValue = quantityObj.Text:gsub("^x", "+")
+                elseif quantityObj:IsA("NumberValue") or quantityObj:IsA("IntValue") then
+                    quantityValue = "+" .. tostring(quantityObj.Value)
+                end
+                
+                local currentAmount = 0
+                
+                pcall(function()
+                    if LocalPlayer.Data:FindFirstChild(itemName) then
+                        local dataValue = LocalPlayer.Data[itemName]
+                        if dataValue:IsA("NumberValue") or dataValue:IsA("IntValue") then
+                            currentAmount = dataValue.Value
                         end
+                    end
+                end)
+                
+                if currentAmount == 0 then
+                    pcall(function()
+                        if LocalPlayer.ItemsInventory[itemName] and LocalPlayer.ItemsInventory[itemName].Amount then
+                            currentAmount = LocalPlayer.ItemsInventory[itemName].Amount.Value
+                        end
+                    end)
+                end
+                
+                print("Found reward: " .. quantityValue .. " " .. itemName)
+                
+                table.insert(rewardsData, {
+                    name = itemName,
+                    quantity = quantityValue,
+                    currentAmount = currentAmount,
+                    isUnit = false
+                })
+            end
+        end
+    end
+else
+    print("ScrollingFrame not found!")
+							end
                         
                         local unitsConnection
                         unitsConnection = LocalPlayer.UnitsInventory.ChildAdded:Connect(function(unitFrame)
