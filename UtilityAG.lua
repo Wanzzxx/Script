@@ -34,7 +34,7 @@ logoButton.Name = "VeryNormalImage"
 logoButton.Size = UDim2.new(0, 50, 0, 50)
 logoButton.Position = UDim2.new(0, 10, 0, 10)
 logoButton.BackgroundTransparency = 1
-logoButton.Image = "rbxassetid://120548082790556"
+logoButton.Image = "rbxassetid://118786472658875"
 logoButton.Parent = logoGui
 
 local isMinimized = false
