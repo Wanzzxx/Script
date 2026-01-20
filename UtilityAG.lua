@@ -99,14 +99,6 @@ local fateEvent = {
 	["Zero Two"] = 3
 }
 
-local worldlineStageMap = {
-        ["Double Dungeon - WL 1"] = "doubledungeon",
-        ["Double Dungeon 2 - WL 2"] = "doubledungeon2",
-        ["Lixian Academy - WL 3"] = "lixianacademy",
-        ["Lixian Yard - WL 4"] = "lixianyard",
-        ["Forbidden Forest - WL 5"] = "Forbidden Forest"
-}
-
 local function formatNumber(num)
     local formatted = tostring(num)
     while true do
@@ -722,56 +714,6 @@ task.spawn(function()
         if Fluent.Unloaded then break end
     end
 end)
-end
-
-local WorldLineDropdown = Tabs.Joiner2:AddDropdown("SelectWorldLineStage", {
-        Title = "Select WorldLine Stage",
-        Description = "Choose which WorldLine stage to host",
-        Values = {
-            "Double Dungeon - WL 1",
-            "Double Dungeon 2 - WL 2",
-            "Lixian Academy - WL 3",
-            "Lixian Yard - WL 4",
-            "Forbidden Forest - WL 5"
-        },
-        Multi = false,
-        Default = nil,
-    })
-    
-    local WorldLineStartToggle = Tabs.Joiner2:AddToggle("WorldLineStart", {
-        Title = "Start Worldline",
-        Default = false
-    })
-    
-    task.spawn(function()
-        while true do
-            task.wait(1)
-            
-            if Options.WorldLineStart.Value then
-                local selectedDisplay = Options.SelectWorldLineStage.Value
-                
-                if selectedDisplay and worldlineStageMap[selectedDisplay] then
-                    local stageName = worldlineStageMap[selectedDisplay]
-                    
-                    pcall(function()
-                        ReplicatedStorage.Remote.RoomFunction:InvokeServer("host", {
-                            ["stage"] = stageName,
-                            ["friendOnly"] = false
-                        })
-                    end)
-                    
-                    task.wait(0.5)
-                    
-                    pcall(function()
-                        ReplicatedStorage.Remote.RoomFunction:InvokeServer("start")
-                    end)
-                end
-            end
-            
-            if Fluent.Unloaded then break end
-        end
-    end)
-end
 end
 
 do
