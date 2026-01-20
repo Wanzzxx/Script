@@ -117,8 +117,10 @@ local accumulatedRewards = {}
 
 local function updateRewardCounter()
     local content = ""
+    local hasRewards = false
     
     for itemName, amount in pairs(accumulatedRewards) do
+        hasRewards = true
         if itemName:find("UNIT_") then
             local unitName = itemName:gsub("UNIT_", "")
             content = content .. "+" .. amount .. " " .. unitName .. "\n"
@@ -127,10 +129,11 @@ local function updateRewardCounter()
         end
     end
     
-    if content == "" then
+    if not hasRewards then
         content = "No rewards tracked yet"
     end
     
+    print("Updating tracker with content:", content)
     RewardCounterParagraph:SetDesc(content)
 	end
 	
