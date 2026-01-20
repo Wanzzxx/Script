@@ -201,6 +201,49 @@ game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(func
         end)
     end
 end)
+
+local AutoBackIfStuckToggle = Tabs.Utility:AddToggle("AutoBackIfStuck", {
+    Title = "Auto Back to Lobby if Wave Stuck",
+    Default = false
+})
+
+task.spawn(function()
+    local lastWave = nil
+    local stuckTime = 0
+    
+    while true do
+        task.wait(1)
+        
+        if Options.AutoBackIfStuck.Value then
+            local gameSettings = workspace:FindFirstChild("GameSettings")
+            local waveValue = gameSettings and gameSettings:FindFirstChild("Wave")
+            
+            if waveValue and (waveValue:IsA("NumberValue") or waveValue:IsA("IntValue")) then
+                local currentWave = waveValue.Value
+                
+                if lastWave == currentWave then
+                    stuckTime = stuckTime + 1
+                    
+                    if stuckTime >= 30 then
+                        pcall(function()
+                            ReplicatedStorage.Remotes.Misc.Teleport:FireServer("Lobby")
+                        end)
+                        stuckTime = 0
+                        lastWave = nil
+                    end
+                else
+                    lastWave = currentWave
+                    stuckTime = 0
+                end
+            end
+        else
+            lastWave = nil
+            stuckTime = 0
+        end
+        
+        if Fluent.Unloaded then break end
+    end
+end)
     
     task.spawn(function()
         while true do
