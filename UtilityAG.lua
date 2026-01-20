@@ -108,6 +108,32 @@ local function formatNumber(num)
 end
 
 do
+    local RewardCounterParagraph = Tabs.Tracker:AddParagraph({
+    Title = "Last Reward Counter",
+    Content = "No rewards tracked yet"
+})
+
+local accumulatedRewards = {}
+
+local function updateRewardCounter()
+    local content = ""
+    
+    for itemName, amount in pairs(accumulatedRewards) do
+        if itemName:find("UNIT_") then
+            local unitName = itemName:gsub("UNIT_", "")
+            content = content .. "+" .. amount .. " " .. unitName .. "\n"
+        else
+            content = content .. itemName .. ": " .. formatNumber(amount) .. "\n"
+        end
+    end
+    
+    if content == "" then
+        content = "No rewards tracked yet"
+    end
+    
+    RewardCounterParagraph:SetDesc(content)
+	end
+	
     local EventCurrencyParagraph = Tabs.Tracker:AddParagraph({
         Title = "Event Currency",
         Content = "Getting your data..."
@@ -884,6 +910,23 @@ end
                         
                         task.wait(0.5)
                         unitsConnection:Disconnect()
+
+						for _, reward in ipairs(rewardsData) do
+    if reward.isUnit then
+        local unitKey = "UNIT_" .. reward.name
+        accumulatedRewards[unitKey] = (accumulatedRewards[unitKey] or 0) + 1
+    else
+        local quantityNum = tonumber(reward.quantity:gsub("[^%d]", "")) or 0
+        accumulatedRewards[reward.name] = (accumulatedRewards[reward.name] or 0) + quantityNum
+    end
+end
+
+for _, unitName in ipairs(unitsObtained) do
+    local unitKey = "UNIT_" .. unitName
+    accumulatedRewards[unitKey] = (accumulatedRewards[unitKey] or 0) + 1
+end
+
+updateRewardCounter()
                         
                         local description = ""
                         
