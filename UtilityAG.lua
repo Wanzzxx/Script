@@ -55,7 +55,8 @@ local Tabs = {
     Tracker = Window:AddTab({ Title = "Tracker", Icon = "users" }),
     Utility = Window:AddTab({ Title = "Utility", Icon = "wrench" }),
     Shop = Window:AddTab({ Title = "Shop", Icon = "shopping-cart" }),
-    Joiner = Window:AddTab({ Title = "Joiner", Icon = "layers" }),
+    Joiner = Window:AddTab({ Title = "Joiner [Event]", Icon = "layers" }),
+	Joiner2 = Window:AddTab({ Title = "Joiner [Main]", Icon = "layers"}),
     Webhook = Window:AddTab({ Title = "Webhook", Icon = "send" }),
     Misc = Window:AddTab({ Title = "Misc", Icon = "plus" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
@@ -655,114 +656,64 @@ do
         end
     end)
 
-    Tabs.Joiner:AddParagraph({
-        Title = "Raid & Tower",
-        Content = "Auto-create and start Raid or Tower stages"
-    })
+Tabs.Joiner2:AddParagraph({
+    Title = "Raid",
+    Content = "Auto-create and start Raid stages"
+})
 
-    local ModeDropdown = Tabs.Joiner:AddDropdown("SelectMode", {
-        Title = "Select Mode",
-        Description = "Choose Raid or Tower Adventures",
-        Values = {"Raid", "Tower Adventures"},
-        Multi = false,
-        Default = nil,
-    })
+local RaidStageDropdown = Tabs.Joiner2:AddDropdown("SelectRaidStage", {
+    Title = "Select Raid Stage",
+    Description = "Choose which raid stage to host",
+    Values = {
+        "Lawless City",
+        "Temple",
+        "Orc Castle",
+        "Kingdom of Wandenreich",
+        "Namekora Village",
+        "Central Command",
+        "The Crimson Eclipse",
+        "Hidden Leaf Village"
+    },
+    Multi = false,
+    Default = nil,
+})
 
-    local StageDropdown = Tabs.Joiner:AddDropdown("SelectStage", {
-        Title = "Select Stage",
-        Description = "Choose stage based on selected mode",
-        Values = {},
-        Multi = false,
-        Default = nil,
-    })
+local RaidStartToggle = Tabs.Joiner2:AddToggle("RaidStart", {
+    Title = "Start",
+    Default = false
+})
 
-    local ModeStartToggle = Tabs.Joiner:AddToggle("ModeStart", {
-        Title = "Start",
-        Default = false
-    })
-
-    ModeDropdown:OnChanged(function(Value)
-        local stageList = {}
+task.spawn(function()
+    while true do
+        task.wait(1)
         
-        if Value == "Tower Adventures" then
-            for _, folder in pairs(LocalPlayer.Stages:GetChildren()) do
-                if folder:IsA("Folder") and folder:FindFirstChild("Floor") then
-                    table.insert(stageList, folder.Name)
-                end
-            end
-        elseif Value == "Raid" then
-            local raidFrame = LocalPlayer.PlayerGui:FindFirstChild("Main") and LocalPlayer.PlayerGui.Main:FindFirstChild("PortalFrame") and LocalPlayer.PlayerGui.Main.PortalFrame:FindFirstChild("StageFrame") and LocalPlayer.PlayerGui.Main.PortalFrame.StageFrame:FindFirstChild("RaidScrollingFrame")
-            if raidFrame then
-                for _, frame in pairs(raidFrame:GetChildren()) do
-                    if frame:IsA("Frame") then
-                        table.insert(stageList, frame.Name)
-                    end
-                end
-            end
-        end
-        
-        StageDropdown:SetValues(stageList)
-        Options.SelectStage:SetValue(nil)
-    end)
-
-    task.spawn(function()
-        while true do
-            task.wait(1)
+        if Options.RaidStart.Value then
+            local selectedStage = Options.SelectRaidStage.Value
             
-            if Options.ModeStart.Value then
-                local selectedMode = Options.SelectMode.Value
-                local selectedStage = Options.SelectStage.Value
+            if selectedStage then
+                pcall(function()
+                    ReplicatedStorage.PlayMode.Events.CreatingPortal:InvokeServer("Raid", {
+                        selectedStage,
+                        "1",
+                        "Raid"
+                    })
+                end)
                 
-                if selectedMode and selectedStage then
-                    if selectedMode == "Tower Adventures" then
-                        local stageFolder = LocalPlayer.Stages:FindFirstChild(selectedStage)
-                        if stageFolder and stageFolder:FindFirstChild("Floor") then
-                            local currentFloor = tostring(stageFolder.Floor.Value)
-                            
-                            pcall(function()
-                                ReplicatedStorage.PlayMode.Events.CreatingPortal:InvokeServer("Tower Adventures", {
-                                    selectedStage,
-                                    currentFloor,
-                                    "Tower Adventures"
-                                })
-                            end)
-                            
-                            task.wait(3)
-                            
-                            pcall(function()
-                                ReplicatedStorage.PlayMode.Events.CreatingPortal:InvokeServer("Create", {
-                                    selectedStage,
-                                    currentFloor,
-                                    "Tower Adventures"
-                                })
-                            end)
-                        end
-                    elseif selectedMode == "Raid" then
-                        pcall(function()
-                            ReplicatedStorage.PlayMode.Events.CreatingPortal:InvokeServer("Raid", {
-                                selectedStage,
-                                "1",
-                                "Raid"
-                            })
-                        end)
-                        
-                        task.wait(3)
-                        
-                        pcall(function()
-                            ReplicatedStorage.PlayMode.Events.CreatingPortal:InvokeServer("Create", {
-                                selectedStage,
-                                "1",
-                                "Raid"
-                            })
-                        end)
-                    end
-                end
+                task.wait(0.5)
+                
+                pcall(function()
+                    ReplicatedStorage.PlayMode.Events.CreatingPortal:InvokeServer("Create", {
+                        selectedStage,
+                        "1",
+                        "Raid"
+                    })
+                end)
             end
-            
-            if Fluent.Unloaded then break end
         end
-    end)
-end
+        
+        if Fluent.Unloaded then break end
+    end
+end)
 
 do
     local WebhookInput = Tabs.Webhook:AddInput("WebhookURL", {
