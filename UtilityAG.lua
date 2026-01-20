@@ -173,7 +173,7 @@ do
     local ChallengeDropdown = Tabs.Utility:AddDropdown("SelectChallenge", {
         Title = "Select Challenge",
         Description = "Choose your challenge type",
-        Values = {"Normal", "Fast Wave", "Super Faster Wave"},
+        Values = {"Eternal Curse", "Normal", "Fast Wave", "Super Faster Wave"},
         Multi = false,
         Default = 1,
     })
@@ -498,7 +498,7 @@ do
     })
 
     local JoinerStartToggle = Tabs.Joiner:AddToggle("JoinerStart", {
-        Title = "Start",
+        Title = "Start [OPM]",
         Default = false
     })
 
@@ -539,7 +539,7 @@ do
 	})
 
 	local JoinFateToggle = Tabs.Joiner:AddToggle("FateToggle", {
-			Title = "Start",
+			Title = "Start [FATE]",
 			Default = false
 		})
 
