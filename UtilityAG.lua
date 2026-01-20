@@ -15,7 +15,7 @@ local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.
 
 local Window = Fluent:CreateWindow({
     Title = "The Roaring Script",
-    SubTitle = "Mainly for Anime Guardians Helper Script (No Macro Included)\nBy WnZ",
+    SubTitle = "Anime Guardians Helper Script (No Macro Included)\nBy WnZ",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
