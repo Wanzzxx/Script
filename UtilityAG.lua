@@ -911,22 +911,31 @@ end
                         task.wait(0.5)
                         unitsConnection:Disconnect()
 
-						for _, reward in ipairs(rewardsData) do
+						print("Tracking rewards, total items:", #rewardsData)
+
+for _, reward in ipairs(rewardsData) do
+    print("Processing reward:", reward.name, reward.quantity, reward.isUnit)
     if reward.isUnit then
         local unitKey = "UNIT_" .. reward.name
         accumulatedRewards[unitKey] = (accumulatedRewards[unitKey] or 0) + 1
+        print("Unit count:", reward.name, accumulatedRewards[unitKey])
     else
         local quantityNum = tonumber(reward.quantity:gsub("[^%d]", "")) or 0
         accumulatedRewards[reward.name] = (accumulatedRewards[reward.name] or 0) + quantityNum
+        print("Item count:", reward.name, accumulatedRewards[reward.name])
     end
 end
 
 for _, unitName in ipairs(unitsObtained) do
+    print("Processing obtained unit:", unitName)
     local unitKey = "UNIT_" .. unitName
     accumulatedRewards[unitKey] = (accumulatedRewards[unitKey] or 0) + 1
+    print("Obtained unit count:", unitName, accumulatedRewards[unitKey])
 end
 
+print("Calling updateRewardCounter")
 updateRewardCounter()
+print("Updated reward counter")
                         
                         local description = ""
                         
