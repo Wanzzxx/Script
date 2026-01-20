@@ -29,6 +29,8 @@ logoGui.ResetOnSpawn = false
 logoGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 logoGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
+repeat task.wait() until LocalPlayer.PlayerGui:FindFirstChild("WnZGUI")
+
 local logoButton = Instance.new("ImageButton")
 logoButton.Name = "VeryNormalImage"
 logoButton.Size = UDim2.new(0, 50, 0, 50)
