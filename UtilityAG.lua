@@ -727,7 +727,7 @@ do
                                 })
                             end)
                             
-                            task.wait(0.5)
+                            task.wait(3)
                             
                             pcall(function()
                                 ReplicatedStorage.PlayMode.Events.CreatingPortal:InvokeServer("Create", {
@@ -746,7 +746,7 @@ do
                             })
                         end)
                         
-                        task.wait(0.5)
+                        task.wait(3)
                         
                         pcall(function()
                             ReplicatedStorage.PlayMode.Events.CreatingPortal:InvokeServer("Create", {
