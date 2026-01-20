@@ -1013,7 +1013,7 @@ Window:SelectTab(1)
 
 Fluent:Notify({
     Title = "Fluent",
-    Content = "Auto Challenge script loaded.",
+    Content = "Game loaded.",
     Duration = 5
 })
 
