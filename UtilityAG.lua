@@ -108,35 +108,7 @@ local function formatNumber(num)
 end
 
 do
-    local RewardCounterParagraph = Tabs.Tracker:AddParagraph({
-    Title = "Last Reward Counter",
-    Content = "No rewards tracked yet"
-})
-
-local accumulatedRewards = {}
-
-local function updateRewardCounter()
-    local content = ""
-    local hasRewards = false
     
-    for itemName, amount in pairs(accumulatedRewards) do
-        hasRewards = true
-        if itemName:find("UNIT_") then
-            local unitName = itemName:gsub("UNIT_", "")
-            content = content .. "+" .. amount .. " " .. unitName .. "\n"
-        else
-            content = content .. itemName .. ": " .. formatNumber(amount) .. "\n"
-        end
-    end
-    
-    if not hasRewards then
-        content = "No rewards tracked yet"
-    end
-    
-    print("Updating tracker with content:", content)
-    RewardCounterParagraph:SetDesc(content)
-	end
-	
     local EventCurrencyParagraph = Tabs.Tracker:AddParagraph({
         Title = "Event Currency",
         Content = "Getting your data..."
@@ -215,7 +187,7 @@ do
 local BackToLobbyToggle = Tabs.Utility:AddToggle("BackToLobby", {
     Title = "Back to Lobby When Disconnected",
     Description = "Disable *Verify Teleports* If you're using delta, else it's not going to work.",
-    Default = false
+    Default = true
 })
 
 game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(obj)
@@ -233,7 +205,8 @@ end)
 
 local AutoBackIfStuckToggle = Tabs.Utility:AddToggle("AutoBackIfStuck", {
     Title = "Auto Back to Lobby if Wave Stuck",
-    Default = false
+	Description = "Must Enable",
+    Default = true
 })
 
 task.spawn(function()
@@ -913,32 +886,6 @@ end
                         
                         task.wait(0.5)
                         unitsConnection:Disconnect()
-
-						print("Tracking rewards, total items:", #rewardsData)
-
-for _, reward in ipairs(rewardsData) do
-    print("Processing reward:", reward.name, reward.quantity, reward.isUnit)
-    if reward.isUnit then
-        local unitKey = "UNIT_" .. reward.name
-        accumulatedRewards[unitKey] = (accumulatedRewards[unitKey] or 0) + 1
-        print("Unit count:", reward.name, accumulatedRewards[unitKey])
-    else
-        local quantityNum = tonumber(reward.quantity:gsub("[^%d]", "")) or 0
-        accumulatedRewards[reward.name] = (accumulatedRewards[reward.name] or 0) + quantityNum
-        print("Item count:", reward.name, accumulatedRewards[reward.name])
-    end
-end
-
-for _, unitName in ipairs(unitsObtained) do
-    print("Processing obtained unit:", unitName)
-    local unitKey = "UNIT_" .. unitName
-    accumulatedRewards[unitKey] = (accumulatedRewards[unitKey] or 0) + 1
-    print("Obtained unit count:", unitName, accumulatedRewards[unitKey])
-end
-
-print("Calling updateRewardCounter")
-updateRewardCounter()
-print("Updated reward counter")
                         
                         local description = ""
                         
