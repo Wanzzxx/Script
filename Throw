@@ -10,7 +10,6 @@ local R=RS:WaitForChild("Remotes",15)
 local STALL,FOCUS,WEAK,WIN,MINSPAN,TAP=10,0.5,0.25,8,5,1.4
 local S={[""]=1,k=1e3,m=1e6,b=1e9,t=1e12,qa=1e15,qi=1e18,sx=1e21,sp=1e24,oc=1e27,no=1e30,dc=1e33}
 
--- Auto Reconnect / Rejoin on Error Message
 local function rejoin()
   task.wait(1)
   pcall(function()
@@ -157,7 +156,7 @@ end
 local function leave() return ready() or focus end
 
 local function startT()
-  status="Training Mode"
+  status="Training"
   tp(spot())
   task.wait(0.3)
   inv("Training_Start")
@@ -179,7 +178,7 @@ local function changed(old,oldV)
   return true
 end
 local function doUp()
-  status="Upgrading..."
+  status="Upgrading tool"
   stopT()
   local b,l=btn(),priceL()
   if not (b and l) then return false end
@@ -197,7 +196,7 @@ local function doUp()
       tp(b)
       task.wait(0.2)
     end
-    status="Upgrading..."
+    status="Upgrading - pressing E"
     local pr=get(b,"ProximityPrompt")
     if pr and fireproximityprompt then pcall(fireproximityprompt,pr) end
     VIM:SendKeyEvent(true,Enum.KeyCode.E,false,game)
@@ -229,11 +228,11 @@ local function waitGui()
     if active() then return true end
     local a=W:FindFirstChild("StarterArea")
     if not a then
-      status="Farm Area not found"
+      status="StarterArea not found"
       task.wait(1)
     else
       n=n+1
-      status="Teleporting to Farm Area #"..n
+      status="Teleporting to StarterArea #"..n
       tp(a)
       local t=os.clock()
       while os.clock()-t<1 do
@@ -246,7 +245,7 @@ local function waitGui()
   return false
 end
 local function catch()
-  status="Trying to perfect timing..."
+  status="Perfect catching"
   local f,nt=os.clock(),os.clock()
   while run and on and not leave() and active() do
     local now=os.clock()
@@ -287,7 +286,7 @@ if old then old:Destroy() end
 local DIM,CARD,PUR,BLU,WHITE=C(125,125,160),C(28,28,42),C(125,85,255),C(55,150,255),C(255,255,255)
 
 local sg=mk("ScreenGui",{Name="AutoTrainerUI",ResetOnSpawn=false,DisplayOrder=999},par)
-local fr=mk("Frame",{Size=UDim2.fromOffset(300,305),Position=UDim2.new(0,20,0,60),BackgroundColor3=WHITE,BorderSizePixel=0,Active=true,ClipsDescendants=true},sg)
+local fr=mk("Frame",{Size=UDim2.fromOffset(300,280),Position=UDim2.new(0,20,0,60),BackgroundColor3=WHITE,BorderSizePixel=0,Active=true,ClipsDescendants=true},sg)
 round(fr,14)
 grad(fr,C(26,26,38),C(12,12,18),90)
 grad(mk("UIStroke",{Color=WHITE,Thickness=2},fr),PUR,BLU,45)
@@ -316,10 +315,9 @@ local moL=card(12,86,"MONEY")
 local prL=card(154,86,"UPGRADE COST")
 local seL=card(12,140,"SESSION")
 local upL=card(154,140,"UPGRADES")
-local inL=lbl(fr,14,190,272,18,"",12)
-local gotL=lbl(fr,14,210,272,18,"You got: None",12,C(255,220,100))
+local inL=lbl(fr,14,192,272,18,"",12)
 
-local bb=mk("Frame",{Size=UDim2.fromOffset(276,24),Position=UDim2.fromOffset(12,232),BackgroundColor3=C(38,38,54),BorderSizePixel=0,ClipsDescendants=true},fr)
+local bb=mk("Frame",{Size=UDim2.fromOffset(276,24),Position=UDim2.fromOffset(12,214),BackgroundColor3=C(38,38,54),BorderSizePixel=0,ClipsDescendants=true},fr)
 round(bb,12)
 local bf=mk("Frame",{Size=UDim2.new(0,0,1,0),BackgroundColor3=WHITE,BorderSizePixel=0},bb)
 round(bf,12)
@@ -328,7 +326,7 @@ local bt=lbl(bb,0,0,276,24,"0%",12)
 bt.TextXAlignment=Enum.TextXAlignment.Center
 bt.ZIndex=2
 
-local tg=mk("TextButton",{Size=UDim2.fromOffset(276,34),Position=UDim2.fromOffset(12,260),BackgroundColor3=WHITE,BorderSizePixel=0,Text="PAUSE",TextColor3=WH,Font=Enum.Font.GothamBold,TextSize=15,AutoButtonColor=false},fr)
+local tg=mk("TextButton",{Size=UDim2.fromOffset(276,34),Position=UDim2.fromOffset(12,242),BackgroundColor3=WHITE,BorderSizePixel=0,Text="PAUSE",TextColor3=WH,Font=Enum.Font.GothamBold,TextSize=15,AutoButtonColor=false},fr)
 round(tg,10)
 local tgG=grad(tg,PUR,BLU,0)
 
@@ -351,7 +349,7 @@ end)
 local small=false
 mn.Activated:Connect(function()
   small=not small
-  fr.Size=small and UDim2.fromOffset(300,40) or UDim2.fromOffset(300,305)
+  fr.Size=small and UDim2.fromOffset(300,40) or UDim2.fromOffset(300,280)
   mn.Text=small and "+" or "-"
 end)
 cl.Activated:Connect(function()
@@ -361,63 +359,13 @@ cl.Activated:Connect(function()
 end)
 tg.Activated:Connect(function()
   on=not on
-  tg.Text=on and "Click To Pause" or "Click To Resume"
+  tg.Text=on and "PAUSE" or "RESUME"
   tgG.Color=on and ColorSequence.new(PUR,BLU) or ColorSequence.new(C(60,60,80),C(90,90,115))
   if on then
     resetP()
   else
     stopT()
     status="Paused"
-  end
-end)
-
--- Robust inventory tracking with a lock timer to prevent old items from overriding new ones
-local processedTools = {}
-local isInitialized = false
-
-local function registerExisting(container)
-  if container then
-    for _, item in ipairs(container:GetChildren()) do
-      if item:IsA("Tool") then
-        processedTools[item] = true
-      end
-    end
-  end
-end
-
-registerExisting(plr:WaitForChild("Backpack"))
-registerExisting(plr.Character)
-
-task.delay(2, function()
-  isInitialized = true
-end)
-
-plr.Backpack.ChildAdded:Connect(function(item)
-  if not isInitialized then return end
-  if item:IsA("Tool") and not processedTools[item] then
-    processedTools[item] = true
-    
-    -- Wait briefly for server replication (ToolTip & attributes)
-    task.wait(0.25)
-    if not item or not item.Parent then return end
-    
-    local rarity = item:GetAttribute("Rarity") or item:GetAttribute("Tier") or ""
-    if rarity ~= "" then
-      rarity = "[" .. tostring(rarity) .. "] "
-    end
-    
-    local tip = item.ToolTip or ""
-    tip = tip:match("^(.-)%s*%-") or tip
-    tip = tip:gsub("^%s*(.-)%s*$", "%1")
-    
-    local txt = "You got: " .. rarity .. item.Name
-    if tip ~= "" then
-      txt = txt .. " - " .. tip
-    end
-    
-    if gotL then
-      gotL.Text = txt
-    end
   end
 end)
 
@@ -439,7 +387,7 @@ task.spawn(function()
     prL.Text=pt
     seL.Text=fmt(os.clock()-t0)
     upL.Text=tostring(ups)
-    inL.Text=("Income: %.2f%%/s  %s"):format(rate,focus and "[Fast Money]" or weak and "[weak]" or "")
+    inL.Text=("Income: %.2f%%/s  %s"):format(rate,focus and "[focus train]" or weak and "[weak]" or "")
     inL.TextColor3=focus and C(80,225,130) or weak and C(255,130,110) or WH
     bf.Size=UDim2.new(r,0,1,0)
     bt.Text=math.floor(r*100).."%"
@@ -481,11 +429,11 @@ task.spawn(function()
         resetP()
       elseif mode=="train" then
         if focus then
-          status="Training Mode - Fast Money"
+          status="Training - high income focus"
           resetP()
           
           if active() then
-            status="Clearing stuck..."
+            status="Clearing stuck ThrowSequence..."
             while run and on and active() do
               tap()
               task.wait(TAP)
@@ -499,11 +447,11 @@ task.spawn(function()
           if not training then startT() end
           local st=stalled()
           local idle=math.floor(os.clock()-lastChg)
-          status=(weak and "Low incomes - training" or "Training")..(" | Power %s (idle %ds)"):format(tostring(lastPow or "?"),idle)
+          status=(weak and "Weak - training" or "Training")..(" | Power %s (idle %ds)"):format(tostring(lastPow or "?"),idle)
           if st then
             mode="farm"
             stopT()
-            status="Farming Mode - Stalled"
+            status="Throw Power stalled - farming animals"
           end
         end
       elseif focus then
