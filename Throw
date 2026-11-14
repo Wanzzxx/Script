@@ -157,7 +157,7 @@ end
 local function leave() return ready() or focus end
 
 local function startT()
-  status="Training"
+  status="Training Mode"
   tp(spot())
   task.wait(0.3)
   inv("Training_Start")
@@ -179,7 +179,7 @@ local function changed(old,oldV)
   return true
 end
 local function doUp()
-  status="Upgrading tool"
+  status="Upgrading..."
   stopT()
   local b,l=btn(),priceL()
   if not (b and l) then return false end
@@ -197,7 +197,7 @@ local function doUp()
       tp(b)
       task.wait(0.2)
     end
-    status="Upgrading - pressing E"
+    status="Upgrading..."
     local pr=get(b,"ProximityPrompt")
     if pr and fireproximityprompt then pcall(fireproximityprompt,pr) end
     VIM:SendKeyEvent(true,Enum.KeyCode.E,false,game)
@@ -229,11 +229,11 @@ local function waitGui()
     if active() then return true end
     local a=W:FindFirstChild("StarterArea")
     if not a then
-      status="StarterArea not found"
+      status="Farm Area not found"
       task.wait(1)
     else
       n=n+1
-      status="Teleporting to StarterArea #"..n
+      status="Teleporting to Farm Area #"..n
       tp(a)
       local t=os.clock()
       while os.clock()-t<1 do
@@ -246,7 +246,7 @@ local function waitGui()
   return false
 end
 local function catch()
-  status="Perfect catching"
+  status="Trying to perfect timing..."
   local f,nt=os.clock(),os.clock()
   while run and on and not leave() and active() do
     local now=os.clock()
@@ -361,7 +361,7 @@ cl.Activated:Connect(function()
 end)
 tg.Activated:Connect(function()
   on=not on
-  tg.Text=on and "PAUSE" or "RESUME"
+  tg.Text=on and "Click To Pause" or "Click To Resume"
   tgG.Color=on and ColorSequence.new(PUR,BLU) or ColorSequence.new(C(60,60,80),C(90,90,115))
   if on then
     resetP()
@@ -439,7 +439,7 @@ task.spawn(function()
     prL.Text=pt
     seL.Text=fmt(os.clock()-t0)
     upL.Text=tostring(ups)
-    inL.Text=("Income: %.2f%%/s  %s"):format(rate,focus and "[focus train]" or weak and "[weak]" or "")
+    inL.Text=("Income: %.2f%%/s  %s"):format(rate,focus and "[Fast Money]" or weak and "[weak]" or "")
     inL.TextColor3=focus and C(80,225,130) or weak and C(255,130,110) or WH
     bf.Size=UDim2.new(r,0,1,0)
     bt.Text=math.floor(r*100).."%"
@@ -481,11 +481,11 @@ task.spawn(function()
         resetP()
       elseif mode=="train" then
         if focus then
-          status="Training - high income focus"
+          status="Training Mode - Fast Money"
           resetP()
           
           if active() then
-            status="Clearing stuck ThrowSequence..."
+            status="Clearing stuck..."
             while run and on and active() do
               tap()
               task.wait(TAP)
@@ -499,11 +499,11 @@ task.spawn(function()
           if not training then startT() end
           local st=stalled()
           local idle=math.floor(os.clock()-lastChg)
-          status=(weak and "Weak - training" or "Training")..(" | Power %s (idle %ds)"):format(tostring(lastPow or "?"),idle)
+          status=(weak and "Low incomes - training" or "Training")..(" | Power %s (idle %ds)"):format(tostring(lastPow or "?"),idle)
           if st then
             mode="farm"
             stopT()
-            status="Throw Power stalled - farming animals"
+            status="Farming Mode - Stalled"
           end
         end
       elseif focus then
