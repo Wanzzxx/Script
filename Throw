@@ -8,9 +8,7 @@ local CoreGui=game:GetService("CoreGui")
 local W=workspace
 local R=RS:WaitForChild("Remotes",15)
 local STALL,FOCUS,WEAK,WIN,MINSPAN,TAP=10,0.5,0.25,8,5,1.4
-local S={[""]=1,k=1e3,m=1e6,b=1e9,t=1e12,qa=1e15,qi=1e18,sx=1e21,sp=1e24,oc=1e27,no=1e30,dc=1e33}
 
--- Auto Reconnect / Rejoin on Error Message
 local function rejoin()
   task.wait(1)
   pcall(function()
@@ -39,11 +37,21 @@ end
 local function num(v)
   if typeof(v)=="number" then return v end
   if v==nil then return nil end
-  local s=tostring(v):gsub("[,%s]","")
+  local s=tostring(v):gsub("[%$,%s]","")
   local n,suf=s:match("(%d[%d%.]*)(%a*)")
   n=tonumber(n)
-  local m=S[(suf or ""):lower()]
-  return n and m and n*m
+  if not n then return nil end
+  if not suf or suf=="" then return n end
+  suf=suf:lower()
+  local mult=1
+  local baseMap={k=3,m=6,b=9,t=12,qa=15,qi=18,sx=21,sp=24,oc=27,no=30,dc=33,ud=36,dd=39,td=42,qad=45,qid=48,sxd=51,spd=54,ocd=57,nod=60,vg=63}
+  local p=baseMap[suf]
+  if p then
+    mult=10^p
+  else
+    mult=10^(3*#suf)
+  end
+  return n*mult
 end
 
 local function get(r,...)
@@ -287,7 +295,7 @@ if old then old:Destroy() end
 local DIM,CARD,PUR,BLU,WHITE=C(125,125,160),C(28,28,42),C(125,85,255),C(55,150,255),C(255,255,255)
 
 local sg=mk("ScreenGui",{Name="AutoTrainerUI",ResetOnSpawn=false,DisplayOrder=999},par)
-local fr=mk("Frame",{Size=UDim2.fromOffset(300,305),Position=UDim2.new(0,20,0,60),BackgroundColor3=WHITE,BorderSizePixel=0,Active=true,ClipsDescendants=true},sg)
+local fr=mk("Frame",{Size=UDim2.fromOffset(300,280),Position=UDim2.new(0,20,0,60),BackgroundColor3=WHITE,BorderSizePixel=0,Active=true,ClipsDescendants=true},sg)
 round(fr,14)
 grad(fr,C(26,26,38),C(12,12,18),90)
 grad(mk("UIStroke",{Color=WHITE,Thickness=2},fr),PUR,BLU,45)
@@ -316,10 +324,9 @@ local moL=card(12,86,"MONEY")
 local prL=card(154,86,"UPGRADE COST")
 local seL=card(12,140,"SESSION")
 local upL=card(154,140,"UPGRADES")
-local inL=lbl(fr,14,190,272,18,"",12)
-local gotL=lbl(fr,14,210,272,18,"You got: None",12,C(255,220,100))
+local inL=lbl(fr,14,192,272,18,"",12)
 
-local bb=mk("Frame",{Size=UDim2.fromOffset(276,24),Position=UDim2.fromOffset(12,232),BackgroundColor3=C(38,38,54),BorderSizePixel=0,ClipsDescendants=true},fr)
+local bb=mk("Frame",{Size=UDim2.fromOffset(276,24),Position=UDim2.fromOffset(12,214),BackgroundColor3=C(38,38,54),BorderSizePixel=0,ClipsDescendants=true},fr)
 round(bb,12)
 local bf=mk("Frame",{Size=UDim2.new(0,0,1,0),BackgroundColor3=WHITE,BorderSizePixel=0},bb)
 round(bf,12)
@@ -328,7 +335,7 @@ local bt=lbl(bb,0,0,276,24,"0%",12)
 bt.TextXAlignment=Enum.TextXAlignment.Center
 bt.ZIndex=2
 
-local tg=mk("TextButton",{Size=UDim2.fromOffset(276,34),Position=UDim2.fromOffset(12,260),BackgroundColor3=WHITE,BorderSizePixel=0,Text="PAUSE",TextColor3=WH,Font=Enum.Font.GothamBold,TextSize=15,AutoButtonColor=false},fr)
+local tg=mk("TextButton",{Size=UDim2.fromOffset(276,34),Position=UDim2.fromOffset(12,242),BackgroundColor3=WHITE,BorderSizePixel=0,Text="PAUSE",TextColor3=WH,Font=Enum.Font.GothamBold,TextSize=15,AutoButtonColor=false},fr)
 round(tg,10)
 local tgG=grad(tg,PUR,BLU,0)
 
@@ -351,7 +358,7 @@ end)
 local small=false
 mn.Activated:Connect(function()
   small=not small
-  fr.Size=small and UDim2.fromOffset(300,40) or UDim2.fromOffset(300,305)
+  fr.Size=small and UDim2.fromOffset(300,40) or UDim2.fromOffset(300,280)
   mn.Text=small and "+" or "-"
 end)
 cl.Activated:Connect(function()
@@ -368,56 +375,6 @@ tg.Activated:Connect(function()
   else
     stopT()
     status="Paused"
-  end
-end)
-
--- Robust inventory tracking with a lock timer to prevent old items from overriding new ones
-local processedTools = {}
-local isInitialized = false
-
-local function registerExisting(container)
-  if container then
-    for _, item in ipairs(container:GetChildren()) do
-      if item:IsA("Tool") then
-        processedTools[item] = true
-      end
-    end
-  end
-end
-
-registerExisting(plr:WaitForChild("Backpack"))
-registerExisting(plr.Character)
-
-task.delay(2, function()
-  isInitialized = true
-end)
-
-plr.Backpack.ChildAdded:Connect(function(item)
-  if not isInitialized then return end
-  if item:IsA("Tool") and not processedTools[item] then
-    processedTools[item] = true
-    
-    -- Wait briefly for server replication (ToolTip & attributes)
-    task.wait(0.25)
-    if not item or not item.Parent then return end
-    
-    local rarity = item:GetAttribute("Rarity") or item:GetAttribute("Tier") or ""
-    if rarity ~= "" then
-      rarity = "[" .. tostring(rarity) .. "] "
-    end
-    
-    local tip = item.ToolTip or ""
-    tip = tip:match("^(.-)%s*%-") or tip
-    tip = tip:gsub("^%s*(.-)%s*$", "%1")
-    
-    local txt = "You got: " .. rarity .. item.Name
-    if tip ~= "" then
-      txt = txt .. " - " .. tip
-    end
-    
-    if gotL then
-      gotL.Text = txt
-    end
   end
 end)
 
@@ -517,3 +474,5 @@ task.spawn(function()
     end
   end
 end)
+
+-- Sup
