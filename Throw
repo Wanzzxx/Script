@@ -1,0 +1,519 @@
+local plr=game:GetService("Players").LocalPlayer
+local RS=game:GetService("ReplicatedStorage")
+local UIS=game:GetService("UserInputService")
+local VIM=game:GetService("VirtualInputManager")
+local TeleportService=game:GetService("TeleportService")
+local GuiService=game:GetService("GuiService")
+local CoreGui=game:GetService("CoreGui")
+local W=workspace
+local R=RS:WaitForChild("Remotes",15)
+local STALL,FOCUS,WEAK,WIN,MINSPAN,TAP=10,0.5,0.25,8,5,1.4
+local S={[""]=1,k=1e3,m=1e6,b=1e9,t=1e12,qa=1e15,qi=1e18,sx=1e21,sp=1e24,oc=1e27,no=1e30,dc=1e33}
+
+-- Auto Reconnect / Rejoin on Error Message
+local function rejoin()
+  task.wait(1)
+  pcall(function()
+    TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, plr)
+  end)
+  task.wait(2)
+  pcall(function()
+    TeleportService:Teleport(game.PlaceId, plr)
+  end)
+end
+
+GuiService.ErrorMessageChanged:Connect(function()
+  rejoin()
+end)
+
+local PromptGui = CoreGui:FindFirstChild("RobloxPromptGui")
+local PromptOverlay = PromptGui and PromptGui:FindFirstChild("promptOverlay", true)
+if PromptOverlay then
+  PromptOverlay.ChildAdded:Connect(function(child)
+    if child.Name == "ErrorPrompt" then
+      rejoin()
+    end
+  end)
+end
+
+local function num(v)
+  if typeof(v)=="number" then return v end
+  if v==nil then return nil end
+  local s=tostring(v):gsub("[,%s]","")
+  local n,suf=s:match("(%d[%d%.]*)(%a*)")
+  n=tonumber(n)
+  local m=S[(suf or ""):lower()]
+  return n and m and n*m
+end
+
+local function get(r,...)
+  for _,n in ipairs({...}) do
+    if not r then return end
+    r=r:FindFirstChild(n)
+  end
+  return r
+end
+
+local function spot() return get(W,"LocalPlotProps","TrainingArea","TrainingSpot") end
+local function btn() return get(spot(),"UpgradeButton") end
+local function priceL() return get(btn(),"PriceAnchor","PriceBillboard","Holder","PriceHolder","Price") end
+local function moneyRaw()
+  local m=get(plr,"leaderstats","Money")
+  return m and m.Value
+end
+local function power()
+  local p=get(plr,"leaderstats","Throw Power")
+  return p and p.Value
+end
+
+local function inv(n,...)
+  local r=R and R:FindFirstChild(n)
+  if not r then return end
+  local a=table.pack(...)
+  pcall(function()
+    if r:IsA("RemoteEvent") then r:FireServer(table.unpack(a,1,a.n))
+    else r:InvokeServer(table.unpack(a,1,a.n)) end
+  end)
+end
+
+local function root()
+  local c=plr.Character
+  return c and c:FindFirstChild("HumanoidRootPart")
+end
+local function tp(i)
+  local h=root()
+  if h and i and i:IsA("PVInstance") then
+    h.CFrame=i:GetPivot()+Vector3.new(0,3,0)
+    h.AssemblyLinearVelocity=Vector3.zero
+  end
+end
+local function dist(i)
+  local h=root()
+  if h and i then return (h.Position-i:GetPivot().Position).Magnitude end
+  return math.huge
+end
+
+local run,on,mode,training=true,true,"train",false
+local status,ups,retry,t0="Starting",0,0,os.clock()
+local lastPow,lastChg=nil,os.clock()
+
+local function resetP()
+  lastPow=nil
+  lastChg=os.clock()
+end
+local function stalled()
+  local v=power()
+  if v==nil then return false end
+  if lastPow==nil or v>lastPow then lastChg=os.clock() end
+  lastPow=v
+  return os.clock()-lastChg>=STALL
+end
+local function ready()
+  if os.clock()<retry then return false end
+  local m,p=num(moneyRaw()),num((priceL() or {}).Text)
+  return m~=nil and p~=nil and m>=p
+end
+
+plr.CharacterAdded:Connect(function()
+  training=false
+  resetP()
+end)
+
+local samples,since,lastM,lastP,rate,focus,weak={},nil,nil,nil,0,false,false
+local function resetInc()
+  table.clear(samples)
+  since,lastM,rate,focus,weak=nil,nil,0,false,false
+end
+local function income()
+  local now=os.clock()
+  local pl=priceL()
+  local pt=pl and pl.Text
+  local m,p=num(moneyRaw()),pt and num(pt)
+  if not (m and p and p>0) then return end
+  if pt~=lastP then
+    lastP=pt
+    resetInc()
+  end
+  if lastM then
+    table.insert(samples,{now,math.max(0,m-lastM)/p*100})
+  else
+    since=now
+  end
+  lastM=m
+  while samples[1] and samples[1][1]<now-WIN do table.remove(samples,1) end
+  local span=math.min(WIN,now-since)
+  if span<MINSPAN then
+    rate=0
+    return
+  end
+  local tot=0
+  for _,s in ipairs(samples) do tot=tot+s[2] end
+  rate=tot/span
+  if rate>=FOCUS then focus,weak=true,false
+  elseif rate<FOCUS*0.5 then focus=false end
+  if rate<=WEAK then weak,focus=true,false
+  elseif rate>WEAK*1.25 then weak=false end
+end
+local function leave() return ready() or focus end
+
+local function startT()
+  status="Training"
+  tp(spot())
+  task.wait(0.3)
+  inv("Training_Start")
+  training=true
+  resetP()
+end
+local function stopT()
+  if training then
+    inv("Training_Stop")
+    training=false
+  end
+end
+
+local function changed(old,oldV)
+  local l=priceL()
+  if not l or l.Text==old then return false end
+  local n=num(l.Text)
+  if oldV and n then return n>oldV end
+  return true
+end
+local function doUp()
+  status="Upgrading tool"
+  stopT()
+  local b,l=btn(),priceL()
+  if not (b and l) then return false end
+  tp(b)
+  task.wait(0.4)
+  local old=l.Text
+  local oldV=num(old)
+  local dl=os.clock()+30
+  while run and on do
+    if changed(old,oldV) then return true end
+    if os.clock()>=dl then return false end
+    b=btn()
+    if not b then return false end
+    if dist(b)>12 then
+      tp(b)
+      task.wait(0.2)
+    end
+    status="Upgrading - pressing E"
+    local pr=get(b,"ProximityPrompt")
+    if pr and fireproximityprompt then pcall(fireproximityprompt,pr) end
+    VIM:SendKeyEvent(true,Enum.KeyCode.E,false,game)
+    task.wait((pr and pr.HoldDuration or 0)+0.15)
+    VIM:SendKeyEvent(false,Enum.KeyCode.E,false,game)
+    task.wait(0.1)
+  end
+  return false
+end
+
+local function active()
+  local pg=plr:FindFirstChild("PlayerGui")
+  local x=pg and pg:FindFirstChild("ThrowSequence",true)
+  while x and x~=game do
+    if x:IsA("ScreenGui") then return x.Enabled end
+    if x:IsA("GuiObject") and not x.Visible then return false end
+    x=x.Parent
+  end
+  return x~=nil
+end
+local function tap()
+  local s=W.CurrentCamera.ViewportSize
+  VIM:SendMouseButtonEvent(s.X/2,s.Y/2,0,true,game,0)
+  VIM:SendMouseButtonEvent(s.X/2,s.Y/2,0,false,game,0)
+end
+local function waitGui()
+  local n=0
+  while run and on and not leave() do
+    if active() then return true end
+    local a=W:FindFirstChild("StarterArea")
+    if not a then
+      status="StarterArea not found"
+      task.wait(1)
+    else
+      n=n+1
+      status="Teleporting to StarterArea #"..n
+      tp(a)
+      local t=os.clock()
+      while os.clock()-t<1 do
+        if not (run and on) or leave() then return false end
+        if active() then return true end
+        task.wait(0.05)
+      end
+    end
+  end
+  return false
+end
+local function catch()
+  status="Perfect catching"
+  local f,nt=os.clock(),os.clock()
+  while run and on and not leave() and active() do
+    local now=os.clock()
+    if now>=f then
+      task.spawn(inv,"Throw_Resolve",1)
+      f=now+0.95
+    end
+    if now>=nt then
+      tap()
+      nt=now+TAP
+    end
+    task.wait(0.05)
+  end
+end
+local function farm()
+  if waitGui() then catch() end
+end
+
+local C=Color3.fromRGB
+local WH=C(235,235,245)
+local function mk(c,p,par)
+  local o=Instance.new(c)
+  for k,v in pairs(p) do o[k]=v end
+  o.Parent=par
+  return o
+end
+local function round(o,r) return mk("UICorner",{CornerRadius=UDim.new(0,r)},o) end
+local function grad(o,a,b,r) return mk("UIGradient",{Color=ColorSequence.new(a,b),Rotation=r or 0},o) end
+local function lbl(par,x,y,w,h,t,sz,col,font)
+  return mk("TextLabel",{Position=UDim2.fromOffset(x,y),Size=UDim2.fromOffset(w,h),BackgroundTransparency=1,Text=t,TextColor3=col or WH,Font=font or Enum.Font.GothamBold,TextSize=sz,TextXAlignment=Enum.TextXAlignment.Left,TextTruncate=Enum.TextTruncate.AtEnd},par)
+end
+
+local ok,par=pcall(function() return gethui and gethui() or game:GetService("CoreGui") end)
+if not ok or not par then par=plr:WaitForChild("PlayerGui") end
+local old=par:FindFirstChild("AutoTrainerUI")
+if old then old:Destroy() end
+
+local DIM,CARD,PUR,BLU,WHITE=C(125,125,160),C(28,28,42),C(125,85,255),C(55,150,255),C(255,255,255)
+
+local sg=mk("ScreenGui",{Name="AutoTrainerUI",ResetOnSpawn=false,DisplayOrder=999},par)
+local fr=mk("Frame",{Size=UDim2.fromOffset(300,305),Position=UDim2.new(0,20,0,60),BackgroundColor3=WHITE,BorderSizePixel=0,Active=true,ClipsDescendants=true},sg)
+round(fr,14)
+grad(fr,C(26,26,38),C(12,12,18),90)
+grad(mk("UIStroke",{Color=WHITE,Thickness=2},fr),PUR,BLU,45)
+
+local ti=mk("Frame",{Size=UDim2.new(1,0,0,40),BackgroundColor3=WHITE,BorderSizePixel=0,Active=true},fr)
+grad(ti,PUR,BLU,0)
+lbl(ti,14,0,130,40,"AUTO TRAINER",16)
+lbl(ti,150,0,70,40,"drag me",10,C(215,215,255),Enum.Font.Gotham)
+local mn=mk("TextButton",{Size=UDim2.fromOffset(34,40),Position=UDim2.new(1,-74,0,0),BackgroundTransparency=1,Text="-",TextColor3=WH,Font=Enum.Font.GothamBold,TextSize=22},ti)
+local cl=mk("TextButton",{Size=UDim2.fromOffset(34,40),Position=UDim2.new(1,-38,0,0),BackgroundTransparency=1,Text="X",TextColor3=C(255,150,150),Font=Enum.Font.GothamBold,TextSize=16},ti)
+
+local pill=mk("Frame",{Size=UDim2.fromOffset(276,30),Position=UDim2.fromOffset(12,48),BackgroundColor3=CARD,BorderSizePixel=0},fr)
+round(pill,8)
+local dot=mk("Frame",{Size=UDim2.fromOffset(10,10),Position=UDim2.fromOffset(10,10),BackgroundColor3=C(80,225,130),BorderSizePixel=0},pill)
+round(dot,5)
+local stL=lbl(pill,28,0,240,30,"",13,WH,Enum.Font.GothamMedium)
+
+local function card(x,y,cap)
+  local f=mk("Frame",{Size=UDim2.fromOffset(134,46),Position=UDim2.fromOffset(x,y),BackgroundColor3=CARD,BorderSizePixel=0},fr)
+  round(f,8)
+  mk("UIStroke",{Color=C(48,48,70),Thickness=1},f)
+  lbl(f,10,4,114,14,cap,10,DIM)
+  return lbl(f,10,20,114,22,"-",16)
+end
+local moL=card(12,86,"MONEY")
+local prL=card(154,86,"UPGRADE COST")
+local seL=card(12,140,"SESSION")
+local upL=card(154,140,"UPGRADES")
+local inL=lbl(fr,14,190,272,18,"",12)
+local gotL=lbl(fr,14,210,272,18,"You got: None",12,C(255,220,100))
+
+local bb=mk("Frame",{Size=UDim2.fromOffset(276,24),Position=UDim2.fromOffset(12,232),BackgroundColor3=C(38,38,54),BorderSizePixel=0,ClipsDescendants=true},fr)
+round(bb,12)
+local bf=mk("Frame",{Size=UDim2.new(0,0,1,0),BackgroundColor3=WHITE,BorderSizePixel=0},bb)
+round(bf,12)
+grad(bf,C(80,225,130),C(70,170,255),0)
+local bt=lbl(bb,0,0,276,24,"0%",12)
+bt.TextXAlignment=Enum.TextXAlignment.Center
+bt.ZIndex=2
+
+local tg=mk("TextButton",{Size=UDim2.fromOffset(276,34),Position=UDim2.fromOffset(12,260),BackgroundColor3=WHITE,BorderSizePixel=0,Text="PAUSE",TextColor3=WH,Font=Enum.Font.GothamBold,TextSize=15,AutoButtonColor=false},fr)
+round(tg,10)
+local tgG=grad(tg,PUR,BLU,0)
+
+local drag,ds,sp
+ti.InputBegan:Connect(function(i)
+  if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+    drag,ds,sp=true,i.Position,fr.Position
+    i.Changed:Connect(function()
+      if i.UserInputState==Enum.UserInputState.End then drag=false end
+    end)
+  end
+end)
+UIS.InputChanged:Connect(function(i)
+  if drag and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+    local d=i.Position-ds
+    fr.Position=UDim2.new(sp.X.Scale,sp.X.Offset+d.X,sp.Y.Scale,sp.Y.Offset+d.Y)
+  end
+end)
+
+local small=false
+mn.Activated:Connect(function()
+  small=not small
+  fr.Size=small and UDim2.fromOffset(300,40) or UDim2.fromOffset(300,305)
+  mn.Text=small and "+" or "-"
+end)
+cl.Activated:Connect(function()
+  run,on=false,false
+  pcall(stopT)
+  sg:Destroy()
+end)
+tg.Activated:Connect(function()
+  on=not on
+  tg.Text=on and "PAUSE" or "RESUME"
+  tgG.Color=on and ColorSequence.new(PUR,BLU) or ColorSequence.new(C(60,60,80),C(90,90,115))
+  if on then
+    resetP()
+  else
+    stopT()
+    status="Paused"
+  end
+end)
+
+-- Robust inventory tracking with a lock timer to prevent old items from overriding new ones
+local processedTools = {}
+local isInitialized = false
+
+local function registerExisting(container)
+  if container then
+    for _, item in ipairs(container:GetChildren()) do
+      if item:IsA("Tool") then
+        processedTools[item] = true
+      end
+    end
+  end
+end
+
+registerExisting(plr:WaitForChild("Backpack"))
+registerExisting(plr.Character)
+
+task.delay(2, function()
+  isInitialized = true
+end)
+
+plr.Backpack.ChildAdded:Connect(function(item)
+  if not isInitialized then return end
+  if item:IsA("Tool") and not processedTools[item] then
+    processedTools[item] = true
+    
+    -- Wait briefly for server replication (ToolTip & attributes)
+    task.wait(0.25)
+    if not item or not item.Parent then return end
+    
+    local rarity = item:GetAttribute("Rarity") or item:GetAttribute("Tier") or ""
+    if rarity ~= "" then
+      rarity = "[" .. tostring(rarity) .. "] "
+    end
+    
+    local tip = item.ToolTip or ""
+    tip = tip:match("^(.-)%s*%-") or tip
+    tip = tip:gsub("^%s*(.-)%s*$", "%1")
+    
+    local txt = "You got: " .. rarity .. item.Name
+    if tip ~= "" then
+      txt = txt .. " - " .. tip
+    end
+    
+    if gotL then
+      gotL.Text = txt
+    end
+  end
+end)
+
+local function fmt(s)
+  s=math.floor(s)
+  return ("%02d:%02d:%02d"):format(s//3600,s%3600//60,s%60)
+end
+
+task.spawn(function()
+  while run do
+    pcall(income)
+    local mr,l=moneyRaw(),priceL()
+    local pt=l and l.Text or "?"
+    local m,p=num(mr),num(pt)
+    local r=(m and p and p>0) and math.clamp(m/p,0,1) or 0
+    stL.Text=status
+    dot.BackgroundColor3=not on and C(130,130,150) or status:find("Upgrad") and C(70,160,255) or mode=="farm" and C(255,170,60) or C(80,225,130)
+    moL.Text=tostring(mr or "?")
+    prL.Text=pt
+    seL.Text=fmt(os.clock()-t0)
+    upL.Text=tostring(ups)
+    inL.Text=("Income: %.2f%%/s  %s"):format(rate,focus and "[focus train]" or weak and "[weak]" or "")
+    inL.TextColor3=focus and C(80,225,130) or weak and C(255,130,110) or WH
+    bf.Size=UDim2.new(r,0,1,0)
+    bt.Text=math.floor(r*100).."%"
+    task.wait(0.25)
+  end
+end)
+
+task.spawn(function()
+  while run do
+    if on then task.spawn(inv,"Plot_EquipBest") end
+    task.wait(0.5)
+  end
+end)
+
+task.spawn(function()
+  local id=1
+  while run do
+    if on then
+      task.spawn(inv,"Shop_Buy",id)
+      id=id%100+1
+    end
+    task.wait(0.3)
+  end
+end)
+
+task.spawn(function()
+  while run do
+    if not on then
+      task.wait(0.3)
+    else
+      if ready() then
+        if doUp() then
+          ups=ups+1
+          retry=0
+        else
+          retry=os.clock()+8
+        end
+        mode,training="train",false
+        resetP()
+      elseif mode=="train" then
+        if focus then
+          status="Training - high income focus"
+          resetP()
+          
+          if active() then
+            status="Clearing stuck ThrowSequence..."
+            while run and on and active() do
+              tap()
+              task.wait(TAP)
+            end
+          end
+
+          if not training or dist(spot()) > 6 then
+            startT()
+          end
+        else
+          if not training then startT() end
+          local st=stalled()
+          local idle=math.floor(os.clock()-lastChg)
+          status=(weak and "Weak - training" or "Training")..(" | Power %s (idle %ds)"):format(tostring(lastPow or "?"),idle)
+          if st then
+            mode="farm"
+            stopT()
+            status="Throw Power stalled - farming animals"
+          end
+        end
+      elseif focus then
+        mode,training="train",false
+        startT()
+        resetP()
+      else
+        farm()
+      end
+      task.wait(0.1)
+    end
+  end
+end)
