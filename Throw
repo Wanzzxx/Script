@@ -37,7 +37,9 @@ end
 local function num(v)
   if typeof(v)=="number" then return v end
   if v==nil then return nil end
-  local s=tostring(v):gsub("[%$,%s]","")
+  local s=tostring(v)
+  if s:lower():find("max") then return math.huge end
+  s=s:gsub("[%$,%s]","")
   local n,suf=s:match("(%d[%d%.]*)(%a*)")
   n=tonumber(n)
   if not n then return nil end
@@ -116,7 +118,17 @@ local function stalled()
   lastPow=v
   return os.clock()-lastChg>=STALL
 end
+
+local function isMaxUpgrades()
+  local pl = priceL()
+  if pl and pl.Text and pl.Text:lower():find("max") then
+    return true
+  end
+  return false
+end
+
 local function ready()
+  if isMaxUpgrades() then return false end
   if os.clock()<retry then return false end
   local m,p=num(moneyRaw()),num((priceL() or {}).Text)
   return m~=nil and p~=nil and m>=p
@@ -162,7 +174,7 @@ local function income()
   if rate<=WEAK then weak,focus=true,false
   elseif rate>WEAK*1.25 then weak=false end
 end
-local function leave() return ready() or focus end
+local function leave() return ready() or focus or isMaxUpgrades() end
 
 local function startT()
   status="Training"
@@ -388,18 +400,34 @@ task.spawn(function()
     pcall(income)
     local mr,l=moneyRaw(),priceL()
     local pt=l and l.Text or "?"
+    
+    -- Handle Upgrade Cost Text Color and Max State
+    if pt:lower():find("max") then
+      prL.TextColor3 = C(80, 225, 130) -- Green
+    else
+      prL.TextColor3 = WH
+    end
+
     local m,p=num(mr),num(pt)
-    local r=(m and p and p>0) and math.clamp(m/p,0,1) or 0
+    local r=(m and p and p>0 and p~=math.huge) and math.clamp(m/p,0,1) or (isMaxUpgrades() and 1 or 0)
+    
     stL.Text=status
     dot.BackgroundColor3=not on and C(130,130,150) or status:find("Upgrad") and C(70,160,255) or mode=="farm" and C(255,170,60) or C(80,225,130)
     moL.Text=tostring(mr or "?")
     prL.Text=pt
     seL.Text=fmt(os.clock()-t0)
     upL.Text=tostring(ups)
-    inL.Text=("Income: %.2f%%/s  %s"):format(rate,focus and "[focus train]" or weak and "[weak]" or "")
-    inL.TextColor3=focus and C(80,225,130) or weak and C(255,130,110) or WH
+    
+    if isMaxUpgrades() then
+      inL.Text="Income: MAXED [Training Only]"
+      inL.TextColor3 = C(80, 225, 130)
+    else
+      inL.Text=("Income: %.2f%%/s  %s"):format(rate,focus and "[focus train]" or weak and "[weak]" or "")
+      inL.TextColor3=focus and C(80,225,130) or weak and C(255,130,110) or WH
+    end
+
     bf.Size=UDim2.new(r,0,1,0)
-    bt.Text=math.floor(r*100).."%"
+    bt.Text=isMaxUpgrades() and "MAX" or (math.floor(r*100).."%")
     task.wait(0.25)
   end
 end)
@@ -427,7 +455,14 @@ task.spawn(function()
     if not on then
       task.wait(0.3)
     else
-      if ready() then
+      if isMaxUpgrades() then
+        mode, training = "train", false
+        status = "Maxed - Training Only"
+        if not training or dist(spot()) > 6 then
+          startT()
+        end
+        resetP()
+      elseif ready() then
         if doUp() then
           ups=ups+1
           retry=0
@@ -475,4 +510,4 @@ task.spawn(function()
   end
 end)
 
--- Sup brah
+-- Sup brah1
