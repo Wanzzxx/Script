@@ -103,7 +103,7 @@ local function dist(i)
   return math.huge
 end
 
-local run,on,mode,training=true,true,"train",false
+local run,mode,training=true,"train",false
 local status,ups,retry,t0="Starting",0,0,os.clock()
 local lastPow,lastChg=nil,os.clock()
 
@@ -208,7 +208,7 @@ local function doUp()
   local old=l.Text
   local oldV=num(old)
   local dl=os.clock()+30
-  while run and on do
+  while run do
     if changed(old,oldV) then return true end
     if os.clock()>=dl then return false end
     b=btn()
@@ -245,7 +245,7 @@ local function tap()
 end
 local function waitGui()
   local n=0
-  while run and on and not leave() do
+  while run and not leave() do
     if active() then return true end
     local a=W:FindFirstChild("StarterArea")
     if not a then
@@ -257,7 +257,7 @@ local function waitGui()
       tp(a)
       local t=os.clock()
       while os.clock()-t<1 do
-        if not (run and on) or leave() then return false end
+        if not run or leave() then return false end
         if active() then return true end
         task.wait(0.05)
       end
@@ -268,7 +268,7 @@ end
 local function catch()
   status="Perfect Throwing..."
   local f,nt=os.clock(),os.clock()
-  while run and on and not leave() and active() do
+  while run and not leave() and active() do
     local now=os.clock()
     if now>=f then
       task.spawn(inv,"Throw_Resolve",1)
@@ -307,7 +307,7 @@ if old then old:Destroy() end
 local DIM,CARD,PUR,BLU,WHITE=C(125,125,160),C(28,28,42),C(125,85,255),C(55,150,255),C(255,255,255)
 
 local sg=mk("ScreenGui",{Name="AutoTrainerUI",ResetOnSpawn=false,DisplayOrder=999},par)
-local fr=mk("Frame",{Size=UDim2.fromOffset(300,280),Position=UDim2.new(0,20,0,60),BackgroundColor3=WHITE,BorderSizePixel=0,Active=true,ClipsDescendants=true},sg)
+local fr=mk("Frame",{Size=UDim2.fromOffset(300,240),Position=UDim2.new(0,20,0,60),BackgroundColor3=WHITE,BorderSizePixel=0,Active=true,ClipsDescendants=true},sg)
 round(fr,14)
 grad(fr,C(26,26,38),C(12,12,18),90)
 grad(mk("UIStroke",{Color=WHITE,Thickness=2},fr),PUR,BLU,45)
@@ -347,10 +347,6 @@ local bt=lbl(bb,0,0,276,24,"0%",12)
 bt.TextXAlignment=Enum.TextXAlignment.Center
 bt.ZIndex=2
 
-local tg=mk("TextButton",{Size=UDim2.fromOffset(276,34),Position=UDim2.fromOffset(12,242),BackgroundColor3=WHITE,BorderSizePixel=0,Text="PAUSE",TextColor3=WH,Font=Enum.Font.GothamBold,TextSize=15,AutoButtonColor=false},fr)
-round(tg,10)
-local tgG=grad(tg,PUR,BLU,0)
-
 local drag,ds,sp
 ti.InputBegan:Connect(function(i)
   if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
@@ -370,24 +366,13 @@ end)
 local small=false
 mn.Activated:Connect(function()
   small=not small
-  fr.Size=small and UDim2.fromOffset(300,40) or UDim2.fromOffset(300,280)
+  fr.Size=small and UDim2.fromOffset(300,40) or UDim2.fromOffset(300,240)
   mn.Text=small and "+" or "-"
 end)
 cl.Activated:Connect(function()
-  run,on=false,false
+  run=false
   pcall(stopT)
   sg:Destroy()
-end)
-tg.Activated:Connect(function()
-  on=not on
-  tg.Text=on and "PAUSE" or "RESUME"
-  tgG.Color=on and ColorSequence.new(PUR,BLU) or ColorSequence.new(C(255, 10, 10),C(10, 255, 55))
-  if on then
-    resetP()
-  else
-    stopT()
-    status="Paused"
-  end
 end)
 
 local function fmt(s)
@@ -401,9 +386,8 @@ task.spawn(function()
     local mr,l=moneyRaw(),priceL()
     local pt=l and l.Text or "?"
     
-    -- Handle Upgrade Cost Text Color and Max State
     if pt:lower():find("max") then
-      prL.TextColor3 = C(80, 225, 130) -- Green
+      prL.TextColor3 = C(80, 225, 130)
     else
       prL.TextColor3 = WH
     end
@@ -412,7 +396,7 @@ task.spawn(function()
     local r=(m and p and p>0 and p~=math.huge) and math.clamp(m/p,0,1) or (isMaxUpgrades() and 1 or 0)
     
     stL.Text=status
-    dot.BackgroundColor3=not on and C(130,130,150) or status:find("Upgrad") and C(70,160,255) or mode=="farm" and C(255,170,60) or C(80,225,130)
+    dot.BackgroundColor3=status:find("Upgrad") and C(70,160,255) or mode=="farm" and C(255,170,60) or C(80,225,130)
     moL.Text=tostring(mr or "?")
     prL.Text=pt
     seL.Text=fmt(os.clock()-t0)
@@ -434,7 +418,7 @@ end)
 
 task.spawn(function()
   while run do
-    if on then task.spawn(inv,"Plot_EquipBest") end
+    task.spawn(inv,"Plot_EquipBest")
     task.wait(0.5)
   end
 end)
@@ -442,72 +426,66 @@ end)
 task.spawn(function()
   local id=1
   while run do
-    if on then
-      task.spawn(inv,"Shop_Buy",id)
-      id=id%100+1
-    end
+    task.spawn(inv,"Shop_Buy",id)
+    id=id%100+1
     task.wait(0.3)
   end
 end)
 
 task.spawn(function()
   while run do
-    if not on then
-      task.wait(0.3)
-    else
-      if isMaxUpgrades() then
-        mode, training = "train", false
-        status = "Maxed - Training Only"
+    if isMaxUpgrades() then
+      mode, training = "train", false
+      status = "Maxed - Training Only"
+      if not training or dist(spot()) > 6 then
+        startT()
+      end
+      resetP()
+    elseif ready() then
+      if doUp() then
+        ups=ups+1
+        retry=0
+      else
+        retry=os.clock()+8
+      end
+      mode,training="train",false
+      resetP()
+    elseif mode=="train" then
+      if focus then
+        status="Training - high income mode"
+        resetP()
+        
+        if active() then
+          status="Fixing stuck..."
+          while run and active() do
+            tap()
+            task.wait(TAP)
+          end
+        end
+
         if not training or dist(spot()) > 6 then
           startT()
         end
-        resetP()
-      elseif ready() then
-        if doUp() then
-          ups=ups+1
-          retry=0
-        else
-          retry=os.clock()+8
-        end
-        mode,training="train",false
-        resetP()
-      elseif mode=="train" then
-        if focus then
-          status="Training - high income mode"
-          resetP()
-          
-          if active() then
-            status="Fixing stuck..."
-            while run and on and active() do
-              tap()
-              task.wait(TAP)
-            end
-          end
-
-          if not training or dist(spot()) > 6 then
-            startT()
-          end
-        else
-          if not training then startT() end
-          local st=stalled()
-          local idle=math.floor(os.clock()-lastChg)
-          status=(weak and "Weak - training" or "Training")..(" | Power %s (idle %ds)"):format(tostring(lastPow or "?"),idle)
-          if st then
-            mode="farm"
-            stopT()
-            status="Throw stalled"
-          end
-        end
-      elseif focus then
-        mode,training="train",false
-        startT()
-        resetP()
       else
-        farm()
+        if not training then startT() end
+        local st=stalled()
+        local idle=math.floor(os.clock()-lastChg)
+        status=(weak and "Weak - training" or "Training")..(" | Power %s (idle %ds)"):format(tostring(lastPow or "?"),idle)
+        if st then
+          mode="farm"
+          stopT()
+          status="Throw stalled"
+        end
       end
-      task.wait(0.1)
+    elseif focus then
+      mode,training="train",false
+      startT()
+      resetP()
+    else
+      farm()
     end
+    task.wait(0.1)
   end
 end)
 
--- Sup brah1
+-- Gng
