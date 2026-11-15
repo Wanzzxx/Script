@@ -237,11 +237,11 @@ local function waitGui()
     if active() then return true end
     local a=W:FindFirstChild("StarterArea")
     if not a then
-      status="StarterArea not found"
+      status="Farm area not found"
       task.wait(1)
     else
       n=n+1
-      status="Teleporting to StarterArea #"..n
+      status="Attempt to Farm #"..n
       tp(a)
       local t=os.clock()
       while os.clock()-t<1 do
@@ -254,7 +254,7 @@ local function waitGui()
   return false
 end
 local function catch()
-  status="Perfect catching"
+  status="Perfect Throwing..."
   local f,nt=os.clock(),os.clock()
   while run and on and not leave() and active() do
     local now=os.clock()
@@ -302,8 +302,8 @@ grad(mk("UIStroke",{Color=WHITE,Thickness=2},fr),PUR,BLU,45)
 
 local ti=mk("Frame",{Size=UDim2.new(1,0,0,40),BackgroundColor3=WHITE,BorderSizePixel=0,Active=true},fr)
 grad(ti,PUR,BLU,0)
-lbl(ti,14,0,130,40,"AUTO TRAINER",16)
-lbl(ti,150,0,70,40,"drag me",10,C(215,215,255),Enum.Font.Gotham)
+lbl(ti,14,0,130,40,"TFFA - KAITUN",16)
+lbl(ti,150,0,70,40,"thx to Gemini & Claude",10,C(215,215,255),Enum.Font.Gotham)
 local mn=mk("TextButton",{Size=UDim2.fromOffset(34,40),Position=UDim2.new(1,-74,0,0),BackgroundTransparency=1,Text="-",TextColor3=WH,Font=Enum.Font.GothamBold,TextSize=22},ti)
 local cl=mk("TextButton",{Size=UDim2.fromOffset(34,40),Position=UDim2.new(1,-38,0,0),BackgroundTransparency=1,Text="X",TextColor3=C(255,150,150),Font=Enum.Font.GothamBold,TextSize=16},ti)
 
@@ -320,10 +320,10 @@ local function card(x,y,cap)
   lbl(f,10,4,114,14,cap,10,DIM)
   return lbl(f,10,20,114,22,"-",16)
 end
-local moL=card(12,86,"MONEY")
-local prL=card(154,86,"UPGRADE COST")
-local seL=card(12,140,"SESSION")
-local upL=card(154,140,"UPGRADES")
+local moL=card(12,86,"MONEY:")
+local prL=card(154,86,"UPGRADE COST:")
+local seL=card(12,140,"SESSION:")
+local upL=card(154,140,"UPGRADES:")
 local inL=lbl(fr,14,192,272,18,"",12)
 
 local bb=mk("Frame",{Size=UDim2.fromOffset(276,24),Position=UDim2.fromOffset(12,214),BackgroundColor3=C(38,38,54),BorderSizePixel=0,ClipsDescendants=true},fr)
@@ -369,7 +369,7 @@ end)
 tg.Activated:Connect(function()
   on=not on
   tg.Text=on and "PAUSE" or "RESUME"
-  tgG.Color=on and ColorSequence.new(PUR,BLU) or ColorSequence.new(C(60,60,80),C(90,90,115))
+  tgG.Color=on and ColorSequence.new(PUR,BLU) or ColorSequence.new(C(255, 10, 10),C(10, 255, 55))
   if on then
     resetP()
   else
@@ -438,11 +438,11 @@ task.spawn(function()
         resetP()
       elseif mode=="train" then
         if focus then
-          status="Training - high income focus"
+          status="Training - high income mode"
           resetP()
           
           if active() then
-            status="Clearing stuck ThrowSequence..."
+            status="Fixing stuck..."
             while run and on and active() do
               tap()
               task.wait(TAP)
@@ -460,7 +460,7 @@ task.spawn(function()
           if st then
             mode="farm"
             stopT()
-            status="Throw Power stalled - farming animals"
+            status="Throw stalled"
           end
         end
       elseif focus then
@@ -475,4 +475,4 @@ task.spawn(function()
   end
 end)
 
--- Sup
+-- Sup brah
